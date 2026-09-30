@@ -89,7 +89,7 @@ ln -sf "$WEEK1_DATA/anno.gff3" .
 ls -la
 ```
 
-The `->` in the listing shows that `anno.gff3` is a symbolic link. You can use the file without making a second copy, which matters when the file is 40 GB instead of 40 KB.
+The arrow in the listing shows that `anno.gff3` is a symbolic link. You can use the file without making a second copy, which matters when the file is 40 GB instead of 40 KB.
 
 **Checkpoint 1.** You should be in `~/appbio/week-01/session-01` with one symbolic link to `anno.gff3`.
 
@@ -175,26 +175,57 @@ awk -F'\t' '$3 == "exon" { s += $5 - $4 + 1 } END { print s }' anno.gff3
 
 GFF3 coordinates are 1-based and inclusive. A feature from 100 to 110 covers eleven bases, not ten.
 
-BED format is different: it is 0-based and half-open. Mixing coordinate conventions is one of the most common silent errors in genomics.
+BED format is different: it is 0-based and half-open, so the same region would be written 99 to 110 and its length really is `end - start`. Mixing coordinate conventions is one of the most common silent errors in genomics.
+
+The size of the difference tells you something too: it equals the number of exon features, because you dropped exactly one base from each.
 
 </details>
 
 ### 2.6 `sed`: Make a Targeted Substitution
 
-Some tools want `chr1`, while others want `1`. Coordinate naming mismatches can silently break downstream analysis.
+This file names its chromosomes `I`, `II`, `III`. Many tools, and the UCSC genome browser, expect `chrI`, `chrII`, `chrIII`. Feeding one naming convention to a tool that expects the other produces no error and no overlapping features, which is a slow way to lose an afternoon. Meet the problem now.
+
+Look at the names first:
 
 ```bash
-cut -f1 anno.gff3 | grep -v '^#' | sort -u | head
-sed 's/^chr//' anno.gff3 > anno_nochr.gff3
-cut -f1 anno_nochr.gff3 | grep -v '^#' | sort -u | head
+grep -v '^#' anno.gff3 | cut -f1 | sort -u
 ```
 
-**Question 6.** Why does the pattern start with `^`? What would `sed 's/chr//'` do to a line containing the word `chromosome` in its description column?
+Now try the obvious fix, and look carefully at what it did:
+
+```bash
+sed 's/^/chr/' anno.gff3 | head -3
+```
+
+**Question 6.** Look at the first three lines of that output. What did you just break?
 
 <details>
 <summary>Answer</summary>
 
-`^` anchors the match to the start of the line. Without it, `sed` removes the first `chr` anywhere on the line, so `chromosome` in a description could become `omosome`.
+The header lines. `##gff-version 3` became `chr##gff-version 3`, which is no longer a valid GFF3 header. Tools reading the file will either fail or silently ignore it.
+
+`^` anchors to the start of a line, and comment lines have a start too. The anchor did exactly what you asked; you asked for the wrong thing.
+
+</details>
+
+The fix is to exclude the comment lines:
+
+```bash
+sed '/^#/!s/^/chr/' anno.gff3 > anno_chr.gff3
+head -3 anno_chr.gff3
+grep -v '^#' anno_chr.gff3 | cut -f1 | sort -u
+```
+
+`/^#/!` means "on lines that do **not** match `^#`". Confirm two things: the headers survived, and every sequence name gained its prefix.
+
+**Question 7.** Your `sort -u` output puts `IX` between `IV` and `Mito`, and `V` after `Mito`. Why, and does it matter here?
+
+<details>
+<summary>Answer</summary>
+
+`sort` is comparing text, not Roman numerals. Alphabetically `IX` follows `IV`, and `V` follows `Mito`, so the order is correct as a string sort and meaningless as a chromosome order.
+
+It does not matter for counting unique names, which is all you asked for. It would matter if you were producing a report for a reader, or joining two files on a sorted key. Know what your sort is actually sorting.
 
 </details>
 
@@ -224,6 +255,14 @@ git status
 
 `git status` will become the command you type most often. It tells you what changed and what is staged for commit.
 
+A file in a Git repository is in one of three places, and two commands move it between them:
+
+```text
+working directory  --(git add)-->  staging area  --(git commit)-->  repository
+```
+
+Keep that picture in mind; it explains the behaviour of `git diff` later in this lab.
+
 ### 3.3 Add `.gitignore` First
 
 ```bash
@@ -251,7 +290,7 @@ EOF
 cat .gitignore
 ```
 
-Add `.gitignore` before the first commit. Once a file is committed, it is in the repository history and every future clone. GitHub warns above 50 MB and rejects files above 100 MB; one FASTQ file can be larger than your whole repository should be.
+Add `.gitignore` before the first commit. Once a file is committed, it is in the repository history and in every future clone. GitHub warns above 50 MB and rejects files above 100 MB; one FASTQ file can be larger than your whole repository should be.
 
 ### 3.4 Make Your First Commits
 
@@ -287,7 +326,7 @@ git log --oneline
 Expected shape:
 
 ```text
-9f3c1a Add Week 1 lab notes
+9f3c1a2 Add Week 1 lab notes
 4b7e0d8 Add README and gitignore for sequencing data
 ```
 
@@ -306,7 +345,7 @@ git status
 rm bigfile.fastq.gz
 ```
 
-**Question 7.** Write a commit message for "I fixed the awk command that was counting exons wrong." What makes it better than `fixed bug`?
+**Question 8.** Write a commit message for "I fixed the awk command that was counting exons wrong." What makes it better than `fixed bug`?
 
 <details>
 <summary>Answer</summary>
@@ -321,33 +360,126 @@ It says what changed and why. In six months, `git log` may be the only record of
 
 ## If You Finish Early
 
-1. Find the longest gene in the annotation:
+These are optional. Each one uses only commands from this lab.
 
-   ```bash
-   awk -F'\t' '$3=="gene" { print $5-$4+1, $1, $4, $5 }' anno.gff3 | sort -rn | head -1
-   ```
+### Find the longest gene
 
-   Work out what each stage does.
+```bash
+awk -F'\t' '$3=="gene" { print $5-$4+1, $1, $4, $5 }' anno.gff3 | sort -rn | head -1
+```
 
-2. Count how many genes are on each strand in column 7.
-3. Write a one-liner that produces a tab-separated table of feature type and count.
-4. Try `git diff`: edit `README.md`, run `git diff`, then run `git add README.md` and try `git diff --staged`.
+Work out what each stage does. Build it up one pipe at a time if it is not obvious.
+
+### Count genes on each strand
+
+Column 7 holds the strand. Use the counting idiom from section 2.3.
+
+<details>
+<summary>Answer</summary>
+
+```bash
+awk -F'\t' '$3=="gene"' anno.gff3 | cut -f7 | sort | uniq -c
+```
+
+The two counts should be roughly equal. A large imbalance would be worth investigating.
+
+</details>
+
+### Make a table you could paste into a spreadsheet
+
+Produce two tab-separated columns: feature type, then count.
+
+<details>
+<summary>Answer</summary>
+
+```bash
+grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c | sort -rn \
+  | awk '{ print $2 "\t" $1 }'
+```
+
+`uniq -c` puts the count first and pads it with spaces. The final `awk` swaps the order and separates the columns with a real tab, which is what a spreadsheet expects.
+
+</details>
+
+### Find the shortest gene, and decide whether you believe it
+
+```bash
+awk -F'\t' '$3=="gene" { print $5-$4+1, $9 }' anno.gff3 | sort -n | head -3
+```
+
+Very short genes are sometimes real and sometimes annotation artefacts. You cannot tell from the length alone, which is the point.
+
+### Explore `git diff`
+
+```bash
+cd ~/appbio/hw
+echo "Extra line." >> README.md
+git diff
+git add README.md
+git diff
+git diff --staged
+```
+
+**Question 9.** After `git add`, plain `git diff` shows nothing but `git diff --staged` shows your change. Why?
+
+<details>
+<summary>Answer</summary>
+
+`git diff` compares the working directory against the staging area. Once you have staged the change, those two match, so there is nothing to report.
+
+`git diff --staged` compares the staging area against the last commit, which is where your change now lives. The three places from section 3.2 explain the behaviour of both commands.
+
+</details>
 
 ## Takeaways
 
-| Skill | Command |
-| --- | --- |
-| Count occurrences | `... \| sort \| uniq -c \| sort -rn` |
-| Filter a column | `awk -F'\t' '$3=="gene"'` |
-| Sum across lines | `awk '{s += $5 - $4 + 1} END {print s}'` |
-| Substitute at start of line | `sed 's/^chr//'` |
-| See what changed | `git status`, `git diff` |
-| Record a change | `git add`, `git commit -m "..."` |
+### Commands from this lab
 
-Two habits will save you time all semester:
+Count how many times each value appears in a column:
 
-1. Check coordinate conventions before doing arithmetic.
-2. Add `.gitignore` before the first commit, not after.
+```bash
+grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c | sort -rn
+```
+
+Keep only the rows where a column has a particular value:
+
+```bash
+awk -F'\t' '$3 == "gene"' anno.gff3
+```
+
+Add up a calculated value across every matching row:
+
+```bash
+awk -F'\t' '$3 == "exon" { s += $5 - $4 + 1 } END { print s }' anno.gff3
+```
+
+Substitute text at the start of every line, skipping comments:
+
+```bash
+sed '/^#/!s/^/chr/' anno.gff3 > anno_chr.gff3
+```
+
+Git, in the order you will use it:
+
+```bash
+git status              # what has changed, and what is staged
+git diff                # exactly what changed, line by line
+git add FILE            # stage a change
+git commit -m "..."     # record it
+git log --oneline       # what has happened so far
+```
+
+### Two habits that will save you time all semester
+
+**Check the coordinate convention before doing arithmetic.** GFF3 is 1-based and inclusive, so a feature's length is `end - start + 1`. BED is 0-based and half-open, so the same region's length is `end - start`. Neither format announces which it is, and mixing them gives answers that are wrong by exactly one base per feature.
+
+**Write `.gitignore` before your first commit, not after.** Once a file is committed it is in the history permanently and in every clone. Adding it to `.gitignore` afterwards stops future tracking but does not remove it.
+
+### The idea underneath both
+
+Every command in this lab ran successfully. None of them checked whether the answer made sense. `uniq` without `sort` returns a wrong count with no error. Forgetting `+ 1` returns a total that is off by the number of features. `sed` without the comment filter quietly corrupts your header lines.
+
+Deciding whether an answer is plausible is your job, not the tool's. That is most of what this course is about, and it starts here.
 
 ## Homework Connection
 

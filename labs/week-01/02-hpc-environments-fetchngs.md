@@ -113,9 +113,12 @@ Fix the script by defining `WEEK1_DATA` inside it, then submit:
 
 ```bash
 sed -i "/^echo \"Running on/a export WEEK1_DATA=$WEEK1_DATA" count_job.sh
+cat count_job.sh
 sbatch count_job.sh
 squeue -u "$USER"
 ```
+
+The `cat` is not decoration. Read the file and confirm the `export` line landed *before* the `grep` line that needs it.
 
 ### 2.3 Read the Result and the Cost
 
@@ -145,7 +148,7 @@ Good habit: run once with a reasonable request, check `seff`, then request rough
 
 ```bash
 module load anaconda
-conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit=2.14.0
+conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
 conda activate appbio-week1
 seqkit version
 conda env export --from-history > ~/appbio/week-01/session-02/environment.yml
@@ -156,7 +159,13 @@ Channel order matters. The usual bioinformatics order is `conda-forge` first, th
 If `mamba` is available on Pax, the create step can be faster:
 
 ```bash
-mamba create -y -n appbio-week1 -c conda-forge -c bioconda seqkit=2.14.0
+mamba create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
+```
+
+Pin the version once you know which one you want, so the environment can be recreated:
+
+```bash
+conda search -c conda-forge -c bioconda seqkit | tail -5
 ```
 
 ### 3.2 Nextflow and Containers for Pipelines
@@ -267,6 +276,12 @@ This uses a tiny built-in dataset to confirm that Nextflow runs, containers work
 
 Always run a test profile before using a new pipeline. Check <https://nf-co.re/fetchngs> for the current release, then pin it with `-r`.
 
+The test output is disposable, and it has already done its job by warming the container cache:
+
+```bash
+rm -rf test_out
+```
+
 ### 4.4 Submit the Real Download as a Job
 
 Do not run the real download interactively. It is large enough to take longer than your session.
@@ -274,7 +289,7 @@ Do not run the real download interactively. It is large enough to take longer th
 ```bash
 mkdir -p logs
 
-cat > fetch_job.sh <<EOF
+cat > fetch_job.sh <<'EOF'
 #!/bin/bash
 #SBATCH --job-name=fetchngs
 #SBATCH --partition=batch
@@ -284,12 +299,14 @@ cat > fetch_job.sh <<EOF
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
+set -euo pipefail
+
 module load nextflow
 module load singularity 2>/dev/null || module load apptainer
 
-export COURSE="$COURSE"
+export COURSE=/cluster/tufts/bio_appbio
 export NXF_SINGULARITY_CACHEDIR="$COURSE/$USER/.singularity_cache"
-mkdir -p "\$NXF_SINGULARITY_CACHEDIR"
+mkdir -p "$NXF_SINGULARITY_CACHEDIR"
 
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
@@ -300,11 +317,35 @@ nextflow run nf-core/fetchngs \
   -resume
 EOF
 
+cat fetch_job.sh
 sbatch fetch_job.sh
 squeue -u "$USER"
 ```
 
-**Question 6.** Why ask for twelve hours of wall time for a download, and why include `-resume`?
+Three details in that script are worth understanding rather than copying.
+
+The heredoc delimiter is quoted: `<<'EOF'`. That writes the file exactly as you see it above, leaving every `$VARIABLE` to be resolved when the job runs.
+
+`COURSE` is therefore defined *inside* the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
+
+`set -euo pipefail` makes the job stop at the first failure. Without it, a failed `mkdir` would not stop anything, and you would get a confusing container error several minutes later instead of a clear permissions error immediately.
+
+**Question 6.** Run `cat fetch_job.sh`. What would have changed if the delimiter had been unquoted, as `<<EOF`?
+
+<details>
+<summary>Answer</summary>
+
+Two things, and both are easy to miss.
+
+Every `$VARIABLE` would have been replaced by its value on the node where you typed the command, so the script would carry one fixed path instead of resolving `$HOME` wherever the job actually runs.
+
+And backslash-newline would have been treated as a line continuation for the heredoc itself, collapsing the entire `nextflow run` command onto a single line. The command would still work, but the file would not look like the one above.
+
+Quote the delimiter whenever you want the file to contain exactly what you typed.
+
+</details>
+
+**Question 7.** Why ask for twelve hours of wall time for a download, and why include `-resume`?
 
 <details>
 <summary>Answer</summary>
@@ -358,6 +399,8 @@ zcat *.fastq.gz | awk 'NR % 4 == 1' | wc -l
 
 Compare the read count with the `read_count` column in `../../runs.tsv`.
 
+Counting header lines rather than dividing the line count by four is deliberate. A truncated file gives a line count that is not a multiple of four, so dividing returns a plausible wrong number with no warning.
+
 **Checkpoint 3.** You have a fetchngs job ID, and you know how to check whether the download succeeded.
 
 ## If Your Job Fails
@@ -368,6 +411,18 @@ In order:
 2. Read the standard output: `tail -50 logs/fetchngs_*.out`
 3. Re-run the same job with `-resume` still present.
 4. Ask for help with the exact error message.
+
+Two failures are common enough to name.
+
+**Out of disk space.** The `sratools` download method writes large temporary files while converting, often several times the size of the final FASTQ. Check your quota with `df -h .` and your home usage with `du -sh ~`.
+
+**Permission denied on the container cache.** If `NXF_SINGULARITY_CACHEDIR` points somewhere you cannot write, Singularity fails while pulling images. Confirm the directory exists and is yours:
+
+```bash
+ls -ld "$COURSE/$USER/.singularity_cache"
+```
+
+If it does not exist and you cannot create it, ask the instructor — the per-user directory under the course path has to be set up for you.
 
 A failed download is normal. Not noticing that it failed is the problem.
 
@@ -383,12 +438,18 @@ A failed download is normal. Not noticing that it failed is the problem.
 | Query ENA runs | ENA portal API with `result=read_run` |
 | Filter to one platform | `awk -F'\t' 'NR>1 && $2=="PACBIO_SMRT" {print $1}' runs.tsv` |
 | Test a pipeline | `nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity` |
+| Write a script literally | `cat > job.sh <<'EOF'` with the delimiter quoted |
 | Fetch data properly | Submit `nf-core/fetchngs` as a batch job |
 | Verify FASTQ files | `gzip -t`, then count FASTQ records |
 
-Four habits will save you time this semester:
+Five habits will save you time this semester:
 
 1. Batch jobs do not inherit your interactive shell setup.
 2. Create log directories before submitting jobs.
-3. Run `-profile test` before using a new workflow.
-4. Put long jobs in the scheduler, not in an interactive terminal.
+3. Read the script you just generated before you submit it.
+4. Run `-profile test` before using a new workflow.
+5. Put long jobs in the scheduler, not in an interactive terminal.
+
+## Homework Connection
+
+Homework 1 extends this lab. You will query ENA for a second project, fetch RNA-seq data with the same pipeline, verify it, and record the whole thing in the Git repository you created in Session 1.

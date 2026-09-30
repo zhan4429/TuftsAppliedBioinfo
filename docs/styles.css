@@ -446,8 +446,8 @@ pre {
 
 .lab-hero h1 {
   max-width: 900px;
-  font-size: clamp(2.2rem, 4.5vw, 4rem);
-  line-height: 1;
+  font-size: clamp(1.85rem, 3.4vw, 3rem);
+  line-height: 1.06;
 }
 
 .lab-hero p {
@@ -462,9 +462,10 @@ pre {
 }
 
 .lab-article h2 {
-  margin-top: 2.5rem;
+  margin-top: 2.2rem;
   padding-top: 0.5rem;
-  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+  line-height: 1.12;
 }
 
 .lab-article h3 {
