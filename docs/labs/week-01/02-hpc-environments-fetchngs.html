@@ -12,19 +12,20 @@
     <a class="skip-link" href="#main">Skip to main content</a>
     <header class="site-header" id="top">
       <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics labs">
+        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
           <span class="brand-mark" aria-hidden="true">AB</span>
           <span>Applied Bioinformatics</span>
         </a>
         <div class="nav-links">
           <a href="../../index.html#labs">Labs</a>
+          <a href="../../index.html#tutorials">Tutorials</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
         </div>
       </nav>
     </header>
     <main class="lab-main" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Lab table of contents">
+        <aside class="lab-toc" aria-label="Page table of contents">
           <a class="back-link" href="../../index.html#labs">Back to labs</a>
           <p class="section-kicker">Session 2</p>
           <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
@@ -47,7 +48,8 @@
 <a class="toc-level-3" href="#4-5-check-after-class">4.5 Check After Class</a>
 <a class="toc-level-3" href="#4-6-verify-the-download">4.6 Verify the Download</a>
 <a class="toc-level-2" href="#if-your-job-fails">If Your Job Fails</a>
-<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+<a class="toc-level-2" href="#takeaways">Takeaways</a>
+<a class="toc-level-2" href="#homework-connection">Homework Connection</a></nav>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
@@ -67,9 +69,19 @@
 <p>Set paths and make a work directory:</p>
 <pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/bio_appbio
 export WEEK1_DATA=$COURSE/shared/wk1
-mkdir -p ~/appbio/week-01/session-02
-cd ~/appbio/week-01/session-02</code></pre>
-<p>If your instructor gives a different course path, change only <code>COURSE</code>.</p>
+export MYWORK=$COURSE/$USER
+
+mkdir -p &quot;$MYWORK/week-01/session-02&quot;
+cd &quot;$MYWORK/week-01/session-02&quot;
+pwd</code></pre>
+<p>Three paths, and you will use all of them every week:</p>
+<ul>
+<li><code>$COURSE</code> — the course directory, shared by everyone in the class</li>
+<li><code>$WEEK1_DATA</code> — this week&#x27;s staged data, read-only</li>
+<li><code>$MYWORK</code> — your own directory inside the course allocation, named after your UTLN</li>
+</ul>
+<p><strong>Do all your coursework under <code>$MYWORK</code>, not in your home directory.</strong> Home has a small quota that sequencing data will exhaust immediately, and the course allocation is where the instructor can see and help with your work.</p>
+<p>If your instructor gives a different course path, change only <code>COURSE</code>. If <code>$MYWORK</code> does not exist and you cannot create it, stop and ask — your directory has to be set up for you.</p>
 <h2 id="part-1-get-off-the-login-node">Part 1: Get Off the Login Node</h2>
 <h3 id="1-1-see-where-you-are">1.1 See Where You Are</h3>
 <pre class="lab-code"><code class=" language-bash">hostname</code></pre>
@@ -96,8 +108,8 @@ hostname</code></pre>
 <p><strong>Checkpoint 1.</strong> <code>hostname</code> should not start with <code>login</code>.</p>
 <h2 id="part-2-submit-a-batch-job">Part 2: Submit a Batch Job</h2>
 <h3 id="2-1-write-the-job-script">2.1 Write the Job Script</h3>
-<pre class="lab-code"><code class=" language-bash">mkdir -p ~/appbio/week-01/session-02/logs
-cd ~/appbio/week-01/session-02
+<pre class="lab-code"><code class=" language-bash">mkdir -p &quot;$MYWORK/week-01/session-02/logs&quot;
+cd &quot;$MYWORK/week-01/session-02&quot;
 
 cat &gt; count_job.sh &lt;&lt;&#x27;EOF&#x27;
 #!/bin/bash
@@ -121,8 +133,10 @@ EOF</code></pre>
 </details>
 <p>Fix the script by defining <code>WEEK1_DATA</code> inside it, then submit:</p>
 <pre class="lab-code"><code class=" language-bash">sed -i &quot;/^echo \&quot;Running on/a export WEEK1_DATA=$WEEK1_DATA&quot; count_job.sh
+cat count_job.sh
 sbatch count_job.sh
 squeue -u &quot;$USER&quot;</code></pre>
+<p>The <code>cat</code> is not decoration. Read the file and confirm the <code>export</code> line landed <em>before</em> the <code>grep</code> line that needs it.</p>
 <h3 id="2-3-read-the-result-and-the-cost">2.3 Read the Result and the Cost</h3>
 <p>Replace <code>&amp;lt;jobid&amp;gt;</code> with your job ID.</p>
 <pre class="lab-code"><code class=" language-bash">cat logs/count_*.out
@@ -137,13 +151,15 @@ seff &lt;jobid&gt;</code></pre>
 <h2 id="part-3-two-ways-to-get-software">Part 3: Two Ways to Get Software</h2>
 <h3 id="3-1-conda-or-mamba-for-your-own-tools">3.1 Conda or Mamba for Your Own Tools</h3>
 <pre class="lab-code"><code class=" language-bash">module load anaconda
-conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit=2.14.0
+conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
 conda activate appbio-week1
 seqkit version
-conda env export --from-history &gt; ~/appbio/week-01/session-02/environment.yml</code></pre>
+conda env export --from-history &gt; &quot;$MYWORK/week-01/session-02/environment.yml&quot;</code></pre>
 <p>Channel order matters. The usual bioinformatics order is <code>conda-forge</code> first, then <code>bioconda</code>.</p>
 <p>If <code>mamba</code> is available on Pax, the create step can be faster:</p>
-<pre class="lab-code"><code class=" language-bash">mamba create -y -n appbio-week1 -c conda-forge -c bioconda seqkit=2.14.0</code></pre>
+<pre class="lab-code"><code class=" language-bash">mamba create -y -n appbio-week1 -c conda-forge -c bioconda seqkit</code></pre>
+<p>Pin the version once you know which one you want, so the environment can be recreated:</p>
+<pre class="lab-code"><code class=" language-bash">conda search -c conda-forge -c bioconda seqkit | tail -5</code></pre>
 <h3 id="3-2-nextflow-and-containers-for-pipelines">3.2 Nextflow and Containers for Pipelines</h3>
 <p>You are about to test a real pipeline. Nextflow manages the workflow, and containers provide the pipeline software.</p>
 <pre class="lab-code"><code class=" language-bash">module load nextflow
@@ -162,8 +178,8 @@ singularity --version 2&gt;/dev/null || apptainer --version</code></pre>
 <p>Papers often cite a BioProject accession such as <code>PRJNA...</code>. Download tools usually need run accessions such as <code>SRR...</code>.</p>
 <pre class="lab-code"><code class=" language-text">BioProject (PRJNA) -&gt; BioSample (SAMN) -&gt; Experiment (SRX) -&gt; Run (SRR)</code></pre>
 <p>Set up a clean download directory:</p>
-<pre class="lab-code"><code class=" language-bash">mkdir -p ~/appbio/week-01/session-02/fetch
-cd ~/appbio/week-01/session-02/fetch</code></pre>
+<pre class="lab-code"><code class=" language-bash">mkdir -p &quot;$MYWORK/week-01/session-02/fetch&quot;
+cd &quot;$MYWORK/week-01/session-02/fetch&quot;</code></pre>
 <p>Set the project accession from class, then query ENA before downloading anything large:</p>
 <pre class="lab-code"><code class=" language-bash">export PROJECT=PRJNA792930
 
@@ -201,11 +217,13 @@ cat ids.csv</code></pre>
 <pre class="lab-code"><code class=" language-bash">nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity --outdir test_out</code></pre>
 <p>This uses a tiny built-in dataset to confirm that Nextflow runs, containers work, and the cluster can reach the internet.</p>
 <p>Always run a test profile before using a new pipeline. Check <a href="https://nf-co.re/fetchngs">https://nf-co.re/fetchngs</a> for the current release, then pin it with <code>-r</code>.</p>
+<p>The test output is disposable, and it has already done its job by warming the container cache:</p>
+<pre class="lab-code"><code class=" language-bash">rm -rf test_out</code></pre>
 <h3 id="4-4-submit-the-real-download-as-a-job">4.4 Submit the Real Download as a Job</h3>
 <p>Do not run the real download interactively. It is large enough to take longer than your session.</p>
 <pre class="lab-code"><code class=" language-bash">mkdir -p logs
 
-cat &gt; fetch_job.sh &lt;&lt;EOF
+cat &gt; fetch_job.sh &lt;&lt;&#x27;EOF&#x27;
 #!/bin/bash
 #SBATCH --job-name=fetchngs
 #SBATCH --partition=batch
@@ -215,12 +233,15 @@ cat &gt; fetch_job.sh &lt;&lt;EOF
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
+set -euo pipefail
+
 module load nextflow
 module load singularity 2&gt;/dev/null || module load apptainer
 
-export COURSE=&quot;$COURSE&quot;
-export NXF_SINGULARITY_CACHEDIR=&quot;$COURSE/$USER/.singularity_cache&quot;
-mkdir -p &quot;\$NXF_SINGULARITY_CACHEDIR&quot;
+export COURSE=/cluster/tufts/bio_appbio
+export MYWORK=&quot;$COURSE/$USER&quot;
+export NXF_SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity_cache&quot;
+mkdir -p &quot;$NXF_SINGULARITY_CACHEDIR&quot;
 
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
@@ -231,9 +252,22 @@ nextflow run nf-core/fetchngs \
   -resume
 EOF
 
+cat fetch_job.sh
 sbatch fetch_job.sh
 squeue -u &quot;$USER&quot;</code></pre>
-<p><strong>Question 6.</strong> Why ask for twelve hours of wall time for a download, and why include <code>-resume</code>?</p>
+<p>Three details in that script are worth understanding rather than copying.</p>
+<p>The heredoc delimiter is quoted: <code>&amp;lt;&amp;lt;&amp;#x27;EOF&amp;#x27;</code>. That writes the file exactly as you see it above, leaving every <code>$VARIABLE</code> to be resolved when the job runs.</p>
+<p><code>COURSE</code> and <code>MYWORK</code> are therefore defined <em>inside</em> the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.</p>
+<p><code>set -euo pipefail</code> makes the job stop at the first failure. Without it, a failed <code>mkdir</code> would not stop anything, and you would get a confusing container error several minutes later instead of a clear permissions error immediately.</p>
+<p><strong>Question 6.</strong> Run <code>cat fetch_job.sh</code>. What would have changed if the delimiter had been unquoted, as <code>&amp;lt;&amp;lt;EOF</code>?</p>
+<details>
+<summary>Answer</summary>
+<p>Two things, and both are easy to miss.</p>
+<p>Every <code>$VARIABLE</code> would have been replaced by its value on the node where you typed the command, so the script would carry one fixed path instead of resolving <code>$HOME</code> wherever the job actually runs.</p>
+<p>And backslash-newline would have been treated as a line continuation for the heredoc itself, collapsing the entire <code>nextflow run</code> command onto a single line. The command would still work, but the file would not look like the one above.</p>
+<p>Quote the delimiter whenever you want the file to contain exactly what you typed.</p>
+</details>
+<p><strong>Question 7.</strong> Why ask for twelve hours of wall time for a download, and why include <code>-resume</code>?</p>
 <details>
 <summary>Answer</summary>
 <p>Public archives can be unpredictable, especially if many students start downloads at once. Generous wall time ends early if the job finishes early; wall time that is too short kills a job near the end.</p>
@@ -241,7 +275,7 @@ squeue -u &quot;$USER&quot;</code></pre>
 </details>
 <h3 id="4-5-check-after-class">4.5 Check After Class</h3>
 <p>Replace <code>&amp;lt;jobid&amp;gt;</code> with your job ID.</p>
-<pre class="lab-code"><code class=" language-bash">cd ~/appbio/week-01/session-02/fetch
+<pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-01/session-02/fetch&quot;
 squeue -u &quot;$USER&quot;
 seff &lt;jobid&gt;
 tail -20 logs/fetchngs_*.out
@@ -257,13 +291,14 @@ samplesheet/    samplesheet.csv
 metadata/       ENA metadata
 pipeline_info/  execution reports, timeline, and software versions</code></pre>
 <h3 id="4-6-verify-the-download">4.6 Verify the Download</h3>
-<pre class="lab-code"><code class=" language-bash">cd ~/appbio/week-01/session-02/fetch/results/fastq
+<pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-01/session-02/fetch/results/fastq&quot;
 for f in *.fastq.gz; do
   gzip -t &quot;$f&quot; &amp;&amp; echo &quot;OK $f&quot; || echo &quot;FAIL $f&quot;
 done
 
 zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
 <p>Compare the read count with the <code>read_count</code> column in <code>../../runs.tsv</code>.</p>
+<p>Counting header lines rather than dividing the line count by four is deliberate. A truncated file gives a line count that is not a multiple of four, so dividing returns a plausible wrong number with no warning.</p>
 <p><strong>Checkpoint 3.</strong> You have a fetchngs job ID, and you know how to check whether the download succeeded.</p>
 <h2 id="if-your-job-fails">If Your Job Fails</h2>
 <p>In order:</p>
@@ -273,6 +308,11 @@ zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
 <li>Re-run the same job with <code>-resume</code> still present.</li>
 <li>Ask for help with the exact error message.</li>
 </ol>
+<p>Two failures are common enough to name.</p>
+<p><strong>Out of disk space.</strong> The <code>sratools</code> download method writes large temporary files while converting, often several times the size of the final FASTQ. Check the filesystem with <code>df -h .</code> and your own usage with <code>du -sh &amp;quot;$MYWORK&amp;quot;</code>.</p>
+<p><strong>Permission denied on the container cache.</strong> If <code>NXF_SINGULARITY_CACHEDIR</code> points somewhere you cannot write, Singularity fails while pulling images. Confirm the directory exists and is yours:</p>
+<pre class="lab-code"><code class=" language-bash">ls -ld &quot;$MYWORK/.singularity_cache&quot;</code></pre>
+<p>If it does not exist and you cannot create it, ask the instructor — your directory under the course path has to be set up for you.</p>
 <p>A failed download is normal. Not noticing that it failed is the problem.</p>
 <h2 id="takeaways">Takeaways</h2>
 <div class="table-wrap"><table>
@@ -281,6 +321,10 @@ zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
 <th>Command</th>
 </tr></thead>
 <tbody>
+<tr>
+<td>Work in the right place</td>
+<td><code>$COURSE/$USER</code>, never your home directory</td>
+</tr>
 <tr>
 <td>Request a compute node</td>
 <td><code>srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash</code></td>
@@ -314,6 +358,10 @@ zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
 <td><code>nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity</code></td>
 </tr>
 <tr>
+<td>Write a script literally</td>
+<td><code>cat &amp;gt; job.sh &amp;lt;&amp;lt;&amp;#x27;EOF&amp;#x27;</code> with the delimiter quoted</td>
+</tr>
+<tr>
 <td>Fetch data properly</td>
 <td>Submit <code>nf-core/fetchngs</code> as a batch job</td>
 </tr>
@@ -323,13 +371,17 @@ zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
 </tr>
 </tbody>
 </table></div>
-<p>Four habits will save you time this semester:</p>
+<p>Five habits will save you time this semester:</p>
 <ol>
 <li>Batch jobs do not inherit your interactive shell setup.</li>
 <li>Create log directories before submitting jobs.</li>
+<li>Read the script you just generated before you submit it.</li>
 <li>Run <code>-profile test</code> before using a new workflow.</li>
 <li>Put long jobs in the scheduler, not in an interactive terminal.</li>
+<li>Keep everything under <code>$MYWORK</code>. Home directory quotas are small and sequencing data is not.</li>
 </ol>
+<h2 id="homework-connection">Homework Connection</h2>
+<p>Homework 1 extends this lab. You will query ENA for a second project, fetch RNA-seq data with the same pipeline, verify it, and record the whole thing in the Git repository you created in Session 1 — which also lives under <code>$MYWORK</code>.</p>
         </article>
       </div>
     </main>

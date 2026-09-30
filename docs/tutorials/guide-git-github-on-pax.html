@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tutorial: Set Up Git and GitHub on Pax for Applied Bioinformatics.">
+    <title>Tutorial: Set Up Git and GitHub on Pax | Applied Bioinformatics</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../styles.css">
+  </head>
+  <body class="lab-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header" id="top">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="../index.html#labs" aria-label="Applied Bioinformatics">
+          <span class="brand-mark" aria-hidden="true">AB</span>
+          <span>Applied Bioinformatics</span>
+        </a>
+        <div class="nav-links">
+          <a href="../index.html#labs">Labs</a>
+          <a href="../index.html#tutorials">Tutorials</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main class="lab-main" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Page table of contents">
+          <a class="back-link" href="../index.html#tutorials">Back to tutorials</a>
+          <p class="section-kicker">Tutorial</p>
+          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
+<a class="toc-level-3" href="#one-exception-to-the-mywork-rule">One exception to the $MYWORK rule</a>
+<a class="toc-level-2" href="#part-1-tell-git-who-you-are">Part 1: Tell Git Who You Are</a>
+<a class="toc-level-2" href="#part-2-create-an-ssh-key">Part 2: Create an SSH Key</a>
+<a class="toc-level-3" href="#permissions-matter">Permissions Matter</a>
+<a class="toc-level-2" href="#part-3-add-the-public-key-to-github">Part 3: Add the Public Key to GitHub</a>
+<a class="toc-level-2" href="#part-4-test-github-login-from-pax">Part 4: Test GitHub Login from Pax</a>
+<a class="toc-level-3" href="#if-you-set-a-passphrase">If you set a passphrase</a>
+<a class="toc-level-2" href="#part-5-use-port-443-if-port-22-is-blocked">Part 5: Use Port 443 If Port 22 Is Blocked</a>
+<a class="toc-level-2" href="#part-6-connect-a-repository">Part 6: Connect a Repository</a>
+<a class="toc-level-3" href="#if-you-are-creating-a-new-homework-repository">If you are creating a new homework repository</a>
+<a class="toc-level-3" href="#if-the-repository-already-exists-on-github">If the repository already exists on GitHub</a>
+<a class="toc-level-2" href="#part-7-protect-your-repository-before-you-push-data">Part 7: Protect Your Repository Before You Push Data</a>
+<a class="toc-level-2" href="#everyday-git-cycle">Everyday Git Cycle</a>
+<a class="toc-level-2" href="#troubleshooting">Troubleshooting</a>
+<a class="toc-level-2" href="#quick-reference">Quick Reference</a></nav>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="section-kicker">Tutorial</p>
+            <h1>Tutorial: Set Up Git and GitHub on Pax</h1>
+            <p>Set up Git identity, SSH authentication, and a safe GitHub workflow from the Pax terminal.</p>
+            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+          </header>
+          <p>You will use Git and GitHub throughout the course to save work, share homework repositories, and make your analyses easier to reproduce. This guide sets up GitHub access from the Pax terminal once. After that, the everyday workflow is usually just:</p>
+<pre class="lab-code"><code class=" language-bash">git status
+git add FILE
+git commit -m &quot;Describe the change&quot;
+git push</code></pre>
+<p>Work through the parts in order. Each part includes a check so you can tell whether the setup worked before moving on.</p>
+<h2 id="before-you-start">Before You Start</h2>
+<p>You need a GitHub account. If you do not have one, create it at <a href="https://github.com">https://github.com</a>. You may use whichever email you prefer; it does not have to be your Tufts address.</p>
+<p>Open a terminal on Pax:</p>
+<ul>
+<li>OnDemand: <a href="https://ondemand-prod.pax.tufts.edu/">https://ondemand-prod.pax.tufts.edu/</a> &gt; <strong>Clusters &gt; Tufts HPC Shell Access</strong></li>
+<li>SSH: <code>ssh your_utln@login-prod.pax.tufts.edu</code></li>
+</ul>
+<p>Everything in this guide is light and safe to run on a login node.</p>
+<h3 id="one-exception-to-the-mywork-rule">One exception to the <code>$MYWORK</code> rule</h3>
+<p>In the labs, course files, data, and results should stay under your course work space, such as <code>$COURSE/$USER</code>, rather than in your home directory. Git configuration and SSH keys are the exception. They live in your home directory because that is where Git and SSH look for them by design:</p>
+<pre class="lab-code"><code class=" language-text">$HOME/.gitconfig        your name, email, and Git preferences
+$HOME/.ssh/             your SSH keys and SSH settings</code></pre>
+<p>These files are tiny settings files. The storage rule is about data and analysis output, not login credentials.</p>
+<h2 id="part-1-tell-git-who-you-are">Part 1: Tell Git Who You Are</h2>
+<p>Git records a name and email on every commit. Set them once:</p>
+<pre class="lab-code"><code class=" language-bash">git config --global user.name &quot;Your Full Name&quot;
+git config --global user.email &quot;your.name@tufts.edu&quot;</code></pre>
+<p>Two more settings reduce surprises later:</p>
+<pre class="lab-code"><code class=" language-bash">git config --global init.defaultBranch main
+git config --global pull.rebase false</code></pre>
+<p>The first makes new repositories start on <code>main</code>, matching GitHub&#x27;s default branch name. The second tells Git how to combine work when a pull needs to merge changes.</p>
+<p>Check your settings:</p>
+<pre class="lab-code"><code class=" language-bash">git config --global --list</code></pre>
+<p>You should see your name, your email, <code>init.defaultbranch=main</code>, and <code>pull.rebase=false</code>.</p>
+<blockquote>The email you use here appears in commits. If you would rather not publish a personal</blockquote>
+<blockquote>address, GitHub can give you a private <code>@users.noreply.github.com</code> address from</blockquote>
+<blockquote><strong>Settings &gt; Emails</strong>. Use that address in the <code>user.email</code> command instead.</blockquote>
+<h2 id="part-2-create-an-ssh-key">Part 2: Create an SSH Key</h2>
+<p>GitHub does not accept account passwords for Git operations. Use an SSH key so Pax can prove to GitHub that it is allowed to push to your repositories.</p>
+<p>An SSH key pair has two halves:</p>
+<ul>
+<li>The private key stays on Pax and should never be shared.</li>
+<li>The public key goes to GitHub.</li>
+</ul>
+<p>Create a new key:</p>
+<pre class="lab-code"><code class=" language-bash">ssh-keygen -t ed25519 -C &quot;your.name@tufts.edu&quot;</code></pre>
+<p>You will be asked three things:</p>
+<p><strong>Where to save it.</strong> Press Enter to accept <code>~/.ssh/id_ed25519</code>.</p>
+<p><strong>A passphrase.</strong> For this course, pressing Enter twice for no passphrase is acceptable because you already log in to Pax through Tufts authentication. If you prefer to set a passphrase, Part 4 shows how to avoid retyping it repeatedly.</p>
+<p><strong>Confirm the passphrase.</strong> Press Enter again.</p>
+<p>Check that both files exist:</p>
+<pre class="lab-code"><code class=" language-bash">ls -l ~/.ssh/id_ed25519*</code></pre>
+<p>You should see two files:</p>
+<pre class="lab-code"><code class=" language-text">~/.ssh/id_ed25519       private key; never share this
+~/.ssh/id_ed25519.pub   public key; this is what you add to GitHub</code></pre>
+<h3 id="permissions-matter">Permissions Matter</h3>
+<p>SSH refuses to use a private key if other people could read it. If you ever see a message such as <code>Permissions 0644 for &amp;#x27;id_ed25519&amp;#x27; are too open</code>, fix the permissions:</p>
+<pre class="lab-code"><code class=" language-bash">chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub</code></pre>
+<blockquote>Never commit a private key. <code>id_ed25519</code> with no <code>.pub</code> ending is the secret half. If</blockquote>
+<blockquote>it ever ends up in a repository, ask for help and make a new key pair.</blockquote>
+<h2 id="part-3-add-the-public-key-to-github">Part 3: Add the Public Key to GitHub</h2>
+<p>Print the public key:</p>
+<pre class="lab-code"><code class=" language-bash">cat ~/.ssh/id_ed25519.pub</code></pre>
+<p>Copy the whole line. It starts with <code>ssh-ed25519</code> and ends with your email.</p>
+<p>Then, on GitHub:</p>
+<ol>
+<li>Click your avatar in the top-right corner and choose <strong>Settings</strong></li>
+<li>In the left sidebar, open <strong>SSH and GPG keys</strong></li>
+<li>Click <strong>New SSH key</strong></li>
+<li>Title: <code>Tufts Pax cluster</code>, or another name you will recognize</li>
+<li>Key type: <strong>Authentication Key</strong></li>
+<li>Paste the public key line into <strong>Key</strong></li>
+<li>Click <strong>Add SSH key</strong></li>
+</ol>
+<p>If GitHub says the key is invalid, you probably copied only part of the line or included an extra line break. Widen the terminal window and copy it again.</p>
+<h2 id="part-4-test-github-login-from-pax">Part 4: Test GitHub Login from Pax</h2>
+<p>Run:</p>
+<pre class="lab-code"><code class=" language-bash">ssh -T git@github.com</code></pre>
+<p>The first time, SSH may ask whether you trust GitHub&#x27;s server:</p>
+<pre class="lab-code"><code class=" language-text">The authenticity of host &#x27;github.com (...)&#x27; can&#x27;t be established.
+ED25519 key fingerprint is SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU.
+Are you sure you want to continue connecting (yes/no/[fingerprint])?</code></pre>
+<p>That ED25519 fingerprint is GitHub&#x27;s current public fingerprint. GitHub also lists its fingerprints in the official documentation: <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints">https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints</a></p>
+<p>Type <code>yes</code>.</p>
+<p>Success looks like this:</p>
+<pre class="lab-code"><code class=" language-text">Hi yourusername! You&#x27;ve successfully authenticated, but GitHub does not provide shell access.</code></pre>
+<p>The <code>does not provide shell access</code> part is not an error. It means GitHub accepted your key for Git, but it will not open a normal shell session.</p>
+<p>If the command hangs and then times out, go to Part 5. That is common on clusters and does not mean you did anything wrong.</p>
+<p>If it says <code>Permission denied (publickey)</code>, GitHub does not recognize your key. Re-check that the public key in GitHub matches:</p>
+<pre class="lab-code"><code class=" language-bash">cat ~/.ssh/id_ed25519.pub</code></pre>
+<h3 id="if-you-set-a-passphrase">If you set a passphrase</h3>
+<p>Start an SSH agent once per terminal session so you are not asked repeatedly:</p>
+<pre class="lab-code"><code class=" language-bash">eval &quot;$(ssh-agent -s)&quot;
+ssh-add ~/.ssh/id_ed25519</code></pre>
+<h2 id="part-5-use-port-443-if-port-22-is-blocked">Part 5: Use Port 443 If Port 22 Is Blocked</h2>
+<p>Many clusters block outbound connections on port 22, the port SSH normally uses. GitHub also accepts SSH connections on port 443, the HTTPS port, which is usually open.</p>
+<p>Test the alternate route:</p>
+<pre class="lab-code"><code class=" language-bash">ssh -T -p 443 git@ssh.github.com</code></pre>
+<p>If you get the <code>Hi yourusername!</code> message, make that route permanent:</p>
+<pre class="lab-code"><code class=" language-bash">cat &gt;&gt; ~/.ssh/config &lt;&lt;&#x27;EOF&#x27;
+
+Host github.com
+    Hostname ssh.github.com
+    Port 443
+    User git
+EOF
+
+chmod 600 ~/.ssh/config</code></pre>
+<p>Now test the normal command again:</p>
+<pre class="lab-code"><code class=" language-bash">ssh -T git@github.com</code></pre>
+<p>It should succeed. From now on, standard GitHub SSH URLs such as <code>git@github.com:YOURUSERNAME/appbio-hw.git</code> will quietly use port 443 from Pax.</p>
+<h2 id="part-6-connect-a-repository">Part 6: Connect a Repository</h2>
+<h3 id="if-you-are-creating-a-new-homework-repository">If you are creating a new homework repository</h3>
+<p>On GitHub, click <strong>+</strong> in the top-right corner, then <strong>New repository</strong>.</p>
+<p>Recommended choices:</p>
+<ul>
+<li>Repository name: something clear, such as <code>appbio-hw</code></li>
+<li>Visibility: <strong>Private</strong>, unless your instructor tells you otherwise</li>
+<li>Initialize with README, <code>.gitignore</code>, or license: leave these unchecked if you already have files on Pax</li>
+</ul>
+<p>Then connect your Pax directory to that GitHub repository. Replace <code>YOURUSERNAME</code> and <code>appbio-hw</code> as needed:</p>
+<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/bio_appbio
+export MYWORK=$COURSE/$USER
+
+cd &quot;$MYWORK/appbio-hw&quot;
+git init
+git branch -M main
+git remote add origin git@github.com:YOURUSERNAME/appbio-hw.git</code></pre>
+<p>If the directory is already a Git repository, <code>git init</code> will not erase your files.</p>
+<p>Before the first push, make at least one commit:</p>
+<pre class="lab-code"><code class=" language-bash">git status
+git add README.md
+git commit -m &quot;Start homework repository&quot;
+git push -u origin main</code></pre>
+<p>If your first file is not named <code>README.md</code>, replace it with the file you want to commit. The <code>-u origin main</code> part sets the default remote branch, so later pushes can be just <code>git push</code>.</p>
+<h3 id="if-the-repository-already-exists-on-github">If the repository already exists on GitHub</h3>
+<p>Use the SSH clone URL:</p>
+<pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK&quot;
+git clone git@github.com:YOURUSERNAME/appbio-hw.git
+cd appbio-hw</code></pre>
+<p>The SSH URL has this form:</p>
+<pre class="lab-code"><code class=" language-text">git@github.com:USERNAME/REPOSITORY.git</code></pre>
+<p>It uses a colon after <code>github.com</code> and does not start with <code>https://</code>.</p>
+<h2 id="part-7-protect-your-repository-before-you-push-data">Part 7: Protect Your Repository Before You Push Data</h2>
+<p>It is much easier to keep large files and secrets out of Git than to remove them later. Add a <code>.gitignore</code> before you start tracking analysis outputs:</p>
+<pre class="lab-code"><code class=" language-bash">cat &gt; .gitignore &lt;&lt;&#x27;EOF&#x27;
+# Sequencing data: never commit these
+*.fastq
+*.fastq.gz
+*.fq.gz
+*.bam
+*.bai
+*.sam
+*.vcf.gz
+
+# Generated directories
+data/
+results/
+work/
+.nextflow*
+
+# Keys and secrets
+id_ed25519
+id_rsa
+*.pem
+
+# Editor and OS noise
+.DS_Store
+*~
+EOF
+
+git add .gitignore
+git commit -m &quot;Add gitignore for sequencing data and secrets&quot;</code></pre>
+<p>Before you push, check size and status:</p>
+<pre class="lab-code"><code class=" language-bash">du -sh .
+git status</code></pre>
+<p>Small repositories are expected. If the repository is hundreds of megabytes, pause and check what is staged before pushing. GitHub warns above 50 MB per file and rejects files above 100 MB.</p>
+<h2 id="everyday-git-cycle">Everyday Git Cycle</h2>
+<p>Use this cycle whenever you work on a homework repository:</p>
+<pre class="lab-code"><code class=" language-bash">git status                       # see what changed
+git add FILE                     # stage the file you want to keep
+git commit -m &quot;Describe change&quot;  # save a snapshot
+git push                         # send it to GitHub</code></pre>
+<p>Before turning in work, run:</p>
+<pre class="lab-code"><code class=" language-bash">git status
+git log --oneline
+du -sh .</code></pre>
+<p>Good signs:</p>
+<ul>
+<li><code>git status</code> says the working tree is clean.</li>
+<li><code>git log --oneline</code> shows a short history of meaningful commits.</li>
+<li><code>du -sh .</code> reports a small repository, not large sequencing files.</li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p><strong><code>Permission denied (publickey)</code></strong> means GitHub does not recognize your key. Confirm that the key exists with <code>ls ~/.ssh/id_ed25519</code>, confirm the public key is registered on GitHub, and test again with <code>ssh -T git@github.com</code>.</p>
+<p><strong><code>Connection timed out</code></strong> usually means port 22 is blocked. Use Part 5.</p>
+<p><strong><code>Permissions 0644 for &amp;#x27;...&amp;#x27; are too open</code></strong> means SSH will not use the key until the permissions are fixed. Use the <code>chmod</code> commands in Part 2.</p>
+<p><strong><code>Host key verification failed</code></strong> means the saved server identity does not match what SSH sees now. Ask for help if you are unsure. If directed, remove the old entry and reconnect:</p>
+<pre class="lab-code"><code class=" language-bash">ssh-keygen -R github.com
+ssh -T git@github.com</code></pre>
+<p><strong><code>Support for password authentication was removed</code></strong> usually means the remote URL uses HTTPS instead of SSH. Switch the remote to SSH:</p>
+<pre class="lab-code"><code class=" language-bash">git remote -v
+git remote set-url origin git@github.com:YOURUSERNAME/appbio-hw.git
+git remote -v</code></pre>
+<p><strong><code>Please tell me who you are</code></strong> means Part 1 was skipped or did not save correctly. Re-run the <code>git config --global</code> commands.</p>
+<p><strong><code>fatal: not a git repository</code></strong> means you are not inside a Git repository. Use <code>cd</code> to enter the repository directory, or run <code>git init</code> if this directory should become a repository.</p>
+<p><strong><code>remote: error: File ... exceeds GitHub&amp;#x27;s file size limit</code></strong> means a large file was committed. Ask for help rather than guessing; removing it correctly requires rewriting Git history.</p>
+<h2 id="quick-reference">Quick Reference</h2>
+<p>One-time setup:</p>
+<pre class="lab-code"><code class=" language-bash">git config --global user.name &quot;Your Full Name&quot;
+git config --global user.email &quot;your.name@tufts.edu&quot;
+git config --global init.defaultBranch main
+git config --global pull.rebase false
+ssh-keygen -t ed25519 -C &quot;your.name@tufts.edu&quot;
+cat ~/.ssh/id_ed25519.pub
+ssh -T git@github.com</code></pre>
+<p>If <code>ssh -T git@github.com</code> times out, add the port 443 block from Part 5 to <code>~/.ssh/config</code>.</p>
+<p>Everyday work:</p>
+<pre class="lab-code"><code class=" language-bash">git status
+git add FILE
+git commit -m &quot;Describe change&quot;
+git push</code></pre>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
+      <a href="../index.html#labs">Course labs</a>
+    </footer>
+  </body>
+</html>

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Build static lab pages from the repository Markdown labs.
+"""Build static course pages from the repository Markdown files.
 
-This intentionally supports the Markdown subset used by the course labs, without
-external dependencies, so GitHub Actions can run it on the default runner.
+This intentionally supports the Markdown subset used by the course labs and
+tutorials, without external dependencies, so GitHub Actions can run it on the
+default runner.
 """
 
 from __future__ import annotations
@@ -13,18 +14,31 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LABS = [
+DOCS = ROOT / "docs"
+PAGES = [
     {
         "source": ROOT / "labs/week-01/01-command-line-git.md",
         "output": ROOT / "docs/labs/week-01/01-command-line-git.html",
-        "session": "Session 1",
+        "label": "Session 1",
         "summary": "Use Pax, inspect a GFF3 file, practice shell pipelines, and create a homework Git repository.",
+        "back_label": "Back to labs",
+        "back_fragment": "labs",
     },
     {
         "source": ROOT / "labs/week-01/02-hpc-environments-fetchngs.md",
         "output": ROOT / "docs/labs/week-01/02-hpc-environments-fetchngs.html",
-        "session": "Session 2",
+        "label": "Session 2",
         "summary": "Request compute resources, submit SLURM jobs, test containers, and start an nf-core/fetchngs download.",
+        "back_label": "Back to labs",
+        "back_fragment": "labs",
+    },
+    {
+        "source": ROOT / "tutorials/guide-git-github-on-pax.md",
+        "output": ROOT / "docs/tutorials/guide-git-github-on-pax.html",
+        "label": "Tutorial",
+        "summary": "Set up Git identity, SSH authentication, and a safe GitHub workflow from the Pax terminal.",
+        "back_label": "Back to tutorials",
+        "back_fragment": "tutorials",
     },
 ]
 
@@ -232,7 +246,22 @@ def render_markdown(markdown: str) -> tuple[str, str, str, list[tuple[int, str, 
     return title, meta, "\n".join(html_parts), toc
 
 
-def page_template(title: str, meta: str, body: str, toc: list[tuple[int, str, str]], lab: dict[str, str]) -> str:
+def relative_prefix(output: Path) -> str:
+    prefix = Path(*([".."] * len(output.parent.relative_to(DOCS).parts)))
+    return "" if str(prefix) == "." else prefix.as_posix()
+
+
+def prefixed(prefix: str, path: str) -> str:
+    return f"{prefix}/{path}" if prefix else path
+
+
+def page_template(title: str, meta: str, body: str, toc: list[tuple[int, str, str]], page: dict[str, str]) -> str:
+    prefix = relative_prefix(Path(page["output"]))
+    index_href = prefixed(prefix, f'index.html#{page["back_fragment"]}')
+    labs_href = prefixed(prefix, "index.html#labs")
+    tutorials_href = prefixed(prefix, "index.html#tutorials")
+    favicon_href = prefixed(prefix, "assets/favicon.svg")
+    styles_href = prefixed(prefix, "styles.css")
     toc_items = "\n".join(
         f'<a class="toc-level-{level}" href="#{anchor}">{html.escape(text)}</a>'
         for level, text, anchor in toc
@@ -245,35 +274,36 @@ def page_template(title: str, meta: str, body: str, toc: list[tuple[int, str, st
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{html.escape(title)} for Applied Bioinformatics.">
     <title>{html.escape(title)} | Applied Bioinformatics</title>
-    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../../styles.css">
+    <link rel="icon" href="{favicon_href}" type="image/svg+xml">
+    <link rel="stylesheet" href="{styles_href}">
   </head>
   <body class="lab-page">
     <a class="skip-link" href="#main">Skip to main content</a>
     <header class="site-header" id="top">
       <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics labs">
+        <a class="brand" href="{labs_href}" aria-label="Applied Bioinformatics">
           <span class="brand-mark" aria-hidden="true">AB</span>
           <span>Applied Bioinformatics</span>
         </a>
         <div class="nav-links">
-          <a href="../../index.html#labs">Labs</a>
+          <a href="{labs_href}">Labs</a>
+          <a href="{tutorials_href}">Tutorials</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
         </div>
       </nav>
     </header>
     <main class="lab-main" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Lab table of contents">
-          <a class="back-link" href="../../index.html#labs">Back to labs</a>
-          <p class="section-kicker">{html.escape(lab["session"])}</p>
+        <aside class="lab-toc" aria-label="Page table of contents">
+          <a class="back-link" href="{index_href}">{html.escape(page["back_label"])}</a>
+          <p class="section-kicker">{html.escape(page["label"])}</p>
           <nav>{toc_items}</nav>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
-            <p class="section-kicker">{html.escape(lab["session"])}</p>
+            <p class="section-kicker">{html.escape(page["label"])}</p>
             <h1>{html.escape(title)}</h1>
-            <p>{html.escape(lab["summary"])}</p>
+            <p>{html.escape(page["summary"])}</p>
             <span>{html.escape(meta)}</span>
           </header>
           {body}
@@ -282,7 +312,7 @@ def page_template(title: str, meta: str, body: str, toc: list[tuple[int, str, st
     </main>
     <footer class="site-footer">
       <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="../../index.html#labs">Course labs</a>
+      <a href="{labs_href}">Course labs</a>
     </footer>
   </body>
 </html>
@@ -290,12 +320,12 @@ def page_template(title: str, meta: str, body: str, toc: list[tuple[int, str, st
 
 
 def main() -> None:
-    for lab in LABS:
-        source = Path(lab["source"])
-        output = Path(lab["output"])
+    for page in PAGES:
+        source = Path(page["source"])
+        output = Path(page["output"])
         title, meta, body, toc = render_markdown(source.read_text(encoding="utf-8"))
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(page_template(title, meta, body, toc, lab), encoding="utf-8")
+        output.write_text(page_template(title, meta, body, toc, page), encoding="utf-8")
         print(f"Built {output.relative_to(ROOT)}")
 
 

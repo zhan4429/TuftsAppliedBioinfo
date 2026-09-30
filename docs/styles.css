@@ -367,6 +367,11 @@ pre {
   color: var(--muted);
 }
 
+.tutorial-card-grid {
+  max-width: 560px;
+  grid-template-columns: 1fr;
+}
+
 .lab-setup {
   display: grid;
   margin-top: 2rem;
