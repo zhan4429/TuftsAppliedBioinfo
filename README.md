@@ -58,10 +58,12 @@ The course repository may evolve, but a useful structure for weekly labs is:
 .
 |-- README.md
 |-- labs/
-|   |-- week-00-prep/
+|   |-- week-00/
 |   |   `-- README.md
-|   |-- week-01-command-line-hpc/
-|   |   `-- README.md
+|   |-- week-01/
+|   |   |-- README.md
+|   |   |-- 01-command-line-git.md
+|   |   `-- 02-hpc-environments-fetchngs.md
 |   |-- week-02-sequencing-qc/
 |   |   `-- README.md
 |   `-- ...
@@ -78,6 +80,11 @@ The course repository may evolve, but a useful structure for weekly labs is:
 ```
 
 Each weekly lab should include the purpose of the lab, setup instructions, commands to run, expected outputs, interpretation questions, troubleshooting notes, and any homework or notebook/report expectations.
+
+Current labs:
+
+- [Week 1: Command Line, Text Processing, and Git](labs/week-01/01-command-line-git.md)
+- [Week 1: HPC, Environments, and Fetching Public Data](labs/week-01/02-hpc-environments-fetchngs.md)
 
 ## Topic Overview
 

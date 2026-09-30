@@ -21,6 +21,10 @@ html {
   scroll-behavior: smooth;
 }
 
+[id] {
+  scroll-margin-top: 104px;
+}
+
 body {
   margin: 0;
   color: var(--ink);
@@ -253,7 +257,8 @@ h3 {
 .content-band,
 .expectations,
 .ai-band,
-.visual-band {
+.visual-band,
+.lab-catalog {
   width: min(1120px, calc(100% - 2rem));
   margin: 5rem auto 0;
 }
@@ -330,6 +335,61 @@ pre {
   height: auto;
 }
 
+.lab-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.lab-catalog {
+  margin-top: calc(5rem - 9rem);
+  padding-top: 9rem;
+}
+
+.lab-card {
+  display: grid;
+  align-content: start;
+  align-items: start;
+  gap: 0.7rem;
+  min-height: 230px;
+  padding: 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: 0 14px 32px rgba(16, 33, 30, 0.08);
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.lab-card:hover,
+.lab-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(15, 118, 110, 0.45);
+  outline: none;
+  box-shadow: 0 22px 42px rgba(16, 33, 30, 0.13);
+}
+
+.lab-session {
+  width: fit-content;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid rgba(15, 118, 110, 0.28);
+  border-radius: 999px;
+  color: var(--teal-dark);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.lab-card strong {
+  font-family: "Iowan Old Style", Georgia, serif;
+  font-size: 1.45rem;
+  line-height: 1.08;
+}
+
+.lab-card span:last-child {
+  color: var(--muted);
+}
+
 .week-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -353,6 +413,12 @@ pre {
   margin-bottom: 0.55rem;
   color: var(--blue);
   font-weight: 900;
+}
+
+.week-grid a {
+  color: inherit;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
 }
 
 .expectation-grid {
@@ -461,6 +527,7 @@ pre {
   .quick-strip,
   .week-grid,
   .expectation-grid,
+  .lab-card-grid,
   .content-band,
   .visual-band,
   .ai-band {
@@ -475,6 +542,10 @@ pre {
 
   .quick-item:last-child {
     border-bottom: 0;
+  }
+
+  .lab-card {
+    min-height: auto;
   }
 }
 
@@ -509,6 +580,7 @@ pre {
   .expectations,
   .ai-band,
   .visual-band,
+  .lab-catalog,
   .quick-strip {
     width: calc(100% - 1rem);
   }
