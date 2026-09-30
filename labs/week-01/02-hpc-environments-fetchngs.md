@@ -18,11 +18,26 @@ Set paths and make a work directory:
 ```bash
 export COURSE=/cluster/tufts/bio_appbio
 export WEEK1_DATA=$COURSE/shared/wk1
-mkdir -p ~/appbio/week-01/session-02
-cd ~/appbio/week-01/session-02
+export MYWORK=$COURSE/$USER
+
+mkdir -p "$MYWORK/week-01/session-02"
+cd "$MYWORK/week-01/session-02"
+pwd
 ```
 
-If your instructor gives a different course path, change only `COURSE`.
+Three paths, and you will use all of them every week:
+
+- `$COURSE` — the course directory, shared by everyone in the class
+- `$WEEK1_DATA` — this week's staged data, read-only
+- `$MYWORK` — your own directory inside the course allocation, named after your UTLN
+
+**Do all your coursework under `$MYWORK`, not in your home directory.** Home has a small
+quota that sequencing data will exhaust immediately, and the course allocation is where
+the instructor can see and help with your work.
+
+If your instructor gives a different course path, change only `COURSE`. If `$MYWORK`
+does not exist and you cannot create it, stop and ask — your directory has to be set up
+for you.
 
 ## Part 1: Get Off the Login Node
 
@@ -78,8 +93,8 @@ The hostname should now look like a compute node, not a login node.
 ### 2.1 Write the Job Script
 
 ```bash
-mkdir -p ~/appbio/week-01/session-02/logs
-cd ~/appbio/week-01/session-02
+mkdir -p "$MYWORK/week-01/session-02/logs"
+cd "$MYWORK/week-01/session-02"
 
 cat > count_job.sh <<'EOF'
 #!/bin/bash
@@ -151,7 +166,7 @@ module load anaconda
 conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
 conda activate appbio-week1
 seqkit version
-conda env export --from-history > ~/appbio/week-01/session-02/environment.yml
+conda env export --from-history > "$MYWORK/week-01/session-02/environment.yml"
 ```
 
 Channel order matters. The usual bioinformatics order is `conda-forge` first, then `bioconda`.
@@ -204,8 +219,8 @@ BioProject (PRJNA) -> BioSample (SAMN) -> Experiment (SRX) -> Run (SRR)
 Set up a clean download directory:
 
 ```bash
-mkdir -p ~/appbio/week-01/session-02/fetch
-cd ~/appbio/week-01/session-02/fetch
+mkdir -p "$MYWORK/week-01/session-02/fetch"
+cd "$MYWORK/week-01/session-02/fetch"
 ```
 
 Set the project accession from class, then query ENA before downloading anything large:
@@ -305,7 +320,8 @@ module load nextflow
 module load singularity 2>/dev/null || module load apptainer
 
 export COURSE=/cluster/tufts/bio_appbio
-export NXF_SINGULARITY_CACHEDIR="$COURSE/$USER/.singularity_cache"
+export MYWORK="$COURSE/$USER"
+export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
 mkdir -p "$NXF_SINGULARITY_CACHEDIR"
 
 nextflow run nf-core/fetchngs \
@@ -326,7 +342,7 @@ Three details in that script are worth understanding rather than copying.
 
 The heredoc delimiter is quoted: `<<'EOF'`. That writes the file exactly as you see it above, leaving every `$VARIABLE` to be resolved when the job runs.
 
-`COURSE` is therefore defined *inside* the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
+`COURSE` and `MYWORK` are therefore defined *inside* the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
 
 `set -euo pipefail` makes the job stop at the first failure. Without it, a failed `mkdir` would not stop anything, and you would get a confusing container error several minutes later instead of a clear permissions error immediately.
 
@@ -361,7 +377,7 @@ Public archives can be unpredictable, especially if many students start download
 Replace `<jobid>` with your job ID.
 
 ```bash
-cd ~/appbio/week-01/session-02/fetch
+cd "$MYWORK/week-01/session-02/fetch"
 squeue -u "$USER"
 seff <jobid>
 tail -20 logs/fetchngs_*.out
@@ -389,7 +405,7 @@ pipeline_info/  execution reports, timeline, and software versions
 ### 4.6 Verify the Download
 
 ```bash
-cd ~/appbio/week-01/session-02/fetch/results/fastq
+cd "$MYWORK/week-01/session-02/fetch/results/fastq"
 for f in *.fastq.gz; do
   gzip -t "$f" && echo "OK $f" || echo "FAIL $f"
 done
@@ -414,15 +430,15 @@ In order:
 
 Two failures are common enough to name.
 
-**Out of disk space.** The `sratools` download method writes large temporary files while converting, often several times the size of the final FASTQ. Check your quota with `df -h .` and your home usage with `du -sh ~`.
+**Out of disk space.** The `sratools` download method writes large temporary files while converting, often several times the size of the final FASTQ. Check the filesystem with `df -h .` and your own usage with `du -sh "$MYWORK"`.
 
 **Permission denied on the container cache.** If `NXF_SINGULARITY_CACHEDIR` points somewhere you cannot write, Singularity fails while pulling images. Confirm the directory exists and is yours:
 
 ```bash
-ls -ld "$COURSE/$USER/.singularity_cache"
+ls -ld "$MYWORK/.singularity_cache"
 ```
 
-If it does not exist and you cannot create it, ask the instructor — the per-user directory under the course path has to be set up for you.
+If it does not exist and you cannot create it, ask the instructor — your directory under the course path has to be set up for you.
 
 A failed download is normal. Not noticing that it failed is the problem.
 
@@ -430,6 +446,7 @@ A failed download is normal. Not noticing that it failed is the problem.
 
 | Task | Command |
 | --- | --- |
+| Work in the right place | `$COURSE/$USER`, never your home directory |
 | Request a compute node | `srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash` |
 | Submit and watch | `sbatch script.sh`, `squeue -u "$USER"` |
 | Check resource use | `seff <jobid>` |
@@ -449,7 +466,8 @@ Five habits will save you time this semester:
 3. Read the script you just generated before you submit it.
 4. Run `-profile test` before using a new workflow.
 5. Put long jobs in the scheduler, not in an interactive terminal.
+6. Keep everything under `$MYWORK`. Home directory quotas are small and sequencing data is not.
 
 ## Homework Connection
 
-Homework 1 extends this lab. You will query ENA for a second project, fetch RNA-seq data with the same pipeline, verify it, and record the whole thing in the Git repository you created in Session 1.
+Homework 1 extends this lab. You will query ENA for a second project, fetch RNA-seq data with the same pipeline, verify it, and record the whole thing in the Git repository you created in Session 1 — which also lives under `$MYWORK`.
