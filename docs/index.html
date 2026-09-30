@@ -22,10 +22,7 @@
         </a>
         <div class="nav-links">
           <a href="#labs">Labs</a>
-          <a href="#week-01">Week 1</a>
-          <a href="#topics">Topics</a>
-          <a href="#workflow">Workflow</a>
-          <a href="#ai-use">AI Use</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
         </div>
       </nav>
     </header>
@@ -36,15 +33,13 @@
           <p class="eyebrow">Tufts University - Department of Biology</p>
           <h1 id="page-title">Applied Bioinformatics</h1>
           <p class="lede">
-            A hands-on course hub for reproducible analysis, real sequencing
-            datasets, HPC workflows, containers, Nextflow and nf-core, notebooks,
-            and critical evaluation of bioinformatics results.
+            A lab hub for hands-on bioinformatics work on Pax, with copyable
+            commands, GitHub-friendly Markdown, and short notes students can
+            use during class.
           </p>
           <div class="hero-actions" aria-label="Primary actions">
-            <a class="button primary" href="https://github.com/zhan4429/TuftsAppliedBioinfo">
-              Open the GitHub repository
-            </a>
-            <a class="button secondary" href="#topics">View weekly topics</a>
+            <a class="button primary" href="#labs">Open labs</a>
+            <a class="button secondary" href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub repository</a>
           </div>
         </div>
       </section>
@@ -62,50 +57,27 @@
         </div>
         <div class="quick-item">
           <span class="quick-number">03</span>
-          <strong>Run carefully</strong>
-          <span>Use HPC, environments, and containers as directed.</span>
+          <strong>Open a lab</strong>
+          <span>Use the Markdown pages during class.</span>
         </div>
         <div class="quick-item">
           <span class="quick-number">04</span>
-          <strong>Report clearly</strong>
-          <span>Use notebooks to explain choices and results.</span>
+          <strong>Run carefully</strong>
+          <span>Use Pax and course storage as directed.</span>
         </div>
       </section>
 
-      <section class="content-band intro-band" id="labs" aria-labelledby="labs-title">
-        <div class="section-copy">
-          <p class="section-kicker">Lab Repository</p>
-          <h2 id="labs-title">Built for copyable, rerunnable class labs</h2>
-          <p>
-            This site complements the GitHub repository used in class. The
-            repository is where weekly Markdown labs, sample sheets, environment
-            files, small configuration files, and notebook templates can live.
-            Course policies, grading, due dates, and official requirements remain
-            governed by the current official syllabus.
-          </p>
-        </div>
-        <div class="command-panel" aria-label="Basic repository commands">
-          <div class="panel-bar">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <pre><code>git clone &lt;repository-url&gt;
-cd &lt;repository-name&gt;
-git pull</code></pre>
-        </div>
-      </section>
-
-      <section class="lab-catalog" id="week-01" aria-labelledby="week-01-title">
+      <section class="lab-hub" id="labs" aria-labelledby="labs-title">
         <div class="section-copy wide">
-          <p class="section-kicker">Available Now</p>
-          <h2 id="week-01-title">Week 1 labs</h2>
+          <p class="section-kicker">Available Labs</p>
+          <h2 id="labs-title">Course labs</h2>
           <p>
             Open these Markdown labs in GitHub during class. They are organized
             for reading, copying commands, checking expected outputs, and
             revisiting answers after trying each question.
           </p>
         </div>
+
         <div class="lab-card-grid">
           <a
             class="lab-card"
@@ -124,128 +96,27 @@ git pull</code></pre>
             <span>Request compute resources, submit SLURM jobs, test containers, and start an nf-core/fetchngs download.</span>
           </a>
         </div>
-      </section>
 
-      <section class="visual-band" aria-labelledby="workflow-title">
-        <div class="visual-copy">
-          <p class="section-kicker">Reproducible Practice</p>
-          <h2 id="workflow-title">From public data to defensible results</h2>
-          <p>
-            Labs are designed around visible inputs, explicit parameters,
-            inspectable quality control, and notebooks that connect computation
-            to interpretation.
-          </p>
+        <div class="lab-setup">
+          <div class="section-copy">
+            <p class="section-kicker">Using the Repository</p>
+            <h2>Keep your copy current</h2>
+            <p>
+              Clone once, then pull before each class. Large data and generated
+              results should stay on Pax or course storage, not in GitHub.
+            </p>
+          </div>
+          <div class="command-panel" aria-label="Basic repository commands">
+            <div class="panel-bar">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <pre><code>git clone &lt;repository-url&gt;
+cd &lt;repository-name&gt;
+git pull</code></pre>
+          </div>
         </div>
-        <img
-          src="assets/workflow-map.svg"
-          alt="Course workflow diagram connecting public data, QC, workflow managers, notebooks, and reproducible reports."
-        >
-      </section>
-
-      <section class="content-band" id="topics" aria-labelledby="topics-title">
-        <div class="section-copy wide">
-          <p class="section-kicker">Weekly Map</p>
-          <h2 id="topics-title">Course topic overview</h2>
-          <p>
-            The course moves from core computing skills into complete workflows
-            for genomics, transcriptomics, chromatin accessibility,
-            single-cell analysis, microbiome and metagenomics, and a final
-            reproduction project.
-          </p>
-        </div>
-
-        <ol class="week-grid">
-          <li><span>Week 0</span>Shell navigation and Python or R preparation.</li>
-          <li><span>Week 1</span><a href="#week-01">Command line, Git, HPC, conda/mamba, containers, and public data.</a></li>
-          <li><span>Week 2</span>Sequencing technologies, experimental design, FASTQ QC, fastp, and MultiQC.</li>
-          <li><span>Week 3</span>Genome assembly, annotation, assembly QC, GFF3/GTF, and IGV.</li>
-          <li><span>Week 4</span>Alignment, SAM/BAM, variant calling, benchmarking, annotation, and VCFs.</li>
-          <li><span>Week 5</span>Bulk RNA-seq quantification, nf-core/rnaseq, counts, metadata, and exploration.</li>
-          <li><span>Week 6</span>DESeq2, covariates, multiple testing, visualization, enrichment, and reporting.</li>
-          <li><span>Week 7</span>ATAC-seq, peak calling, nf-core/atacseq, QC, motifs, and expression integration.</li>
-          <li><span>Week 8</span>Single-cell reads to cells, Cell Ranger, STARsolo, alevin-fry, AnnData, and Seurat.</li>
-          <li><span>Week 9</span>Clustering, cell type annotation, integration, pseudobulk testing, and spatial data.</li>
-          <li><span>Week 10</span>16S, QIIME2/DADA2, compositional data, shotgun profiling, MAGs, and diversity.</li>
-          <li><span>Weeks 12-14</span>Mini-project reproduction work, reports, repositories, and presentations.</li>
-        </ol>
-      </section>
-
-      <section class="expectations" id="workflow" aria-labelledby="workflow-expectations-title">
-        <div class="section-copy wide">
-          <p class="section-kicker">Working Standards</p>
-          <h2 id="workflow-expectations-title">What good course work should leave behind</h2>
-        </div>
-        <div class="expectation-grid">
-          <article>
-            <h3>Reproducibility</h3>
-            <p>
-              Keep commands, versions, sample IDs, parameters, input sources,
-              small config files, and expected outputs visible.
-            </p>
-          </article>
-          <article>
-            <h3>Git and GitHub</h3>
-            <p>
-              Pull before class, commit your own work clearly, and organize final
-              project repositories so another group could rerun the analysis.
-            </p>
-          </article>
-          <article>
-            <h3>HPC</h3>
-            <p>
-              Use login nodes for light work, submit compute jobs through the
-              scheduler, and follow course guidance for storage and job scripts.
-            </p>
-          </article>
-          <article>
-            <h3>Environments</h3>
-            <p>
-              Prefer conda or mamba environment files and record any package
-              changes needed for an assignment or project.
-            </p>
-          </article>
-          <article>
-            <h3>Containers</h3>
-            <p>
-              Record image names, tags, bind mounts, and runtime options so a
-              workflow can be rerun with the same assumptions.
-            </p>
-          </article>
-          <article>
-            <h3>Nextflow and nf-core</h3>
-            <p>
-              Preserve sample sheets, parameter files, configuration files, logs,
-              and reports from workflow runs.
-            </p>
-          </article>
-          <article>
-            <h3>Notebooks</h3>
-            <p>
-              Make notebooks run from top to bottom, explain major choices, label
-              outputs, and interpret results rather than only showing code.
-            </p>
-          </article>
-          <article>
-            <h3>Critical Evaluation</h3>
-            <p>
-              Treat successful execution as the start of interpretation, not proof
-              that the result is correct.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="ai-band" id="ai-use" aria-labelledby="ai-title">
-        <div>
-          <p class="section-kicker">Responsible AI Use</p>
-          <h2 id="ai-title">Use assistants, then verify the science</h2>
-        </div>
-        <ul>
-          <li>Disclose AI use in submitted notebooks or reports.</li>
-          <li>Verify generated commands, code, and explanations.</li>
-          <li>You are responsible for every line you submit.</li>
-          <li>Keep interpretation, discussion, and limitations in your own scientific voice.</li>
-        </ul>
       </section>
     </main>
 
