@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Week 1 Session 2: HPC, Environments, and Fetching Public Data for Applied Bioinformatics.">
+    <title>Week 1 Session 2: HPC, Environments, and Fetching Public Data | Applied Bioinformatics</title>
+    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+  </head>
+  <body class="lab-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header" id="top">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics labs">
+          <span class="brand-mark" aria-hidden="true">AB</span>
+          <span>Applied Bioinformatics</span>
+        </a>
+        <div class="nav-links">
+          <a href="../../index.html#labs">Labs</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main class="lab-main" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Lab table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to labs</a>
+          <p class="section-kicker">Session 2</p>
+          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
+<a class="toc-level-2" href="#part-1-get-off-the-login-node">Part 1: Get Off the Login Node</a>
+<a class="toc-level-3" href="#1-1-see-where-you-are">1.1 See Where You Are</a>
+<a class="toc-level-3" href="#1-2-inspect-the-cluster">1.2 Inspect the Cluster</a>
+<a class="toc-level-3" href="#1-3-request-a-compute-node">1.3 Request a Compute Node</a>
+<a class="toc-level-2" href="#part-2-submit-a-batch-job">Part 2: Submit a Batch Job</a>
+<a class="toc-level-3" href="#2-1-write-the-job-script">2.1 Write the Job Script</a>
+<a class="toc-level-3" href="#2-2-spot-the-bug-before-submitting">2.2 Spot the Bug Before Submitting</a>
+<a class="toc-level-3" href="#2-3-read-the-result-and-the-cost">2.3 Read the Result and the Cost</a>
+<a class="toc-level-2" href="#part-3-two-ways-to-get-software">Part 3: Two Ways to Get Software</a>
+<a class="toc-level-3" href="#3-1-conda-or-mamba-for-your-own-tools">3.1 Conda or Mamba for Your Own Tools</a>
+<a class="toc-level-3" href="#3-2-nextflow-and-containers-for-pipelines">3.2 Nextflow and Containers for Pipelines</a>
+<a class="toc-level-2" href="#part-4-fetch-public-data-with-nf-core-fetchngs">Part 4: Fetch Public Data with nf-core/fetchngs</a>
+<a class="toc-level-3" href="#4-1-understand-what-you-are-asking-for">4.1 Understand What You Are Asking For</a>
+<a class="toc-level-3" href="#4-2-extract-the-run-you-need">4.2 Extract the Run You Need</a>
+<a class="toc-level-3" href="#4-3-test-the-pipeline-first">4.3 Test the Pipeline First</a>
+<a class="toc-level-3" href="#4-4-submit-the-real-download-as-a-job">4.4 Submit the Real Download as a Job</a>
+<a class="toc-level-3" href="#4-5-check-after-class">4.5 Check After Class</a>
+<a class="toc-level-3" href="#4-6-verify-the-download">4.6 Verify the Download</a>
+<a class="toc-level-2" href="#if-your-job-fails">If Your Job Fails</a>
+<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="section-kicker">Session 2</p>
+            <h1>Week 1 Session 2: HPC, Environments, and Fetching Public Data</h1>
+            <p>Request compute resources, submit SLURM jobs, test containers, and start an nf-core/fetchngs download.</p>
+            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+          </header>
+          <p>In this lab you will move from the login node to a compute node, submit a small SLURM batch job, create a reproducible software environment, test Nextflow and container support, and start a real public-data download with <code>nf-core/fetchngs</code>.</p>
+<p>This lab produces PacBio HiFi data used later in the course. The final download may finish after class, so do not skip the job submission and verification steps.</p>
+<h2 id="before-you-start">Before You Start</h2>
+<p>Open a terminal on Pax:</p>
+<ul>
+<li>OnDemand: <a href="https://ondemand-prod.pax.tufts.edu/">https://ondemand-prod.pax.tufts.edu/</a> &gt; <strong>Clusters &gt; Tufts HPC Shell Access</strong></li>
+<li>SSH: <code>ssh your_utln@login-prod.pax.tufts.edu</code></li>
+</ul>
+<p>Set paths and make a work directory:</p>
+<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/bio_appbio
+export WEEK1_DATA=$COURSE/shared/wk1
+mkdir -p ~/appbio/week-01/session-02
+cd ~/appbio/week-01/session-02</code></pre>
+<p>If your instructor gives a different course path, change only <code>COURSE</code>.</p>
+<h2 id="part-1-get-off-the-login-node">Part 1: Get Off the Login Node</h2>
+<h3 id="1-1-see-where-you-are">1.1 See Where You Are</h3>
+<pre class="lab-code"><code class=" language-bash">hostname</code></pre>
+<p>If the hostname starts with <code>login</code>, you are on a login node shared by everyone on the cluster. Use login nodes for light work only.</p>
+<h3 id="1-2-inspect-the-cluster">1.2 Inspect the Cluster</h3>
+<pre class="lab-code"><code class=" language-bash">sinfo -s</code></pre>
+<p>You may see partitions such as:</p>
+<pre class="lab-code"><code class=" language-text">PARTITION    AVAIL  TIMELIMIT   NODES(A/I/O/T)
+batch*       up     7-00:00:00  ...
+gpu          up     7-00:00:00  ...
+interactive  up     4:00:00     ...
+largemem     up     7-00:00:00  ...
+preempt      up     7-00:00:00  ...</code></pre>
+<p><strong>Question 1.</strong> Which partition is appropriate for a 3-hour debugging session? Which is more appropriate for a 5-day assembly?</p>
+<details>
+<summary>Answer</summary>
+<p>Use <code>interactive</code> for a 3-hour debugging session. Use <code>batch</code> or another instructor-approved long-running partition for a 5-day assembly.</p>
+<p><code>preempt</code> can provide more access, but the job can be interrupted by higher-priority work. It is useful for short, resumable jobs and risky for long, non-resumable jobs.</p>
+</details>
+<h3 id="1-3-request-a-compute-node">1.3 Request a Compute Node</h3>
+<pre class="lab-code"><code class=" language-bash">srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash
+hostname</code></pre>
+<p>The hostname should now look like a compute node, not a login node.</p>
+<p><strong>Checkpoint 1.</strong> <code>hostname</code> should not start with <code>login</code>.</p>
+<h2 id="part-2-submit-a-batch-job">Part 2: Submit a Batch Job</h2>
+<h3 id="2-1-write-the-job-script">2.1 Write the Job Script</h3>
+<pre class="lab-code"><code class=" language-bash">mkdir -p ~/appbio/week-01/session-02/logs
+cd ~/appbio/week-01/session-02
+
+cat &gt; count_job.sh &lt;&lt;&#x27;EOF&#x27;
+#!/bin/bash
+#SBATCH --job-name=count
+#SBATCH --partition=batch
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:10:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+
+echo &quot;Running on: $(hostname)&quot;
+grep -vc &#x27;^#&#x27; &quot;$WEEK1_DATA/anno.gff3&quot;
+EOF</code></pre>
+<h3 id="2-2-spot-the-bug-before-submitting">2.2 Spot the Bug Before Submitting</h3>
+<p><strong>Question 2.</strong> This job will fail as written. Why?</p>
+<details>
+<summary>Answer</summary>
+<p><code>WEEK1_DATA</code> is set in your current shell, but a batch job starts a fresh shell. Unless you define the variable inside the script, the script does not know where the file is.</p>
+<p>This is a common reason a command works interactively but fails in a batch job. The same issue can affect <code>module load</code>, <code>conda activate</code>, and any other setup step.</p>
+</details>
+<p>Fix the script by defining <code>WEEK1_DATA</code> inside it, then submit:</p>
+<pre class="lab-code"><code class=" language-bash">sed -i &quot;/^echo \&quot;Running on/a export WEEK1_DATA=$WEEK1_DATA&quot; count_job.sh
+sbatch count_job.sh
+squeue -u &quot;$USER&quot;</code></pre>
+<h3 id="2-3-read-the-result-and-the-cost">2.3 Read the Result and the Cost</h3>
+<p>Replace <code>&amp;lt;jobid&amp;gt;</code> with your job ID.</p>
+<pre class="lab-code"><code class=" language-bash">cat logs/count_*.out
+seff &lt;jobid&gt;</code></pre>
+<p><strong>Question 3.</strong> Memory efficiency will be near zero. Why can over-requesting memory still cost you something?</p>
+<details>
+<summary>Answer</summary>
+<p>SLURM must find a node with the requested memory free. If you ask for much more than you need, your job may wait longer and block resources that someone else could use.</p>
+<p>Good habit: run once with a reasonable request, check <code>seff</code>, then request roughly the observed peak plus a buffer.</p>
+</details>
+<p><strong>Checkpoint 2.</strong> You have a completed job, an output log, and a <code>seff</code> report.</p>
+<h2 id="part-3-two-ways-to-get-software">Part 3: Two Ways to Get Software</h2>
+<h3 id="3-1-conda-or-mamba-for-your-own-tools">3.1 Conda or Mamba for Your Own Tools</h3>
+<pre class="lab-code"><code class=" language-bash">module load anaconda
+conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit=2.14.0
+conda activate appbio-week1
+seqkit version
+conda env export --from-history &gt; ~/appbio/week-01/session-02/environment.yml</code></pre>
+<p>Channel order matters. The usual bioinformatics order is <code>conda-forge</code> first, then <code>bioconda</code>.</p>
+<p>If <code>mamba</code> is available on Pax, the create step can be faster:</p>
+<pre class="lab-code"><code class=" language-bash">mamba create -y -n appbio-week1 -c conda-forge -c bioconda seqkit=2.14.0</code></pre>
+<h3 id="3-2-nextflow-and-containers-for-pipelines">3.2 Nextflow and Containers for Pipelines</h3>
+<p>You are about to test a real pipeline. Nextflow manages the workflow, and containers provide the pipeline software.</p>
+<pre class="lab-code"><code class=" language-bash">module load nextflow
+nextflow -version
+
+module load singularity 2&gt;/dev/null || module load apptainer
+singularity --version 2&gt;/dev/null || apptainer --version</code></pre>
+<p><strong>Question 4.</strong> Conda environments and containers both provide software. Why is a container often more reproducible?</p>
+<details>
+<summary>Answer</summary>
+<p>A conda environment is solved at install time against channels that change. Re-solving the same specification later can produce different versions.</p>
+<p>A container is a fixed filesystem image pinned by tag or digest. Use containers where you can and conda where you must.</p>
+</details>
+<h2 id="part-4-fetch-public-data-with-nf-core-fetchngs">Part 4: Fetch Public Data with <code>nf-core/fetchngs</code></h2>
+<h3 id="4-1-understand-what-you-are-asking-for">4.1 Understand What You Are Asking For</h3>
+<p>Papers often cite a BioProject accession such as <code>PRJNA...</code>. Download tools usually need run accessions such as <code>SRR...</code>.</p>
+<pre class="lab-code"><code class=" language-text">BioProject (PRJNA) -&gt; BioSample (SAMN) -&gt; Experiment (SRX) -&gt; Run (SRR)</code></pre>
+<p>Set up a clean download directory:</p>
+<pre class="lab-code"><code class=" language-bash">mkdir -p ~/appbio/week-01/session-02/fetch
+cd ~/appbio/week-01/session-02/fetch</code></pre>
+<p>Set the project accession from class, then query ENA before downloading anything large:</p>
+<pre class="lab-code"><code class=" language-bash">export PROJECT=PRJNA792930
+
+ENA_API=&quot;https://www.ebi.ac.uk/ena/portal/api/filereport&quot;
+FIELDS=&quot;run_accession,instrument_platform,library_layout,read_count,base_count&quot;
+
+curl -sS --fail --max-time 120 \
+  &quot;${ENA_API}?accession=${PROJECT}&amp;result=read_run&amp;fields=${FIELDS}&amp;format=tsv&quot; \
+  -o runs.tsv
+
+[ &quot;$(wc -l &lt; runs.tsv)&quot; -ge 2 ] \
+  &amp;&amp; echo &quot;OK: $(($(wc -l &lt; runs.tsv) - 1)) runs&quot; \
+  || echo &quot;NO DATA: ask for help before continuing&quot;
+
+awk -F&#x27;\t&#x27; &#x27;{ for (i=1; i&lt;=NF; i++) printf &quot;%-22s&quot;, ($i==&quot;&quot; ? &quot;-&quot; : $i); print &quot;&quot; }&#x27; runs.tsv</code></pre>
+<p>Expected shape:</p>
+<pre class="lab-code"><code class=" language-text">run_accession   instrument_platform   library_layout   read_count   base_count
+SRR27956204     ILLUMINA              PAIRED           ...
+SRR18210286     PACBIO_SMRT           SINGLE           ...
+SRR17374240     OXFORD_NANOPORE       SINGLE           ...</code></pre>
+<h3 id="4-2-extract-the-run-you-need">4.2 Extract the Run You Need</h3>
+<p>This is Session 1&#x27;s <code>awk</code> pattern applied to a real task:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; $2==&quot;PACBIO_SMRT&quot; {print $1}&#x27; runs.tsv &gt; ids.csv
+cat ids.csv</code></pre>
+<p>Expected:</p>
+<pre class="lab-code"><code class=" language-text">SRR18210286</code></pre>
+<p><code>ids.csv</code> should contain one run accession per line, with no header and no commas.</p>
+<p><strong>Question 5.</strong> Compute the coverage for this run assuming a 12.1 Mb genome. Is it more than you need?</p>
+<details>
+<summary>Answer</summary>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$2==&quot;PACBIO_SMRT&quot; {printf &quot;%.0fx\n&quot;, $5/12100000}&#x27; runs.tsv</code></pre>
+<p>The result is hundreds of times coverage. HiFi assembly is usually comfortable at roughly 20-30x because the reads are long and accurate, so this dataset will be subsampled before assembly.</p>
+</details>
+<h3 id="4-3-test-the-pipeline-first">4.3 Test the Pipeline First</h3>
+<pre class="lab-code"><code class=" language-bash">nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity --outdir test_out</code></pre>
+<p>This uses a tiny built-in dataset to confirm that Nextflow runs, containers work, and the cluster can reach the internet.</p>
+<p>Always run a test profile before using a new pipeline. Check <a href="https://nf-co.re/fetchngs">https://nf-co.re/fetchngs</a> for the current release, then pin it with <code>-r</code>.</p>
+<h3 id="4-4-submit-the-real-download-as-a-job">4.4 Submit the Real Download as a Job</h3>
+<p>Do not run the real download interactively. It is large enough to take longer than your session.</p>
+<pre class="lab-code"><code class=" language-bash">mkdir -p logs
+
+cat &gt; fetch_job.sh &lt;&lt;EOF
+#!/bin/bash
+#SBATCH --job-name=fetchngs
+#SBATCH --partition=batch
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8G
+#SBATCH --time=12:00:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+
+module load nextflow
+module load singularity 2&gt;/dev/null || module load apptainer
+
+export COURSE=&quot;$COURSE&quot;
+export NXF_SINGULARITY_CACHEDIR=&quot;$COURSE/$USER/.singularity_cache&quot;
+mkdir -p &quot;\$NXF_SINGULARITY_CACHEDIR&quot;
+
+nextflow run nf-core/fetchngs \
+  -r 1.13.0 \
+  -profile singularity \
+  --input ids.csv \
+  --outdir results \
+  --download_method sratools \
+  -resume
+EOF
+
+sbatch fetch_job.sh
+squeue -u &quot;$USER&quot;</code></pre>
+<p><strong>Question 6.</strong> Why ask for twelve hours of wall time for a download, and why include <code>-resume</code>?</p>
+<details>
+<summary>Answer</summary>
+<p>Public archives can be unpredictable, especially if many students start downloads at once. Generous wall time ends early if the job finishes early; wall time that is too short kills a job near the end.</p>
+<p><code>-resume</code> lets a failed or interrupted Nextflow run reuse completed work instead of starting over.</p>
+</details>
+<h3 id="4-5-check-after-class">4.5 Check After Class</h3>
+<p>Replace <code>&amp;lt;jobid&amp;gt;</code> with your job ID.</p>
+<pre class="lab-code"><code class=" language-bash">cd ~/appbio/week-01/session-02/fetch
+squeue -u &quot;$USER&quot;
+seff &lt;jobid&gt;
+tail -20 logs/fetchngs_*.out
+tail -20 logs/fetchngs_*.err</code></pre>
+<p>When the job completes:</p>
+<pre class="lab-code"><code class=" language-bash">ls results/
+ls -lh results/fastq/
+awk -F, &#x27;{ for (i=1; i&lt;=6 &amp;&amp; i&lt;=NF; i++) printf &quot;%-20s&quot;, $i; print &quot;&quot; }&#x27; \
+  results/samplesheet/samplesheet.csv | head</code></pre>
+<p>Expected result directories:</p>
+<pre class="lab-code"><code class=" language-text">fastq/          HiFi reads used later in the course
+samplesheet/    samplesheet.csv
+metadata/       ENA metadata
+pipeline_info/  execution reports, timeline, and software versions</code></pre>
+<h3 id="4-6-verify-the-download">4.6 Verify the Download</h3>
+<pre class="lab-code"><code class=" language-bash">cd ~/appbio/week-01/session-02/fetch/results/fastq
+for f in *.fastq.gz; do
+  gzip -t &quot;$f&quot; &amp;&amp; echo &quot;OK $f&quot; || echo &quot;FAIL $f&quot;
+done
+
+zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
+<p>Compare the read count with the <code>read_count</code> column in <code>../../runs.tsv</code>.</p>
+<p><strong>Checkpoint 3.</strong> You have a fetchngs job ID, and you know how to check whether the download succeeded.</p>
+<h2 id="if-your-job-fails">If Your Job Fails</h2>
+<p>In order:</p>
+<ol>
+<li>Read the error: <code>tail -50 logs/fetchngs_*.err</code></li>
+<li>Read the standard output: <code>tail -50 logs/fetchngs_*.out</code></li>
+<li>Re-run the same job with <code>-resume</code> still present.</li>
+<li>Ask for help with the exact error message.</li>
+</ol>
+<p>A failed download is normal. Not noticing that it failed is the problem.</p>
+<h2 id="takeaways">Takeaways</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Task</th>
+<th>Command</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Request a compute node</td>
+<td><code>srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash</code></td>
+</tr>
+<tr>
+<td>Submit and watch</td>
+<td><code>sbatch script.sh</code>, <code>squeue -u &amp;quot;$USER&amp;quot;</code></td>
+</tr>
+<tr>
+<td>Check resource use</td>
+<td><code>seff &amp;lt;jobid&amp;gt;</code></td>
+</tr>
+<tr>
+<td>Create an environment</td>
+<td><code>conda create -n env -c conda-forge -c bioconda tool=version</code></td>
+</tr>
+<tr>
+<td>Record an environment</td>
+<td><code>conda env export --from-history &amp;gt; environment.yml</code></td>
+</tr>
+<tr>
+<td>Query ENA runs</td>
+<td>ENA portal API with <code>result=read_run</code></td>
+</tr>
+<tr>
+<td>Filter to one platform</td>
+<td><code>awk -F&amp;#x27;\t&amp;#x27; &amp;#x27;NR&amp;gt;1 &amp;amp;&amp;amp; $2==&amp;quot;PACBIO_SMRT&amp;quot; {print $1}&amp;#x27; runs.tsv</code></td>
+</tr>
+<tr>
+<td>Test a pipeline</td>
+<td><code>nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity</code></td>
+</tr>
+<tr>
+<td>Fetch data properly</td>
+<td>Submit <code>nf-core/fetchngs</code> as a batch job</td>
+</tr>
+<tr>
+<td>Verify FASTQ files</td>
+<td><code>gzip -t</code>, then count FASTQ records</td>
+</tr>
+</tbody>
+</table></div>
+<p>Four habits will save you time this semester:</p>
+<ol>
+<li>Batch jobs do not inherit your interactive shell setup.</li>
+<li>Create log directories before submitting jobs.</li>
+<li>Run <code>-profile test</code> before using a new workflow.</li>
+<li>Put long jobs in the scheduler, not in an interactive terminal.</li>
+</ol>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
+      <a href="../../index.html#labs">Course labs</a>
+    </footer>
+  </body>
+</html>

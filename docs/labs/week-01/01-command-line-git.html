@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Week 1 Session 1: Command Line, Text Processing, and Git for Applied Bioinformatics.">
+    <title>Week 1 Session 1: Command Line, Text Processing, and Git | Applied Bioinformatics</title>
+    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+  </head>
+  <body class="lab-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header" id="top">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics labs">
+          <span class="brand-mark" aria-hidden="true">AB</span>
+          <span>Applied Bioinformatics</span>
+        </a>
+        <div class="nav-links">
+          <a href="../../index.html#labs">Labs</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main class="lab-main" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Lab table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to labs</a>
+          <p class="section-kicker">Session 1</p>
+          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
+<a class="toc-level-2" href="#shared-setup">Shared Setup</a>
+<a class="toc-level-2" href="#part-1-where-am-i">Part 1: Where Am I?</a>
+<a class="toc-level-3" href="#1-1-orient-yourself">1.1 Orient Yourself</a>
+<a class="toc-level-3" href="#1-2-make-a-working-directory">1.2 Make a Working Directory</a>
+<a class="toc-level-3" href="#1-3-relative-and-absolute-paths">1.3 Relative and Absolute Paths</a>
+<a class="toc-level-3" href="#1-4-link-the-data-instead-of-copying-it">1.4 Link the Data Instead of Copying It</a>
+<a class="toc-level-2" href="#part-2-interrogating-a-real-annotation-file">Part 2: Interrogating a Real Annotation File</a>
+<a class="toc-level-3" href="#2-1-look-before-you-leap">2.1 Look Before You Leap</a>
+<a class="toc-level-3" href="#2-2-cut-pull-out-columns">2.2 cut: Pull Out Columns</a>
+<a class="toc-level-3" href="#2-3-the-counting-idiom">2.3 The Counting Idiom</a>
+<a class="toc-level-3" href="#2-4-awk-filter-on-a-column">2.4 awk: Filter on a Column</a>
+<a class="toc-level-3" href="#2-5-awk-do-arithmetic-across-lines">2.5 awk: Do Arithmetic Across Lines</a>
+<a class="toc-level-3" href="#2-6-sed-make-a-targeted-substitution">2.6 sed: Make a Targeted Substitution</a>
+<a class="toc-level-2" href="#part-3-git">Part 3: Git</a>
+<a class="toc-level-3" href="#3-1-configure-git-once-per-account">3.1 Configure Git Once Per Account</a>
+<a class="toc-level-3" href="#3-2-create-a-repository">3.2 Create a Repository</a>
+<a class="toc-level-3" href="#3-3-add-gitignore-first">3.3 Add .gitignore First</a>
+<a class="toc-level-3" href="#3-4-make-your-first-commits">3.4 Make Your First Commits</a>
+<a class="toc-level-3" href="#3-5-prove-gitignore-works">3.5 Prove .gitignore Works</a>
+<a class="toc-level-2" href="#if-you-finish-early">If You Finish Early</a>
+<a class="toc-level-2" href="#takeaways">Takeaways</a>
+<a class="toc-level-2" href="#homework-connection">Homework Connection</a></nav>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="section-kicker">Session 1</p>
+            <h1>Week 1 Session 1: Command Line, Text Processing, and Git</h1>
+            <p>Use Pax, inspect a GFF3 file, practice shell pipelines, and create a homework Git repository.</p>
+            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+          </header>
+          <p>In this lab you will log in to the Pax cluster, orient yourself in the filesystem, inspect a real GFF3 annotation file, practice common Unix text-processing patterns, and create your first Git repository for course work.</p>
+<h2 id="before-you-start">Before You Start</h2>
+<p>You need a terminal on the Tufts HPC cluster, Pax.</p>
+<p>Option A: OnDemand</p>
+<ol>
+<li>Go to <a href="https://ondemand-prod.pax.tufts.edu/">https://ondemand-prod.pax.tufts.edu/</a>.</li>
+<li>Log in with your Tufts UTLN and password, then complete 2FA.</li>
+<li>Open <strong>Clusters &gt; Tufts HPC Shell Access</strong>.</li>
+</ol>
+<p>Option B: SSH</p>
+<pre class="lab-code"><code class=" language-bash">ssh your_utln@login-prod.pax.tufts.edu</code></pre>
+<p>You should land in your home directory, with a path like <code>/cluster/home/your_utln</code>, on a login node with a name like <code>login-p01</code>.</p>
+<h2 id="shared-setup">Shared Setup</h2>
+<p>Set the course data path once. If your instructor gives a different course path, change only the first line.</p>
+<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/bio_appbio
+export WEEK1_DATA=$COURSE/shared/wk1
+ls -hl &quot;$WEEK1_DATA&quot;</code></pre>
+<p>Expected file:</p>
+<pre class="lab-code"><code class=" language-text">anno.gff3</code></pre>
+<p>Do not run real software on the login node. The commands in this lab are tiny and safe; Session 2 covers how to request a compute node.</p>
+<h2 id="part-1-where-am-i">Part 1: Where Am I?</h2>
+<h3 id="1-1-orient-yourself">1.1 Orient Yourself</h3>
+<pre class="lab-code"><code class=" language-bash">pwd
+whoami
+hostname
+ls -lha</code></pre>
+<p><strong>Question 1.</strong> What is the full path to your home directory?</p>
+<h3 id="1-2-make-a-working-directory">1.2 Make a Working Directory</h3>
+<pre class="lab-code"><code class=" language-bash">mkdir -p ~/appbio/week-01/session-01
+cd ~/appbio/week-01/session-01
+pwd</code></pre>
+<h3 id="1-3-relative-and-absolute-paths">1.3 Relative and Absolute Paths</h3>
+<pre class="lab-code"><code class=" language-bash">ls &quot;$WEEK1_DATA&quot;      # absolute path through a variable
+ls ../                # relative path; depends where you are
+cd ..
+pwd
+cd -                  # return to the previous directory
+pwd</code></pre>
+<p><strong>Question 2.</strong> If you are in <code>~/appbio/week-01/session-01</code>, what does <code>../..</code> refer to?</p>
+<details>
+<summary>Answer</summary>
+<p><code>..</code> is <code>~/appbio/week-01</code>, so <code>../..</code> is <code>~/appbio</code>.</p>
+</details>
+<h3 id="1-4-link-the-data-instead-of-copying-it">1.4 Link the Data Instead of Copying It</h3>
+<pre class="lab-code"><code class=" language-bash">cd ~/appbio/week-01/session-01
+ln -sf &quot;$WEEK1_DATA/anno.gff3&quot; .
+ls -la</code></pre>
+<p>The <code>-&amp;gt;</code> in the listing shows that <code>anno.gff3</code> is a symbolic link. You can use the file without making a second copy, which matters when the file is 40 GB instead of 40 KB.</p>
+<p><strong>Checkpoint 1.</strong> You should be in <code>~/appbio/week-01/session-01</code> with one symbolic link to <code>anno.gff3</code>.</p>
+<h2 id="part-2-interrogating-a-real-annotation-file">Part 2: Interrogating a Real Annotation File</h2>
+<p><code>anno.gff3</code> is a genome annotation file: one feature per line, nine tab-separated columns.</p>
+<h3 id="2-1-look-before-you-leap">2.1 Look Before You Leap</h3>
+<pre class="lab-code"><code class=" language-bash">less anno.gff3
+wc -l anno.gff3</code></pre>
+<p>Press <code>q</code> to leave <code>less</code>.</p>
+<p>Lines starting with <code>#</code> are header comments, not data. Compare these counts:</p>
+<pre class="lab-code"><code class=" language-bash">grep -c &#x27;&#x27; anno.gff3       # every line
+grep -c &#x27;^#&#x27; anno.gff3     # header lines
+grep -vc &#x27;^#&#x27; anno.gff3    # data lines only</code></pre>
+<p><strong>Question 3.</strong> How many header lines does the file have?</p>
+<h3 id="2-2-cut-pull-out-columns">2.2 <code>cut</code>: Pull Out Columns</h3>
+<p>Column 3 is the feature type.</p>
+<pre class="lab-code"><code class=" language-bash">grep -v &#x27;^#&#x27; anno.gff3 | cut -f3 | head</code></pre>
+<h3 id="2-3-the-counting-idiom">2.3 The Counting Idiom</h3>
+<p>This four-stage pattern is used constantly in bioinformatics. Build it up one stage at a time and watch what each command adds.</p>
+<pre class="lab-code"><code class=" language-bash">grep -v &#x27;^#&#x27; anno.gff3 | cut -f3 | head
+grep -v &#x27;^#&#x27; anno.gff3 | cut -f3 | sort | head
+grep -v &#x27;^#&#x27; anno.gff3 | cut -f3 | sort | uniq -c
+grep -v &#x27;^#&#x27; anno.gff3 | cut -f3 | sort | uniq -c | sort -rn</code></pre>
+<p><strong>Question 4.</strong> Remove the <code>sort</code> before <code>uniq -c</code> and run the command again. What happens, and why?</p>
+<details>
+<summary>Answer</summary>
+<p><code>uniq</code> only collapses lines that are already adjacent. Without <code>sort</code>, identical feature types scattered through the file are not brought together, so you get a long list of small counts instead of one count per type.</p>
+<p>It produces no error. It just quietly gives the wrong answer, which is the point of the exercise.</p>
+</details>
+<h3 id="2-4-awk-filter-on-a-column">2.4 <code>awk</code>: Filter on a Column</h3>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 == &quot;gene&quot;&#x27; anno.gff3 | wc -l</code></pre>
+<p><code>-F&amp;#x27;\t&amp;#x27;</code> sets the field separator to a tab. Use it for GFF3 because the attributes column can contain spaces.</p>
+<p>Count genes per sequence:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 == &quot;gene&quot;&#x27; anno.gff3 | cut -f1 | sort | uniq -c | sort -rn | head -5</code></pre>
+<h3 id="2-5-awk-do-arithmetic-across-lines">2.5 <code>awk</code>: Do Arithmetic Across Lines</h3>
+<p>Columns 4 and 5 are start and end.</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 == &quot;exon&quot; { s += $5 - $4 + 1 } END { print s }&#x27; anno.gff3</code></pre>
+<p><strong>Question 5.</strong> Why is there a <code>+ 1</code>? Try the command without it and see how much the answer changes.</p>
+<details>
+<summary>Answer</summary>
+<p>GFF3 coordinates are 1-based and inclusive. A feature from 100 to 110 covers eleven bases, not ten.</p>
+<p>BED format is different: it is 0-based and half-open. Mixing coordinate conventions is one of the most common silent errors in genomics.</p>
+</details>
+<h3 id="2-6-sed-make-a-targeted-substitution">2.6 <code>sed</code>: Make a Targeted Substitution</h3>
+<p>Some tools want <code>chr1</code>, while others want <code>1</code>. Coordinate naming mismatches can silently break downstream analysis.</p>
+<pre class="lab-code"><code class=" language-bash">cut -f1 anno.gff3 | grep -v &#x27;^#&#x27; | sort -u | head
+sed &#x27;s/^chr//&#x27; anno.gff3 &gt; anno_nochr.gff3
+cut -f1 anno_nochr.gff3 | grep -v &#x27;^#&#x27; | sort -u | head</code></pre>
+<p><strong>Question 6.</strong> Why does the pattern start with <code>^</code>? What would <code>sed &amp;#x27;s/chr//&amp;#x27;</code> do to a line containing the word <code>chromosome</code> in its description column?</p>
+<details>
+<summary>Answer</summary>
+<p><code>^</code> anchors the match to the start of the line. Without it, <code>sed</code> removes the first <code>chr</code> anywhere on the line, so <code>chromosome</code> in a description could become <code>omosome</code>.</p>
+</details>
+<p><strong>Checkpoint 2.</strong> You have run <code>grep</code>, <code>cut</code>, <code>sort</code>, <code>uniq</code>, <code>awk</code>, and <code>sed</code> on a real annotation file.</p>
+<h2 id="part-3-git">Part 3: Git</h2>
+<p>Your homework will use Git repositories. Set one up now.</p>
+<h3 id="3-1-configure-git-once-per-account">3.1 Configure Git Once Per Account</h3>
+<pre class="lab-code"><code class=" language-bash">git config --global user.name &quot;Your Name&quot;
+git config --global user.email &quot;your.name@tufts.edu&quot;
+git config --global init.defaultBranch main
+git config --list | head</code></pre>
+<h3 id="3-2-create-a-repository">3.2 Create a Repository</h3>
+<pre class="lab-code"><code class=" language-bash">mkdir -p ~/appbio/hw
+cd ~/appbio/hw
+git init
+git status</code></pre>
+<p><code>git status</code> will become the command you type most often. It tells you what changed and what is staged for commit.</p>
+<h3 id="3-3-add-gitignore-first">3.3 Add <code>.gitignore</code> First</h3>
+<pre class="lab-code"><code class=" language-bash">cat &gt; .gitignore &lt;&lt;&#x27;EOF&#x27;
+# Sequencing data: never commit these
+*.fastq
+*.fastq.gz
+*.fq.gz
+*.bam
+*.bai
+*.sam
+*.vcf.gz
+
+# Generated analysis directories
+data/
+results/
+work/
+.nextflow*
+
+# Editor and operating system noise
+.DS_Store
+*~
+EOF
+
+cat .gitignore</code></pre>
+<p>Add <code>.gitignore</code> before the first commit. Once a file is committed, it is in the repository history and every future clone. GitHub warns above 50 MB and rejects files above 100 MB; one FASTQ file can be larger than your whole repository should be.</p>
+<h3 id="3-4-make-your-first-commits">3.4 Make Your First Commits</h3>
+<pre class="lab-code"><code class=" language-bash">cat &gt; README.md &lt;&lt;&#x27;EOF&#x27;
+# Applied Bioinformatics Homework
+
+Coursework repository for Applied Bioinformatics.
+EOF
+
+git add .gitignore README.md
+git status
+git commit -m &quot;Add README and gitignore for sequencing data&quot;</code></pre>
+<p>Make a second commit so your repository has a small history:</p>
+<pre class="lab-code"><code class=" language-bash">mkdir -p hw1
+cat &gt; hw1/notes.md &lt;&lt;&#x27;EOF&#x27;
+# Week 1 Notes
+
+- GFF3 is 1-based and inclusive.
+- BED is 0-based and half-open.
+- A command can run without being scientifically correct.
+EOF
+
+git add hw1/notes.md
+git commit -m &quot;Add Week 1 lab notes&quot;
+git log --oneline</code></pre>
+<p>Expected shape:</p>
+<pre class="lab-code"><code class=" language-text">9f3c1a Add Week 1 lab notes
+4b7e0d8 Add README and gitignore for sequencing data</code></pre>
+<p>Your hashes will be different.</p>
+<h3 id="3-5-prove-gitignore-works">3.5 Prove <code>.gitignore</code> Works</h3>
+<pre class="lab-code"><code class=" language-bash">touch bigfile.fastq.gz
+git status</code></pre>
+<p><code>bigfile.fastq.gz</code> should not appear as untracked. If it does, your <code>.gitignore</code> is in the wrong directory.</p>
+<pre class="lab-code"><code class=" language-bash">rm bigfile.fastq.gz</code></pre>
+<p><strong>Question 7.</strong> Write a commit message for &quot;I fixed the awk command that was counting exons wrong.&quot; What makes it better than <code>fixed bug</code>?</p>
+<details>
+<summary>Answer</summary>
+<p>Something like: <code>Fix exon length calculation for 1-based inclusive GFF3 coordinates</code></p>
+<p>It says what changed and why. In six months, <code>git log</code> may be the only record of your reasoning, and <code>fixed bug</code> tells your future self almost nothing.</p>
+</details>
+<p><strong>Checkpoint 3.</strong> <code>git log --oneline</code> shows two commits, and a <code>.fastq.gz</code> file is ignored.</p>
+<h2 id="if-you-finish-early">If You Finish Early</h2>
+<ol>
+<li>Find the longest gene in the annotation:</li>
+</ol>
+<p>``<code>bash awk -F&amp;#x27;\t&amp;#x27; &amp;#x27;$3==&amp;quot;gene&amp;quot; { print $5-$4+1, $1, $4, $5 }&amp;#x27; anno.gff3 | sort -rn | head -1 </code>``</p>
+<p>Work out what each stage does.</p>
+<ol>
+<li>Count how many genes are on each strand in column 7.</li>
+<li>Write a one-liner that produces a tab-separated table of feature type and count.</li>
+<li>Try <code>git diff</code>: edit <code>README.md</code>, run <code>git diff</code>, then run <code>git add README.md</code> and try <code>git diff --staged</code>.</li>
+</ol>
+<h2 id="takeaways">Takeaways</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Skill</th>
+<th>Command</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Count occurrences</td>
+<td>`... \</td>
+<td>sort \</td>
+<td>uniq -c \</td>
+<td>sort -rn`</td>
+</tr>
+<tr>
+<td>Filter a column</td>
+<td><code>awk -F&amp;#x27;\t&amp;#x27; &amp;#x27;$3==&amp;quot;gene&amp;quot;&amp;#x27;</code></td>
+</tr>
+<tr>
+<td>Sum across lines</td>
+<td><code>awk &amp;#x27;{s += $5 - $4 + 1} END {print s}&amp;#x27;</code></td>
+</tr>
+<tr>
+<td>Substitute at start of line</td>
+<td><code>sed &amp;#x27;s/^chr//&amp;#x27;</code></td>
+</tr>
+<tr>
+<td>See what changed</td>
+<td><code>git status</code>, <code>git diff</code></td>
+</tr>
+<tr>
+<td>Record a change</td>
+<td><code>git add</code>, <code>git commit -m &amp;quot;...&amp;quot;</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Two habits will save you time all semester:</p>
+<ol>
+<li>Check coordinate conventions before doing arithmetic.</li>
+<li>Add <code>.gitignore</code> before the first commit, not after.</li>
+</ol>
+<h2 id="homework-connection">Homework Connection</h2>
+<p>Homework 1 extends the command-line and Git habits from this lab. Keep <code>~/appbio/week-01/session-01</code> and <code>~/appbio/hw</code> unless the instructor tells you to remove them.</p>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
+      <a href="../../index.html#labs">Course labs</a>
+    </footer>
+  </body>
+</html>
