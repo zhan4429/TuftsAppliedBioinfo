@@ -6,6 +6,16 @@ This repository supports the Tufts Department of Biology course **Applied Bioinf
 
 Course policies, grading, due dates, and official requirements are governed by the current official syllabus. This repository is a working companion for labs; it is not a replacement for the syllabus.
 
+## Course Website
+
+This repository includes a static GitHub Pages site in `docs/`. After GitHub Pages is enabled for the repository, the default course site URL will be:
+
+```text
+https://zhan4429.github.io/TuftsAppliedBioinfo/
+```
+
+The deployment workflow is in `.github/workflows/pages.yml` and publishes the contents of `docs/` on pushes to `main`.
+
 ## What This Repository Is For
 
 This repository is intended for in-class labs and related course materials. Weekly lab Markdown files should make it easy to:

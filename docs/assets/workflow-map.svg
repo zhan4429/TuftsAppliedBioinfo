@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="620" viewBox="0 0 980 620" role="img" aria-labelledby="title desc">
+  <title id="title">Applied bioinformatics workflow map</title>
+  <desc id="desc">A visual map of course workflows from public datasets through quality control, pipelines, notebooks, and reproducible reports.</desc>
+  <defs>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path d="M 42 0 L 0 0 0 42" fill="none" stroke="#d8e4df" stroke-width="1"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#10211e" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="980" height="620" rx="28" fill="#fbfaf6"/>
+  <rect x="0" y="0" width="980" height="620" rx="28" fill="url(#grid)" opacity="0.75"/>
+  <path d="M85 496 C184 394 229 502 329 399 C454 270 534 407 650 279 C739 181 797 208 896 115" fill="none" stroke="#0f766e" stroke-width="8" stroke-linecap="round"/>
+  <path d="M99 517 C219 470 261 533 366 452 C481 363 540 500 663 395 C756 314 808 336 896 288" fill="none" stroke="#d95c3f" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+  <path d="M104 156 C218 174 254 103 352 161 C457 224 514 140 618 182 C742 232 792 159 895 192" fill="none" stroke="#2457a6" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+
+  <g filter="url(#shadow)">
+    <rect x="74" y="74" width="220" height="126" rx="8" fill="#ffffff" stroke="#cfdad6"/>
+    <rect x="105" y="110" width="158" height="16" rx="8" fill="#0f766e"/>
+    <rect x="105" y="140" width="118" height="12" rx="6" fill="#d8e4df"/>
+    <rect x="105" y="164" width="86" height="12" rx="6" fill="#d8e4df"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="380" y="76" width="220" height="126" rx="8" fill="#10211e"/>
+    <circle cx="414" cy="111" r="7" fill="#d95c3f"/>
+    <circle cx="437" cy="111" r="7" fill="#b8841f"/>
+    <circle cx="460" cy="111" r="7" fill="#34b58a"/>
+    <rect x="414" y="143" width="122" height="12" rx="6" fill="#e8fff7"/>
+    <rect x="414" y="168" width="76" height="12" rx="6" fill="#8ed8c8"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="684" y="76" width="220" height="126" rx="8" fill="#ffffff" stroke="#cfdad6"/>
+    <path d="M733 154 L758 129 L783 154 L826 111 L859 144" fill="none" stroke="#2457a6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="725" y="169" width="132" height="11" rx="5.5" fill="#d8e4df"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="228" y="292" width="220" height="126" rx="8" fill="#ffffff" stroke="#cfdad6"/>
+    <rect x="264" y="326" width="150" height="12" rx="6" fill="#d95c3f"/>
+    <rect x="264" y="353" width="93" height="12" rx="6" fill="#d8e4df"/>
+    <rect x="264" y="380" width="126" height="12" rx="6" fill="#d8e4df"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="534" y="292" width="220" height="126" rx="8" fill="#ffffff" stroke="#cfdad6"/>
+    <circle cx="606" cy="355" r="38" fill="#e8f4f1"/>
+    <path d="M606 326 L632 371 L580 371 Z" fill="#0f766e"/>
+    <rect x="665" y="335" width="54" height="12" rx="6" fill="#d8e4df"/>
+    <rect x="665" y="363" width="72" height="12" rx="6" fill="#d8e4df"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="380" y="470" width="220" height="84" rx="8" fill="#ffffff" stroke="#cfdad6"/>
+    <rect x="416" y="499" width="148" height="12" rx="6" fill="#b8841f"/>
+    <rect x="416" y="525" width="92" height="12" rx="6" fill="#d8e4df"/>
+  </g>
+
+  <g fill="#10211e" font-family="Aptos, Segoe UI, sans-serif" font-weight="800" font-size="25">
+    <text x="105" y="250">Public data</text>
+    <text x="409" y="250">HPC jobs</text>
+    <text x="724" y="250">QC reports</text>
+    <text x="258" y="466">Pipelines</text>
+    <text x="566" y="466">Notebooks</text>
+    <text x="417" y="596">Reproducible report</text>
+  </g>
+</svg>
