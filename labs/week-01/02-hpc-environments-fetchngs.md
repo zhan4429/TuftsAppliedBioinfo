@@ -4,7 +4,7 @@ Applied Bioinformatics - Tufts University Department of Biology
 
 In this lab you will move from the login node to a compute node, submit a small SLURM batch job, create a reproducible software environment, test Nextflow and container support, and start a real public-data download with `nf-core/fetchngs`.
 
-This lab produces PacBio HiFi data used later in the course. The final download may finish after class, so do not skip the job submission and verification steps.
+This lab produces the sequencing data used in Week 2 and Week 3. You will fetch one run from each of the four platforms in a single study, which is what makes next week's QC comparison possible. The download will finish after class, so do not skip the job submission and verification steps.
 
 ## Before You Start
 
@@ -144,40 +144,47 @@ cat logs/count_*.out
 seff <jobid>
 ```
 
-**Question 3.** Memory efficiency will be near zero. Why can over-requesting memory still cost you something?
+`seff` reports what the job actually used against what you asked for. Memory efficiency
+will be close to zero here, because counting lines in a text file needs almost nothing.
 
-<details>
-<summary>Answer</summary>
-
-SLURM must find a node with the requested memory free. If you ask for much more than you need, your job may wait longer and block resources that someone else could use.
-
-Good habit: run once with a reasonable request, check `seff`, then request roughly the observed peak plus a buffer.
-
-</details>
+Over-requesting is not free: SLURM has to find a node with that much memory available, so
+your job waits longer in the queue for resources it never touches. Run once with a
+generous request, read `seff`, then ask for roughly the observed peak plus a margin.
 
 **Checkpoint 2.** You have a completed job, an output log, and a `seff` report.
 
 ## Part 3: Two Ways to Get Software
 
-### 3.1 Conda or Mamba for Your Own Tools
+### 3.1 Conda for Your Own Tools
+
+Conda is available on Pax as a module. Load it first:
 
 ```bash
-module load anaconda
+module load miniforge
+conda --version
+```
+
+Then build an environment for this course and record it:
+
+```bash
 conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
 conda activate appbio-week1
 seqkit version
 conda env export --from-history > "$MYWORK/week-01/session-02/environment.yml"
+cat "$MYWORK/week-01/session-02/environment.yml"
 ```
 
-Channel order matters. The usual bioinformatics order is `conda-forge` first, then `bioconda`.
+Channel order matters. The usual bioinformatics order is `conda-forge` first, then
+`bioconda`, and reversing it causes dependency conflicts that are painful to debug.
 
-If `mamba` is available on Pax, the create step can be faster:
+That `environment.yml` is the deliverable, not the environment itself. It is what lets
+somebody else rebuild what you had:
 
 ```bash
-mamba create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
+conda env create -f environment.yml
 ```
 
-Pin the version once you know which one you want, so the environment can be recreated:
+Pin the version once you know which one you want, so the file describes something exact:
 
 ```bash
 conda search -c conda-forge -c bioconda seqkit | tail -5
@@ -195,16 +202,15 @@ module load singularity 2>/dev/null || module load apptainer
 singularity --version 2>/dev/null || apptainer --version
 ```
 
-**Question 4.** Conda environments and containers both provide software. Why is a container often more reproducible?
+Conda and containers both provide software, but they are not equally reproducible. A
+conda environment is *solved* at install time against channels that keep moving, so
+rebuilding the same specification in two years can give you different versions. A
+container is a fixed filesystem image pinned by tag or digest, identical whenever you
+pull it.
 
-<details>
-<summary>Answer</summary>
-
-A conda environment is solved at install time against channels that change. Re-solving the same specification later can produce different versions.
-
-A container is a fixed filesystem image pinned by tag or digest. Use containers where you can and conda where you must.
-
-</details>
+Use containers where you can and conda where you must. The pipeline you are about to run
+provisions all of its own software as containers, which is why you installed none of the
+bioinformatics tools yourself.
 
 ## Part 4: Fetch Public Data with `nf-core/fetchngs`
 
@@ -251,33 +257,66 @@ SRR18210286     PACBIO_SMRT           SINGLE           ...
 SRR17374240     OXFORD_NANOPORE       SINGLE           ...
 ```
 
-### 4.2 Extract the Run You Need
+### 4.2 Extract One Run Per Platform
 
-This is Session 1's `awk` pattern applied to a real task:
+This project sequenced the same yeast genome on four different platforms. That is unusual
+and useful: next week you will compare QC output across all four, and any difference you
+see is the platform rather than the sample.
+
+You want one run from each platform, not all five. Session 1's `awk` does it:
 
 ```bash
-awk -F'\t' 'NR>1 && $2=="PACBIO_SMRT" {print $1}' runs.tsv > ids.csv
+awk -F'\t' 'NR>1 && !seen[$2]++ {print $1}' runs.tsv > ids.csv
 cat ids.csv
 ```
 
 Expected:
 
 ```text
+SRR27956204
 SRR18210286
+SRR17374239
+SRR17374240
 ```
+
+**Question 3.** `!seen[$2]++` is doing the work. Explain what it does.
+
+<details>
+<summary>Answer</summary>
+
+`seen` is an array indexed by column 2, the platform name. `seen[$2]++` returns the
+current count for that platform and *then* increments it.
+
+The first time a platform appears the count is 0, which is false, so `!` makes it true
+and the line prints. Every later line for that platform returns 1 or more, which is true,
+so `!` makes it false and the line is skipped.
+
+The result is the first run of each platform. It is a very common idiom for
+deduplicating on a field, and it needs no `sort`.
+
+</details>
 
 `ids.csv` should contain one run accession per line, with no header and no commas.
 
-**Question 5.** Compute the coverage for this run assuming a 12.1 Mb genome. Is it more than you need?
+**Question 4.** Work out the coverage each of these runs gives, for a 12.1 Mb genome, and
+the total you are about to download.
 
 <details>
 <summary>Answer</summary>
 
 ```bash
-awk -F'\t' '$2=="PACBIO_SMRT" {printf "%.0fx\n", $5/12100000}' runs.tsv
+awk -F'\t' 'NR>1 && !seen[$2]++ {
+  printf "%-13s %-16s %6.0fx  %5.1f Gbp\n", $1, $2, $5/12100000, $5/1e9
+  t += $5
+} END { printf "\nTOTAL %.1f Gbp, roughly %.0f GB once gzipped\n", t/1e9, t*0.35/1e9 }' runs.tsv
 ```
 
-The result is hundreds of times coverage. HiFi assembly is usually comfortable at roughly 20-30x because the reads are long and accurate, so this dataset will be subsampled before assembly.
+Every run is enormously oversequenced for a 12 Mb genome — hundreds of times coverage.
+That is normal for deposited data and it is why you will subsample before doing anything
+with it. Nobody needs 1,100x to run FastQC, and nobody needs more than about 30x to
+assemble HiFi reads.
+
+About 11 GB in total. That is why this is a batch job and not something you watch.
 
 </details>
 
@@ -299,7 +338,7 @@ rm -rf test_out
 
 ### 4.4 Submit the Real Download as a Job
 
-Do not run the real download interactively. It is large enough to take longer than your session.
+Do not run the real download interactively. Four runs is roughly 11 GB and will take hours, which is longer than your session and longer than your patience.
 
 ```bash
 mkdir -p logs
@@ -310,7 +349,7 @@ cat > fetch_job.sh <<'EOF'
 #SBATCH --partition=batch
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
@@ -346,32 +385,6 @@ The heredoc delimiter is quoted: `<<'EOF'`. That writes the file exactly as you 
 
 `set -euo pipefail` makes the job stop at the first failure. Without it, a failed `mkdir` would not stop anything, and you would get a confusing container error several minutes later instead of a clear permissions error immediately.
 
-**Question 6.** Run `cat fetch_job.sh`. What would have changed if the delimiter had been unquoted, as `<<EOF`?
-
-<details>
-<summary>Answer</summary>
-
-Two things, and both are easy to miss.
-
-Every `$VARIABLE` would have been replaced by its value on the node where you typed the command, so the script would carry one fixed path instead of resolving `$HOME` wherever the job actually runs.
-
-And backslash-newline would have been treated as a line continuation for the heredoc itself, collapsing the entire `nextflow run` command onto a single line. The command would still work, but the file would not look like the one above.
-
-Quote the delimiter whenever you want the file to contain exactly what you typed.
-
-</details>
-
-**Question 7.** Why ask for twelve hours of wall time for a download, and why include `-resume`?
-
-<details>
-<summary>Answer</summary>
-
-Public archives can be unpredictable, especially if many students start downloads at once. Generous wall time ends early if the job finishes early; wall time that is too short kills a job near the end.
-
-`-resume` lets a failed or interrupted Nextflow run reuse completed work instead of starting over.
-
-</details>
-
 ### 4.5 Check After Class
 
 Replace `<jobid>` with your job ID.
@@ -396,28 +409,63 @@ awk -F, '{ for (i=1; i<=6 && i<=NF; i++) printf "%-20s", $i; print "" }' \
 Expected result directories:
 
 ```text
-fastq/          HiFi reads used later in the course
+fastq/          the reads, one or two files per run
 samplesheet/    samplesheet.csv
 metadata/       ENA metadata
 pipeline_info/  execution reports, timeline, and software versions
 ```
 
+You should have six FASTQ files from four runs: the two paired-end runs give `_1` and
+`_2`, and the two long-read runs give one file each.
+
 ### 4.6 Verify the Download
 
 ```bash
 cd "$MYWORK/week-01/session-02/fetch/results/fastq"
-for f in *.fastq.gz; do
-  gzip -t "$f" && echo "OK $f" || echo "FAIL $f"
-done
 
-zcat *.fastq.gz | awk 'NR % 4 == 1' | wc -l
+for f in *.fastq.gz; do
+  gzip -t "$f" && echo "OK   $f" || echo "FAIL $f"
+done
 ```
 
-Compare the read count with the `read_count` column in `../../runs.tsv`.
+Every file must pass. Now count the reads in each, and compare against what ENA claimed:
 
-Counting header lines rather than dividing the line count by four is deliberate. A truncated file gives a line count that is not a multiple of four, so dividing returns a plausible wrong number with no warning.
+```bash
+for f in *.fastq.gz; do
+  n=$(zcat "$f" | awk 'NR % 4 == 1' | wc -l)
+  printf "%-30s %12d reads\n" "$f" "$n"
+done
 
-**Checkpoint 3.** You have a fetchngs job ID, and you know how to check whether the download succeeded.
+awk -F'\t' 'NR>1 && !seen[$2]++ {printf "%-13s %-16s %12d reads (ENA)\n", $1, $2, $4}' ../../runs.tsv
+```
+
+For the paired runs the two mates should have identical counts, and each should match the
+ENA figure. For the single-end runs the one file should match directly.
+
+Counting header lines rather than dividing the line count by four is deliberate. A
+truncated file gives a line count that is not a multiple of four, so dividing returns a
+plausible wrong number with no warning.
+
+**Question 5.** Look at the read counts and the file sizes together. Which platform
+produced the fewest reads, and why is that not a sign that anything went wrong?
+
+<details>
+<summary>Answer</summary>
+
+The long-read platforms, by a wide margin. PacBio produced a few hundred thousand reads
+where Illumina produced tens of millions.
+
+Read *count* and sequence *yield* are different things. A nanopore read averaging well
+over 10 kb carries as much sequence as a hundred Illumina reads. Comparing platforms on
+read count alone is meaningless; compare total bases, which is what you did in Question 4.
+
+This is the distinction next week's QC session is built on.
+
+</details>
+
+**Checkpoint 3.** You have a fetchngs job ID, six FASTQ files, and read counts that match what ENA reported.
+
+> **Do not delete these.** Week 2 runs QC on all four platforms and Week 3 assembles the PacBio run. If you need the space back later, the subsampled copies you make next week are the ones to keep.
 
 ## If Your Job Fails
 
@@ -453,7 +501,7 @@ A failed download is normal. Not noticing that it failed is the problem.
 | Create an environment | `conda create -n env -c conda-forge -c bioconda tool=version` |
 | Record an environment | `conda env export --from-history > environment.yml` |
 | Query ENA runs | ENA portal API with `result=read_run` |
-| Filter to one platform | `awk -F'\t' 'NR>1 && $2=="PACBIO_SMRT" {print $1}' runs.tsv` |
+| Keep the first row per group | `awk -F'\t' 'NR>1 && !seen[$2]++ {print $1}' runs.tsv` |
 | Test a pipeline | `nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity` |
 | Write a script literally | `cat > job.sh <<'EOF'` with the delimiter quoted |
 | Fetch data properly | Submit `nf-core/fetchngs` as a batch job |
@@ -467,7 +515,3 @@ Five habits will save you time this semester:
 4. Run `-profile test` before using a new workflow.
 5. Put long jobs in the scheduler, not in an interactive terminal.
 6. Keep everything under `$MYWORK`. Home directory quotas are small and sequencing data is not.
-
-## Homework Connection
-
-Homework 1 extends this lab. You will query ENA for a second project, fetch RNA-seq data with the same pipeline, verify it, and record the whole thing in the Git repository you created in Session 1 — which also lives under `$MYWORK`.
