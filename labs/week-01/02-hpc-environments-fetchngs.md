@@ -137,11 +137,11 @@ The `cat` is not decoration. Read the file and confirm the `export` line landed 
 
 ### 2.3 Read the Result and the Cost
 
-Replace `<jobid>` with your job ID.
+Replace JOBID below with your own job ID.
 
 ```bash
 cat logs/count_*.out
-seff <jobid>
+seff JOBID
 ```
 
 `seff` reports what the job actually used against what you asked for. Memory efficiency
@@ -379,7 +379,7 @@ squeue -u "$USER"
 
 Three details in that script are worth understanding rather than copying.
 
-The heredoc delimiter is quoted: `<<'EOF'`. That writes the file exactly as you see it above, leaving every `$VARIABLE` to be resolved when the job runs.
+The heredoc delimiter is quoted, as shown on the `cat` line above. That writes the file exactly as you see it, leaving every variable to be resolved when the job runs.
 
 `COURSE` and `MYWORK` are therefore defined *inside* the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
 
@@ -387,12 +387,12 @@ The heredoc delimiter is quoted: `<<'EOF'`. That writes the file exactly as you 
 
 ### 4.5 Check After Class
 
-Replace `<jobid>` with your job ID.
+Replace JOBID below with your own job ID.
 
 ```bash
 cd "$MYWORK/week-01/session-02/fetch"
 squeue -u "$USER"
-seff <jobid>
+seff JOBID
 tail -20 logs/fetchngs_*.out
 tail -20 logs/fetchngs_*.err
 ```
@@ -478,7 +478,7 @@ In order:
 
 Two failures are common enough to name.
 
-**Out of disk space.** The `sratools` download method writes large temporary files while converting, often several times the size of the final FASTQ. Check the filesystem with `df -h .` and your own usage with `du -sh "$MYWORK"`.
+**Out of disk space.** The `sratools` download method writes large temporary files while converting, often several times the size of the final FASTQ. Check the filesystem with `df -h .`, and your own usage with a `du -sh` on your work directory.
 
 **Permission denied on the container cache.** If `NXF_SINGULARITY_CACHEDIR` points somewhere you cannot write, Singularity fails while pulling images. Confirm the directory exists and is yours:
 
@@ -492,22 +492,53 @@ A failed download is normal. Not noticing that it failed is the problem.
 
 ## Takeaways
 
-| Task | Command |
-| --- | --- |
-| Work in the right place | `$COURSE/$USER`, never your home directory |
-| Request a compute node | `srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash` |
-| Submit and watch | `sbatch script.sh`, `squeue -u "$USER"` |
-| Check resource use | `seff <jobid>` |
-| Create an environment | `conda create -n env -c conda-forge -c bioconda tool=version` |
-| Record an environment | `conda env export --from-history > environment.yml` |
-| Query ENA runs | ENA portal API with `result=read_run` |
-| Keep the first row per group | `awk -F'\t' 'NR>1 && !seen[$2]++ {print $1}' runs.tsv` |
-| Test a pipeline | `nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity` |
-| Write a script literally | `cat > job.sh <<'EOF'` with the delimiter quoted |
-| Fetch data properly | Submit `nf-core/fetchngs` as a batch job |
-| Verify FASTQ files | `gzip -t`, then count FASTQ records |
+Get a compute node, then submit real work to the scheduler:
 
-Five habits will save you time this semester:
+```bash
+srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash
+sbatch script.sh
+squeue -u "$USER"
+seff JOBID
+```
+
+Build an environment and record it so it can be rebuilt:
+
+```bash
+module load miniforge
+conda create -n env -c conda-forge -c bioconda tool=version
+conda env export --from-history > environment.yml
+```
+
+Query ENA, then keep the first run of each platform:
+
+```bash
+curl -sS --fail "${ENA_API}?accession=${PROJECT}&result=read_run&fields=${FIELDS}&format=tsv" -o runs.tsv
+awk -F'\t' 'NR>1 && !seen[$2]++ {print $1}' runs.tsv > ids.csv
+```
+
+Test a pipeline before trusting it, then submit the real run as a job:
+
+```bash
+nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity --outdir test_out
+sbatch fetch_job.sh
+```
+
+Write a script literally by quoting the heredoc delimiter:
+
+```bash
+cat > job.sh <<'EOF'
+...
+EOF
+```
+
+Verify what you downloaded:
+
+```bash
+gzip -t file.fastq.gz
+zcat file.fastq.gz | awk 'NR % 4 == 1' | wc -l
+```
+
+Six habits will save you time this semester:
 
 1. Batch jobs do not inherit your interactive shell setup.
 2. Create log directories before submitting jobs.

@@ -152,7 +152,7 @@ It produces no error. It just quietly gives the wrong answer, which is the point
 awk -F'\t' '$3 == "gene"' anno.gff3 | wc -l
 ```
 
-`-F'\t'` sets the field separator to a tab. Use it for GFF3 because the attributes column can contain spaces.
+The `-F` option sets the field separator to a tab. Use it for GFF3 because the attributes column can contain spaces.
 
 Count genes per sequence:
 
@@ -216,7 +216,7 @@ head -3 anno_chr.gff3
 grep -v '^#' anno_chr.gff3 | cut -f1 | sort -u
 ```
 
-`/^#/!` means "on lines that do **not** match `^#`". Confirm two things: the headers survived, and every sequence name gained its prefix.
+The `/^#/!` prefix means: on lines that do **not** match a leading hash. Confirm two things: the headers survived, and every sequence name gained its prefix.
 
 **Question 7.** Your `sort -u` output puts `IX` between `IV` and `Mito`, and `V` after `Mito`. Why, and does it matter here?
 
@@ -358,79 +358,6 @@ It says what changed and why. In six months, `git log` may be the only record of
 
 **Checkpoint 3.** `git log --oneline` shows two commits, and a `.fastq.gz` file is ignored.
 
-## If You Finish Early
-
-These are optional. Each one uses only commands from this lab.
-
-### Find the longest gene
-
-```bash
-awk -F'\t' '$3=="gene" { print $5-$4+1, $1, $4, $5 }' anno.gff3 | sort -rn | head -1
-```
-
-Work out what each stage does. Build it up one pipe at a time if it is not obvious.
-
-### Count genes on each strand
-
-Column 7 holds the strand. Use the counting idiom from section 2.3.
-
-<details>
-<summary>Answer</summary>
-
-```bash
-awk -F'\t' '$3=="gene"' anno.gff3 | cut -f7 | sort | uniq -c
-```
-
-The two counts should be roughly equal. A large imbalance would be worth investigating.
-
-</details>
-
-### Make a table you could paste into a spreadsheet
-
-Produce two tab-separated columns: feature type, then count.
-
-<details>
-<summary>Answer</summary>
-
-```bash
-grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c | sort -rn \
-  | awk '{ print $2 "\t" $1 }'
-```
-
-`uniq -c` puts the count first and pads it with spaces. The final `awk` swaps the order and separates the columns with a real tab, which is what a spreadsheet expects.
-
-</details>
-
-### Find the shortest gene, and decide whether you believe it
-
-```bash
-awk -F'\t' '$3=="gene" { print $5-$4+1, $9 }' anno.gff3 | sort -n | head -3
-```
-
-Very short genes are sometimes real and sometimes annotation artefacts. You cannot tell from the length alone, which is the point.
-
-### Explore `git diff`
-
-```bash
-cd ~/appbio/hw
-echo "Extra line." >> README.md
-git diff
-git add README.md
-git diff
-git diff --staged
-```
-
-**Question 9.** After `git add`, plain `git diff` shows nothing but `git diff --staged` shows your change. Why?
-
-<details>
-<summary>Answer</summary>
-
-`git diff` compares the working directory against the staging area. Once you have staged the change, those two match, so there is nothing to report.
-
-`git diff --staged` compares the staging area against the last commit, which is where your change now lives. The three places from section 3.2 explain the behaviour of both commands.
-
-</details>
-
 ## Takeaways
 
 ### Commands from this lab
@@ -480,7 +407,3 @@ git log --oneline       # what has happened so far
 Every command in this lab ran successfully. None of them checked whether the answer made sense. `uniq` without `sort` returns a wrong count with no error. Forgetting `+ 1` returns a total that is off by the number of features. `sed` without the comment filter quietly corrupts your header lines.
 
 Deciding whether an answer is plausible is your job, not the tool's. That is most of what this course is about, and it starts here.
-
-## Homework Connection
-
-Homework 1 extends the command-line and Git habits from this lab. Keep `~/appbio/week-01/session-01` and `~/appbio/hw` unless the instructor tells you to remove them.
