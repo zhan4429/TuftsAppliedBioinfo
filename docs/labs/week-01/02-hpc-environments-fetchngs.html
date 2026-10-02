@@ -7,6 +7,7 @@
     <title>Week 1 Session 2: HPC, Environments, and Fetching Public Data | Applied Bioinformatics</title>
     <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../../styles.css">
+    <script src="../../assets/lab-code-copy.js" defer></script>
   </head>
   <body class="lab-page">
     <a class="skip-link" href="#main">Skip to main content</a>
@@ -38,18 +39,17 @@
 <a class="toc-level-3" href="#2-2-spot-the-bug-before-submitting">2.2 Spot the Bug Before Submitting</a>
 <a class="toc-level-3" href="#2-3-read-the-result-and-the-cost">2.3 Read the Result and the Cost</a>
 <a class="toc-level-2" href="#part-3-two-ways-to-get-software">Part 3: Two Ways to Get Software</a>
-<a class="toc-level-3" href="#3-1-conda-or-mamba-for-your-own-tools">3.1 Conda or Mamba for Your Own Tools</a>
+<a class="toc-level-3" href="#3-1-conda-for-your-own-tools">3.1 Conda for Your Own Tools</a>
 <a class="toc-level-3" href="#3-2-nextflow-and-containers-for-pipelines">3.2 Nextflow and Containers for Pipelines</a>
 <a class="toc-level-2" href="#part-4-fetch-public-data-with-nf-core-fetchngs">Part 4: Fetch Public Data with nf-core/fetchngs</a>
 <a class="toc-level-3" href="#4-1-understand-what-you-are-asking-for">4.1 Understand What You Are Asking For</a>
-<a class="toc-level-3" href="#4-2-extract-the-run-you-need">4.2 Extract the Run You Need</a>
+<a class="toc-level-3" href="#4-2-extract-one-run-per-platform">4.2 Extract One Run Per Platform</a>
 <a class="toc-level-3" href="#4-3-test-the-pipeline-first">4.3 Test the Pipeline First</a>
 <a class="toc-level-3" href="#4-4-submit-the-real-download-as-a-job">4.4 Submit the Real Download as a Job</a>
 <a class="toc-level-3" href="#4-5-check-after-class">4.5 Check After Class</a>
 <a class="toc-level-3" href="#4-6-verify-the-download">4.6 Verify the Download</a>
 <a class="toc-level-2" href="#if-your-job-fails">If Your Job Fails</a>
-<a class="toc-level-2" href="#takeaways">Takeaways</a>
-<a class="toc-level-2" href="#homework-connection">Homework Connection</a></nav>
+<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
@@ -59,7 +59,7 @@
             <span>Applied Bioinformatics - Tufts University Department of Biology</span>
           </header>
           <p>In this lab you will move from the login node to a compute node, submit a small SLURM batch job, create a reproducible software environment, test Nextflow and container support, and start a real public-data download with <code>nf-core/fetchngs</code>.</p>
-<p>This lab produces PacBio HiFi data used later in the course. The final download may finish after class, so do not skip the job submission and verification steps.</p>
+<p>This lab produces the sequencing data used in Week 2 and Week 3. You will fetch one run from each of the four platforms in a single study, which is what makes next week&#x27;s QC comparison possible. The download will finish after class, so do not skip the job submission and verification steps.</p>
 <h2 id="before-you-start">Before You Start</h2>
 <p>Open a terminal on Pax:</p>
 <ul>
@@ -89,13 +89,10 @@ pwd</code></pre>
 <h3 id="1-2-inspect-the-cluster">1.2 Inspect the Cluster</h3>
 <pre class="lab-code"><code class=" language-bash">sinfo -s</code></pre>
 <p>You may see partitions such as:</p>
-<pre class="lab-code"><code class=" language-text">PARTITION    AVAIL  TIMELIMIT   NODES(A/I/O/T)
-batch*       up     7-00:00:00  ...
-gpu          up     7-00:00:00  ...
-interactive  up     4:00:00     ...
-largemem     up     7-00:00:00  ...
-preempt      up     7-00:00:00  ...</code></pre>
-<p><strong>Question 1.</strong> Which partition is appropriate for a 3-hour debugging session? Which is more appropriate for a 5-day assembly?</p>
+<pre class="lab-code"><code class=" language-text">PARTITION    AVAIL  TIMELIMIT   NODES(A/I/O/T) NODELIST
+batch*          up 2-00:00:00      46/21/23/90 pax[001-002,004-006,012-019,027-033,035-046,054-061,069,072-075,078-085,107-109,120,145-149,154-171,188-197]
+gpu             up 2-00:00:00       14/12/1/27 pax[003,007-011,020-026,049-052,063,105-106,142-144,184-187]
+preempt         up 2-00:00:00     65/71/33/169 pax[001-002,004-006,012-019,027-048,053-062,064-075,077-104,107-141,145-183,188-197]</code></pre>
 <details>
 <summary>Answer</summary>
 <p>Use <code>interactive</code> for a 3-hour debugging session. Use <code>batch</code> or another instructor-approved long-running partition for a 5-day assembly.</p>
@@ -125,7 +122,7 @@ echo &quot;Running on: $(hostname)&quot;
 grep -vc &#x27;^#&#x27; &quot;$WEEK1_DATA/anno.gff3&quot;
 EOF</code></pre>
 <h3 id="2-2-spot-the-bug-before-submitting">2.2 Spot the Bug Before Submitting</h3>
-<p><strong>Question 2.</strong> This job will fail as written. Why?</p>
+<p><strong>Question 1.</strong> This job will fail as written. Why?</p>
 <details>
 <summary>Answer</summary>
 <p><code>WEEK1_DATA</code> is set in your current shell, but a batch job starts a fresh shell. Unless you define the variable inside the script, the script does not know where the file is.</p>
@@ -138,27 +135,27 @@ sbatch count_job.sh
 squeue -u &quot;$USER&quot;</code></pre>
 <p>The <code>cat</code> is not decoration. Read the file and confirm the <code>export</code> line landed <em>before</em> the <code>grep</code> line that needs it.</p>
 <h3 id="2-3-read-the-result-and-the-cost">2.3 Read the Result and the Cost</h3>
-<p>Replace <code>&amp;lt;jobid&amp;gt;</code> with your job ID.</p>
+<p>Replace JOBID below with your own job ID.</p>
 <pre class="lab-code"><code class=" language-bash">cat logs/count_*.out
-seff &lt;jobid&gt;</code></pre>
-<p><strong>Question 3.</strong> Memory efficiency will be near zero. Why can over-requesting memory still cost you something?</p>
-<details>
-<summary>Answer</summary>
-<p>SLURM must find a node with the requested memory free. If you ask for much more than you need, your job may wait longer and block resources that someone else could use.</p>
-<p>Good habit: run once with a reasonable request, check <code>seff</code>, then request roughly the observed peak plus a buffer.</p>
-</details>
+seff JOBID</code></pre>
+<p><code>seff</code> reports what the job actually used against what you asked for. Memory efficiency will be close to zero here, because counting lines in a text file needs almost nothing.</p>
+<p>Over-requesting is not free: SLURM has to find a node with that much memory available, so your job waits longer in the queue for resources it never touches. Run once with a generous request, read <code>seff</code>, then ask for roughly the observed peak plus a margin.</p>
 <p><strong>Checkpoint 2.</strong> You have a completed job, an output log, and a <code>seff</code> report.</p>
 <h2 id="part-3-two-ways-to-get-software">Part 3: Two Ways to Get Software</h2>
-<h3 id="3-1-conda-or-mamba-for-your-own-tools">3.1 Conda or Mamba for Your Own Tools</h3>
-<pre class="lab-code"><code class=" language-bash">module load anaconda
-conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
+<h3 id="3-1-conda-for-your-own-tools">3.1 Conda for Your Own Tools</h3>
+<p>Conda is available on Pax as a module. Load it first:</p>
+<pre class="lab-code"><code class=" language-bash">module load miniforge
+conda --version</code></pre>
+<p>Then build an environment for this course and record it:</p>
+<pre class="lab-code"><code class=" language-bash">conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
 conda activate appbio-week1
 seqkit version
-conda env export --from-history &gt; &quot;$MYWORK/week-01/session-02/environment.yml&quot;</code></pre>
-<p>Channel order matters. The usual bioinformatics order is <code>conda-forge</code> first, then <code>bioconda</code>.</p>
-<p>If <code>mamba</code> is available on Pax, the create step can be faster:</p>
-<pre class="lab-code"><code class=" language-bash">mamba create -y -n appbio-week1 -c conda-forge -c bioconda seqkit</code></pre>
-<p>Pin the version once you know which one you want, so the environment can be recreated:</p>
+conda env export --from-history &gt; &quot;$MYWORK/week-01/session-02/environment.yml&quot;
+cat &quot;$MYWORK/week-01/session-02/environment.yml&quot;</code></pre>
+<p>Channel order matters. The usual bioinformatics order is <code>conda-forge</code> first, then <code>bioconda</code>, and reversing it causes dependency conflicts that are painful to debug.</p>
+<p>That <code>environment.yml</code> is the deliverable, not the environment itself. It is what lets somebody else rebuild what you had:</p>
+<pre class="lab-code"><code class=" language-bash">conda env create -f environment.yml</code></pre>
+<p>Pin the version once you know which one you want, so the file describes something exact:</p>
 <pre class="lab-code"><code class=" language-bash">conda search -c conda-forge -c bioconda seqkit | tail -5</code></pre>
 <h3 id="3-2-nextflow-and-containers-for-pipelines">3.2 Nextflow and Containers for Pipelines</h3>
 <p>You are about to test a real pipeline. Nextflow manages the workflow, and containers provide the pipeline software.</p>
@@ -167,12 +164,8 @@ nextflow -version
 
 module load singularity 2&gt;/dev/null || module load apptainer
 singularity --version 2&gt;/dev/null || apptainer --version</code></pre>
-<p><strong>Question 4.</strong> Conda environments and containers both provide software. Why is a container often more reproducible?</p>
-<details>
-<summary>Answer</summary>
-<p>A conda environment is solved at install time against channels that change. Re-solving the same specification later can produce different versions.</p>
-<p>A container is a fixed filesystem image pinned by tag or digest. Use containers where you can and conda where you must.</p>
-</details>
+<p>Conda and containers both provide software, but they are not equally reproducible. A conda environment is <em>solved</em> at install time against channels that keep moving, so rebuilding the same specification in two years can give you different versions. A container is a fixed filesystem image pinned by tag or digest, identical whenever you pull it.</p>
+<p>Use containers where you can and conda where you must. The pipeline you are about to run provisions all of its own software as containers, which is why you installed none of the bioinformatics tools yourself.</p>
 <h2 id="part-4-fetch-public-data-with-nf-core-fetchngs">Part 4: Fetch Public Data with <code>nf-core/fetchngs</code></h2>
 <h3 id="4-1-understand-what-you-are-asking-for">4.1 Understand What You Are Asking For</h3>
 <p>Papers often cite a BioProject accession such as <code>PRJNA...</code>. Download tools usually need run accessions such as <code>SRR...</code>.</p>
@@ -200,18 +193,33 @@ awk -F&#x27;\t&#x27; &#x27;{ for (i=1; i&lt;=NF; i++) printf &quot;%-22s&quot;, 
 SRR27956204     ILLUMINA              PAIRED           ...
 SRR18210286     PACBIO_SMRT           SINGLE           ...
 SRR17374240     OXFORD_NANOPORE       SINGLE           ...</code></pre>
-<h3 id="4-2-extract-the-run-you-need">4.2 Extract the Run You Need</h3>
-<p>This is Session 1&#x27;s <code>awk</code> pattern applied to a real task:</p>
-<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; $2==&quot;PACBIO_SMRT&quot; {print $1}&#x27; runs.tsv &gt; ids.csv
+<h3 id="4-2-extract-one-run-per-platform">4.2 Extract One Run Per Platform</h3>
+<p>This project sequenced the same yeast genome on four different platforms. That is unusual and useful: next week you will compare QC output across all four, and any difference you see is the platform rather than the sample.</p>
+<p>You want one run from each platform, not all five. Session 1&#x27;s <code>awk</code> does it:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; !seen[$2]++ {print $1}&#x27; runs.tsv &gt; ids.csv
 cat ids.csv</code></pre>
 <p>Expected:</p>
-<pre class="lab-code"><code class=" language-text">SRR18210286</code></pre>
-<p><code>ids.csv</code> should contain one run accession per line, with no header and no commas.</p>
-<p><strong>Question 5.</strong> Compute the coverage for this run assuming a 12.1 Mb genome. Is it more than you need?</p>
+<pre class="lab-code"><code class=" language-text">SRR27956204
+SRR18210286
+SRR17374239
+SRR17374240</code></pre>
+<p><strong>Question 2.</strong> <code>!seen[$2]++</code> is doing the work. Explain what it does.</p>
 <details>
 <summary>Answer</summary>
-<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$2==&quot;PACBIO_SMRT&quot; {printf &quot;%.0fx\n&quot;, $5/12100000}&#x27; runs.tsv</code></pre>
-<p>The result is hundreds of times coverage. HiFi assembly is usually comfortable at roughly 20-30x because the reads are long and accurate, so this dataset will be subsampled before assembly.</p>
+<p><code>seen</code> is an array indexed by column 2, the platform name. <code>seen[$2]++</code> returns the current count for that platform and <em>then</em> increments it.</p>
+<p>The first time a platform appears the count is 0, which is false, so <code>!</code> makes it true and the line prints. Every later line for that platform returns 1 or more, which is true, so <code>!</code> makes it false and the line is skipped.</p>
+<p>The result is the first run of each platform. It is a very common idiom for deduplicating on a field, and it needs no <code>sort</code>.</p>
+</details>
+<p><code>ids.csv</code> should contain one run accession per line, with no header and no commas.</p>
+<p><strong>Question 3.</strong> Work out the coverage each of these runs gives, for a 12.1 Mb genome, and the total you are about to download.</p>
+<details>
+<summary>Answer</summary>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; !seen[$2]++ {
+  printf &quot;%-13s %-16s %6.0fx  %5.1f Gbp\n&quot;, $1, $2, $5/12100000, $5/1e9
+  t += $5
+} END { printf &quot;\nTOTAL %.1f Gbp, roughly %.0f GB once gzipped\n&quot;, t/1e9, t*0.35/1e9 }&#x27; runs.tsv</code></pre>
+<p>Every run is enormously oversequenced for a 12 Mb genome — hundreds of times coverage. That is normal for deposited data and it is why you will subsample before doing anything with it. Nobody needs 1,100x to run FastQC, and nobody needs more than about 30x to assemble HiFi reads.</p>
+<p>About 11 GB in total. That is why this is a batch job and not something you watch.</p>
 </details>
 <h3 id="4-3-test-the-pipeline-first">4.3 Test the Pipeline First</h3>
 <pre class="lab-code"><code class=" language-bash">nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity --outdir test_out</code></pre>
@@ -220,7 +228,7 @@ cat ids.csv</code></pre>
 <p>The test output is disposable, and it has already done its job by warming the container cache:</p>
 <pre class="lab-code"><code class=" language-bash">rm -rf test_out</code></pre>
 <h3 id="4-4-submit-the-real-download-as-a-job">4.4 Submit the Real Download as a Job</h3>
-<p>Do not run the real download interactively. It is large enough to take longer than your session.</p>
+<p>Do not run the real download interactively. Four runs is roughly 11 GB and will take hours, which is longer than your session and longer than your patience.</p>
 <pre class="lab-code"><code class=" language-bash">mkdir -p logs
 
 cat &gt; fetch_job.sh &lt;&lt;&#x27;EOF&#x27;
@@ -229,7 +237,7 @@ cat &gt; fetch_job.sh &lt;&lt;&#x27;EOF&#x27;
 #SBATCH --partition=batch
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
@@ -256,28 +264,14 @@ cat fetch_job.sh
 sbatch fetch_job.sh
 squeue -u &quot;$USER&quot;</code></pre>
 <p>Three details in that script are worth understanding rather than copying.</p>
-<p>The heredoc delimiter is quoted: <code>&amp;lt;&amp;lt;&amp;#x27;EOF&amp;#x27;</code>. That writes the file exactly as you see it above, leaving every <code>$VARIABLE</code> to be resolved when the job runs.</p>
-<p><code>COURSE</code> and <code>MYWORK</code> are therefore defined <em>inside</em> the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.</p>
+<p>The heredoc delimiter is quoted, as shown on the <code>cat</code> line above. That writes the file exactly as you see it, leaving every variable to be resolved when the job runs.</p>
+<p><code>COURSE</code> and <code>MYWORK</code> are therefore defined <em>inside</em> the script. This is Question 1 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.</p>
 <p><code>set -euo pipefail</code> makes the job stop at the first failure. Without it, a failed <code>mkdir</code> would not stop anything, and you would get a confusing container error several minutes later instead of a clear permissions error immediately.</p>
-<p><strong>Question 6.</strong> Run <code>cat fetch_job.sh</code>. What would have changed if the delimiter had been unquoted, as <code>&amp;lt;&amp;lt;EOF</code>?</p>
-<details>
-<summary>Answer</summary>
-<p>Two things, and both are easy to miss.</p>
-<p>Every <code>$VARIABLE</code> would have been replaced by its value on the node where you typed the command, so the script would carry one fixed path instead of resolving <code>$HOME</code> wherever the job actually runs.</p>
-<p>And backslash-newline would have been treated as a line continuation for the heredoc itself, collapsing the entire <code>nextflow run</code> command onto a single line. The command would still work, but the file would not look like the one above.</p>
-<p>Quote the delimiter whenever you want the file to contain exactly what you typed.</p>
-</details>
-<p><strong>Question 7.</strong> Why ask for twelve hours of wall time for a download, and why include <code>-resume</code>?</p>
-<details>
-<summary>Answer</summary>
-<p>Public archives can be unpredictable, especially if many students start downloads at once. Generous wall time ends early if the job finishes early; wall time that is too short kills a job near the end.</p>
-<p><code>-resume</code> lets a failed or interrupted Nextflow run reuse completed work instead of starting over.</p>
-</details>
 <h3 id="4-5-check-after-class">4.5 Check After Class</h3>
-<p>Replace <code>&amp;lt;jobid&amp;gt;</code> with your job ID.</p>
+<p>Replace JOBID below with your own job ID.</p>
 <pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-01/session-02/fetch&quot;
 squeue -u &quot;$USER&quot;
-seff &lt;jobid&gt;
+seff JOBID
 tail -20 logs/fetchngs_*.out
 tail -20 logs/fetchngs_*.err</code></pre>
 <p>When the job completes:</p>
@@ -286,20 +280,35 @@ ls -lh results/fastq/
 awk -F, &#x27;{ for (i=1; i&lt;=6 &amp;&amp; i&lt;=NF; i++) printf &quot;%-20s&quot;, $i; print &quot;&quot; }&#x27; \
   results/samplesheet/samplesheet.csv | head</code></pre>
 <p>Expected result directories:</p>
-<pre class="lab-code"><code class=" language-text">fastq/          HiFi reads used later in the course
+<pre class="lab-code"><code class=" language-text">fastq/          the reads, one or two files per run
 samplesheet/    samplesheet.csv
 metadata/       ENA metadata
 pipeline_info/  execution reports, timeline, and software versions</code></pre>
+<p>You should have six FASTQ files from four runs: the two paired-end runs give <code>_1</code> and <code>_2</code>, and the two long-read runs give one file each.</p>
 <h3 id="4-6-verify-the-download">4.6 Verify the Download</h3>
 <pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-01/session-02/fetch/results/fastq&quot;
+
 for f in *.fastq.gz; do
-  gzip -t &quot;$f&quot; &amp;&amp; echo &quot;OK $f&quot; || echo &quot;FAIL $f&quot;
+  gzip -t &quot;$f&quot; &amp;&amp; echo &quot;OK   $f&quot; || echo &quot;FAIL $f&quot;
+done</code></pre>
+<p>Every file must pass. Now count the reads in each, and compare against what ENA claimed:</p>
+<pre class="lab-code"><code class=" language-bash">for f in *.fastq.gz; do
+  n=$(zcat &quot;$f&quot; | awk &#x27;NR % 4 == 1&#x27; | wc -l)
+  printf &quot;%-30s %12d reads\n&quot; &quot;$f&quot; &quot;$n&quot;
 done
 
-zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
-<p>Compare the read count with the <code>read_count</code> column in <code>../../runs.tsv</code>.</p>
+awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; !seen[$2]++ {printf &quot;%-13s %-16s %12d reads (ENA)\n&quot;, $1, $2, $4}&#x27; ../../runs.tsv</code></pre>
+<p>For the paired runs the two mates should have identical counts, and each should match the ENA figure. For the single-end runs the one file should match directly.</p>
 <p>Counting header lines rather than dividing the line count by four is deliberate. A truncated file gives a line count that is not a multiple of four, so dividing returns a plausible wrong number with no warning.</p>
-<p><strong>Checkpoint 3.</strong> You have a fetchngs job ID, and you know how to check whether the download succeeded.</p>
+<p><strong>Question 4.</strong> Look at the read counts and the file sizes together. Which platform produced the fewest reads, and why is that not a sign that anything went wrong?</p>
+<details>
+<summary>Answer</summary>
+<p>The long-read platforms, by a wide margin. PacBio produced a few hundred thousand reads where Illumina produced tens of millions.</p>
+<p>Read <em>count</em> and sequence <em>yield</em> are different things. A nanopore read averaging well over 10 kb carries as much sequence as a hundred Illumina reads. Comparing platforms on read count alone is meaningless; compare total bases, which is what you did in Question 4.</p>
+<p>This is the distinction next week&#x27;s QC session is built on.</p>
+</details>
+<p><strong>Checkpoint 3.</strong> You have a fetchngs job ID, six FASTQ files, and read counts that match what ENA reported.</p>
+<blockquote><strong>Do not delete these.</strong> Week 2 runs QC on all four platforms and Week 3 assembles the PacBio run. If you need the space back later, the subsampled copies you make next week are the ones to keep.</blockquote>
 <h2 id="if-your-job-fails">If Your Job Fails</h2>
 <p>In order:</p>
 <ol>
@@ -309,69 +318,35 @@ zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
 <li>Ask for help with the exact error message.</li>
 </ol>
 <p>Two failures are common enough to name.</p>
-<p><strong>Out of disk space.</strong> The <code>sratools</code> download method writes large temporary files while converting, often several times the size of the final FASTQ. Check the filesystem with <code>df -h .</code> and your own usage with <code>du -sh &amp;quot;$MYWORK&amp;quot;</code>.</p>
+<p><strong>Out of disk space.</strong> The <code>sratools</code> download method writes large temporary files while converting, often several times the size of the final FASTQ. Check the filesystem with <code>df -h .</code>, and your own usage with a <code>du -sh</code> on your work directory.</p>
 <p><strong>Permission denied on the container cache.</strong> If <code>NXF_SINGULARITY_CACHEDIR</code> points somewhere you cannot write, Singularity fails while pulling images. Confirm the directory exists and is yours:</p>
 <pre class="lab-code"><code class=" language-bash">ls -ld &quot;$MYWORK/.singularity_cache&quot;</code></pre>
 <p>If it does not exist and you cannot create it, ask the instructor — your directory under the course path has to be set up for you.</p>
 <p>A failed download is normal. Not noticing that it failed is the problem.</p>
 <h2 id="takeaways">Takeaways</h2>
-<div class="table-wrap"><table>
-<thead><tr>
-<th>Task</th>
-<th>Command</th>
-</tr></thead>
-<tbody>
-<tr>
-<td>Work in the right place</td>
-<td><code>$COURSE/$USER</code>, never your home directory</td>
-</tr>
-<tr>
-<td>Request a compute node</td>
-<td><code>srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash</code></td>
-</tr>
-<tr>
-<td>Submit and watch</td>
-<td><code>sbatch script.sh</code>, <code>squeue -u &amp;quot;$USER&amp;quot;</code></td>
-</tr>
-<tr>
-<td>Check resource use</td>
-<td><code>seff &amp;lt;jobid&amp;gt;</code></td>
-</tr>
-<tr>
-<td>Create an environment</td>
-<td><code>conda create -n env -c conda-forge -c bioconda tool=version</code></td>
-</tr>
-<tr>
-<td>Record an environment</td>
-<td><code>conda env export --from-history &amp;gt; environment.yml</code></td>
-</tr>
-<tr>
-<td>Query ENA runs</td>
-<td>ENA portal API with <code>result=read_run</code></td>
-</tr>
-<tr>
-<td>Filter to one platform</td>
-<td><code>awk -F&amp;#x27;\t&amp;#x27; &amp;#x27;NR&amp;gt;1 &amp;amp;&amp;amp; $2==&amp;quot;PACBIO_SMRT&amp;quot; {print $1}&amp;#x27; runs.tsv</code></td>
-</tr>
-<tr>
-<td>Test a pipeline</td>
-<td><code>nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity</code></td>
-</tr>
-<tr>
-<td>Write a script literally</td>
-<td><code>cat &amp;gt; job.sh &amp;lt;&amp;lt;&amp;#x27;EOF&amp;#x27;</code> with the delimiter quoted</td>
-</tr>
-<tr>
-<td>Fetch data properly</td>
-<td>Submit <code>nf-core/fetchngs</code> as a batch job</td>
-</tr>
-<tr>
-<td>Verify FASTQ files</td>
-<td><code>gzip -t</code>, then count FASTQ records</td>
-</tr>
-</tbody>
-</table></div>
-<p>Five habits will save you time this semester:</p>
+<p>Get a compute node, then submit real work to the scheduler:</p>
+<pre class="lab-code"><code class=" language-bash">srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash
+sbatch script.sh
+squeue -u &quot;$USER&quot;
+seff JOBID</code></pre>
+<p>Build an environment and record it so it can be rebuilt:</p>
+<pre class="lab-code"><code class=" language-bash">module load miniforge
+conda create -n env -c conda-forge -c bioconda tool=version
+conda env export --from-history &gt; environment.yml</code></pre>
+<p>Query ENA, then keep the first run of each platform:</p>
+<pre class="lab-code"><code class=" language-bash">curl -sS --fail &quot;${ENA_API}?accession=${PROJECT}&amp;result=read_run&amp;fields=${FIELDS}&amp;format=tsv&quot; -o runs.tsv
+awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; !seen[$2]++ {print $1}&#x27; runs.tsv &gt; ids.csv</code></pre>
+<p>Test a pipeline before trusting it, then submit the real run as a job:</p>
+<pre class="lab-code"><code class=" language-bash">nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity --outdir test_out
+sbatch fetch_job.sh</code></pre>
+<p>Write a script literally by quoting the heredoc delimiter:</p>
+<pre class="lab-code"><code class=" language-bash">cat &gt; job.sh &lt;&lt;&#x27;EOF&#x27;
+...
+EOF</code></pre>
+<p>Verify what you downloaded:</p>
+<pre class="lab-code"><code class=" language-bash">gzip -t file.fastq.gz
+zcat file.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
+<p>Six habits will save you time this semester:</p>
 <ol>
 <li>Batch jobs do not inherit your interactive shell setup.</li>
 <li>Create log directories before submitting jobs.</li>
@@ -380,8 +355,6 @@ zcat *.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
 <li>Put long jobs in the scheduler, not in an interactive terminal.</li>
 <li>Keep everything under <code>$MYWORK</code>. Home directory quotas are small and sequencing data is not.</li>
 </ol>
-<h2 id="homework-connection">Homework Connection</h2>
-<p>Homework 1 extends this lab. You will query ENA for a second project, fetch RNA-seq data with the same pipeline, verify it, and record the whole thing in the Git repository you created in Session 1 — which also lives under <code>$MYWORK</code>.</p>
         </article>
       </div>
     </main>

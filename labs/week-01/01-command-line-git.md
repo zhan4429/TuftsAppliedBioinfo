@@ -110,7 +110,7 @@ wc -l anno.gff3
 
 Press `q` to leave `less`.
 
-Lines starting with `#` are header comments, not data. Compare these counts:
+Lines starting with `#` are not data. Most are the `###` separators Ensembl writes after each gene, not headers. Compare these counts:
 
 ```bash
 grep -c '' anno.gff3       # count every line
@@ -136,6 +136,7 @@ grep -v '^#' anno.gff3 | cut -f3 | sort | head
 grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c
 grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c | sort -rn
 ```
+
 - cut -f3 — pull out the one column you want to count
 - sort — bring identical values next to each other
 - uniq -c — collapse the runs and count them
@@ -163,7 +164,7 @@ The `-F` option sets the field separator to a tab. Use it for GFF3 because the a
 Count genes per chromosome:
 
 ```bash
-awk -F'\t' '$3 == "gene"' anno.gff3 | cut -f1 | sort | uniq -c | sort -rn 
+awk -F'\t' '$3 == "gene"' anno.gff3 | cut -f1 | sort | uniq -c | sort -rn
 ```
 
 ### 2.5 `awk`: Do Arithmetic Across Lines
@@ -244,7 +245,7 @@ introns, short intergenic regions, and almost no repetitive DNA. It is a compact
 under selection for fast replication.
 
 Human exons cover only a few percent of the genome. The difference is not that humans have
-fewer genes — the counts are within a factor of three — but that human genes are spread
+fewer genes but that human genes are spread
 across far more space, with large introns, extensive regulatory regions, and roughly half
 the genome made of repetitive elements.
 
@@ -261,15 +262,7 @@ several annotated transcripts, their shared exons are counted once per transcrip
 total is inflated.
 
 In yeast that barely matters, because alternative splicing is rare. In human it matters a
-great deal. The correct approach there is to merge overlapping intervals first:
-
-```bash
-awk -F'\t' '$3=="exon" {print $1"\t"$4-1"\t"$5}' anno.gff3 | sort -k1,1 -k2,2n | bedtools merge
-```
-
-Note the `$4-1`, which converts from 1-based GFF3 to 0-based BED on the way out. The same
-convention problem, in the other direction.
-
+great deal.
 </details>
 
 ### 2.6 `sed`: Make a Targeted Substitution
@@ -307,7 +300,27 @@ head -3 anno_chr.gff3
 grep -v '^#' anno_chr.gff3 | cut -f1 | sort -u
 ```
 
-The `/^#/!` prefix means: on lines that do **not** match a leading hash. Confirm two things: the headers survived, and every sequence name gained its prefix.
+The script has two parts, an address and a command:
+
+```text
+/^#/        address   lines that start with #
+    !       negate    ... that do NOT match
+     s/^/chr/         substitute: replace the start of the line with chr
+```
+
+`sed` reads one line at a time and runs the command only where the address matches. Here
+the `!` inverts it, so header lines and `###` separators pass through untouched while data
+lines gain their prefix.
+
+Replacing `^` with text looks odd, because `^` matches a position rather than a character.
+That is how you prepend: find the start of the line, put something there. Using `$` instead
+would append to the end.
+
+Note the output goes to a **new** file. `sed` streams to standard output and never edits the
+input, so redirecting back onto `anno.gff3` would have emptied it before `sed` read a byte of it.
+
+Confirm two things: the headers survived, and every sequence name gained its prefix.
+
 
 **Question 7.** Your `sort -u` output puts `IX` between `IV` and `Mito`, and `V` after `Mito`. Why, and does it matter here?
 
@@ -338,8 +351,8 @@ git config --list | head
 ### 3.2 Create a Repository
 
 ```bash
-mkdir -p ~/appbio/hw
-cd ~/appbio/hw
+mkdir -p $COURSE/$USER/hw ## ToDO
+cd $COURSE/$USER/hw
 git init
 git status
 ```

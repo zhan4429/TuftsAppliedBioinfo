@@ -262,6 +262,10 @@ def page_template(title: str, meta: str, body: str, toc: list[tuple[int, str, st
     tutorials_href = prefixed(prefix, "index.html#tutorials")
     favicon_href = prefixed(prefix, "assets/favicon.svg")
     styles_href = prefixed(prefix, "styles.css")
+    code_copy_href = prefixed(prefix, "assets/lab-code-copy.js")
+    output_path = Path(page["output"])
+    is_lab_page = output_path.relative_to(DOCS).parts[0] == "labs"
+    code_copy_script = f'\n    <script src="{code_copy_href}" defer></script>' if is_lab_page else ""
     toc_items = "\n".join(
         f'<a class="toc-level-{level}" href="#{anchor}">{html.escape(text)}</a>'
         for level, text, anchor in toc
@@ -275,7 +279,7 @@ def page_template(title: str, meta: str, body: str, toc: list[tuple[int, str, st
     <meta name="description" content="{html.escape(title)} for Applied Bioinformatics.">
     <title>{html.escape(title)} | Applied Bioinformatics</title>
     <link rel="icon" href="{favicon_href}" type="image/svg+xml">
-    <link rel="stylesheet" href="{styles_href}">
+    <link rel="stylesheet" href="{styles_href}">{code_copy_script}
   </head>
   <body class="lab-page">
     <a class="skip-link" href="#main">Skip to main content</a>

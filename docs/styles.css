@@ -507,6 +507,56 @@ pre {
   color: #e8fff7;
 }
 
+.lab-code-block {
+  position: relative;
+  margin: 1rem 0;
+}
+
+.lab-code-block .lab-code {
+  margin: 0;
+  padding-top: 2.8rem;
+}
+
+.lab-code-copy {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(232, 255, 247, 0.28);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e8fff7;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.lab-code-copy:hover,
+.lab-code-copy:focus-visible {
+  background: rgba(232, 255, 247, 0.16);
+  border-color: rgba(232, 255, 247, 0.55);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.lab-code-copy.is-copied {
+  background: #e8fff7;
+  border-color: #e8fff7;
+  color: var(--teal-dark);
+}
+
+.lab-code-copy svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .lab-article pre code {
   display: block;
   min-width: max-content;
