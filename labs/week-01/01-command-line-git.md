@@ -136,6 +136,10 @@ grep -v '^#' anno.gff3 | cut -f3 | sort | head
 grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c
 grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c | sort -rn
 ```
+- cut -f3 — pull out the one column you want to count
+- sort — bring identical values next to each other
+- uniq -c — collapse the runs and count them
+- sort -rn — put the biggest counts first
 
 **Question 3.** Remove the `sort` before `uniq -c` and run the command again. What happens, and why?
 
@@ -156,30 +160,115 @@ awk -F'\t' '$3 == "gene"' anno.gff3 | wc -l
 
 The `-F` option sets the field separator to a tab. Use it for GFF3 because the attributes column can contain spaces.
 
-Count genes per sequence:
+Count genes per chromosome:
 
 ```bash
-awk -F'\t' '$3 == "gene"' anno.gff3 | cut -f1 | sort | uniq -c | sort -rn | head -5
+awk -F'\t' '$3 == "gene"' anno.gff3 | cut -f1 | sort | uniq -c | sort -rn 
 ```
 
 ### 2.5 `awk`: Do Arithmetic Across Lines
 
-Columns 4 and 5 are start and end.
+So far `awk` has been filtering lines. It can also accumulate a running total as it reads,
+which is how you answer questions about quantity rather than count.
+
+Columns 4 and 5 are the start and end coordinates of each feature. This adds up the length
+of every exon in the file:
 
 ```bash
 awk -F'\t' '$3 == "exon" { s += $5 - $4 + 1 } END { print s }' anno.gff3
 ```
 
-**Question 4.** Why is there a `+ 1`? Try the command without it and see how much the answer changes.
+Four things are happening:
+
+```text
+-F'\t'                 split each line on tabs
+$3 == "exon"           only act on rows where column 3 is exon
+{ s += $5 - $4 + 1 }   add this exon's length to a running total called s
+END { print s }        after the last line, print the total once
+```
+
+`awk` creates `s` the first time you use it and starts it at zero, so there is nothing to
+declare. The block in braces runs once per matching line; the `END` block runs once, at the
+very end.
+
+**Question 4.** Why is there a `+ 1`? Run the command without it and see how much the
+answer changes.
 
 <details>
 <summary>Answer</summary>
 
-GFF3 coordinates are 1-based and inclusive. A feature from 100 to 110 covers eleven bases, not ten.
+GFF3 coordinates are **1-based and inclusive**: the first base of a sequence is base 1, and
+both the start and end coordinates are part of the feature. A feature from 100 to 110
+therefore covers eleven bases, not ten.
 
-BED format is different: it is 0-based and half-open, so the same region would be written 99 to 110 and its length really is `end - start`. Mixing coordinate conventions is one of the most common silent errors in genomics.
+BED format is different. It is **0-based and half-open**, so the same region is written
+99 to 110 and its length really is `end - start`, with no `+ 1`.
 
-The size of the difference tells you something too: it equals the number of exon features, because you dropped exactly one base from each.
+Drop the `+ 1` and your total is short by exactly one base per exon. With roughly 7,500
+exons in this file that is about 7,500 bases missing — a small enough error to look
+entirely plausible, which is what makes it dangerous.
+
+The difference between the two answers is the exon count. Try it:
+
+```bash
+awk -F'\t' '$3 == "exon" { s += $5 - $4 + 1 } END { print s }' anno.gff3
+awk -F'\t' '$3 == "exon" { s += $5 - $4 }     END { print s }' anno.gff3
+awk -F'\t' '$3 == "exon"' anno.gff3 | wc -l
+```
+
+Mixing coordinate conventions is one of the most common silent errors in genomics, and it
+never produces an error message.
+
+</details>
+
+### How much of this genome is transcribed?
+
+A total number of bases is hard to interpret on its own. Divide it by the genome size and
+it becomes a proportion you can reason about. The yeast genome is about 12.1 Mb:
+
+```bash
+awk -F'\t' '$3 == "exon" { s += $5 - $4 + 1 } END { printf "%.1f%% of the genome\n", 100*s/12100000 }' anno.gff3
+```
+
+`printf` works as it does in C: `%.1f` prints a number to one decimal place, and `%%`
+prints a literal percent sign.
+
+**Question 5.** You should get a strikingly high number. What would the same calculation
+give for the human genome, and why?
+
+<details>
+<summary>Answer</summary>
+
+Yeast comes out around 70%. Most of its genome is transcribed, because it has very few
+introns, short intergenic regions, and almost no repetitive DNA. It is a compact genome
+under selection for fast replication.
+
+Human exons cover only a few percent of the genome. The difference is not that humans have
+fewer genes — the counts are within a factor of three — but that human genes are spread
+across far more space, with large introns, extensive regulatory regions, and roughly half
+the genome made of repetitive elements.
+
+This is why a gene-density figure tells you more about genome architecture than a gene
+count does, and it is worth knowing before you interpret any coverage statistic.
+
+</details>
+
+<details>
+<summary>One caveat worth knowing</summary>
+
+This sums exon lengths; it does not measure distinct exonic positions. Where a gene has
+several annotated transcripts, their shared exons are counted once per transcript, so the
+total is inflated.
+
+In yeast that barely matters, because alternative splicing is rare. In human it matters a
+great deal. The correct approach there is to merge overlapping intervals first:
+
+```bash
+awk -F'\t' '$3=="exon" {print $1"\t"$4-1"\t"$5}' anno.gff3 | sort -k1,1 -k2,2n | bedtools merge
+```
+
+Note the `$4-1`, which converts from 1-based GFF3 to 0-based BED on the way out. The same
+convention problem, in the other direction.
 
 </details>
 
@@ -199,7 +288,7 @@ Now try the obvious fix, and look carefully at what it did:
 sed 's/^/chr/' anno.gff3 | head -3
 ```
 
-**Question 5.** Look at the first three lines of that output. What did you just break?
+**Question 6.** Look at the first three lines of that output. What did you just break?
 
 <details>
 <summary>Answer</summary>
@@ -220,7 +309,7 @@ grep -v '^#' anno_chr.gff3 | cut -f1 | sort -u
 
 The `/^#/!` prefix means: on lines that do **not** match a leading hash. Confirm two things: the headers survived, and every sequence name gained its prefix.
 
-**Question 6.** Your `sort -u` output puts `IX` between `IV` and `Mito`, and `V` after `Mito`. Why, and does it matter here?
+**Question 7.** Your `sort -u` output puts `IX` between `IV` and `Mito`, and `V` after `Mito`. Why, and does it matter here?
 
 <details>
 <summary>Answer</summary>
@@ -347,7 +436,7 @@ git status
 rm bigfile.fastq.gz
 ```
 
-**Question 7.** Write a commit message for "I fixed the awk command that was counting exons wrong." What makes it better than `fixed bug`?
+**Question 8.** Write a commit message for "I fixed the awk command that was counting exons wrong." What makes it better than `fixed bug`?
 
 <details>
 <summary>Answer</summary>
