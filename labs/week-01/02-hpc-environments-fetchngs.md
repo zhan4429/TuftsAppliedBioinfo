@@ -35,10 +35,6 @@ Three paths, and you will use all of them every week:
 quota that sequencing data will exhaust immediately, and the course allocation is where
 the instructor can see and help with your work.
 
-If your instructor gives a different course path, change only `COURSE`. If `$MYWORK`
-does not exist and you cannot create it, stop and ask — your directory has to be set up
-for you.
-
 ## Part 1: Get Off the Login Node
 
 ### 1.1 See Where You Are
@@ -64,19 +60,10 @@ gpu             up 2-00:00:00       14/12/1/27 pax[003,007-011,020-026,049-052,0
 preempt         up 2-00:00:00     65/71/33/169 pax[001-002,004-006,012-019,027-048,053-062,064-075,077-104,107-141,145-183,188-197]
 ```
 
-<details>
-<summary>Answer</summary>
-
-Use `interactive` for a 3-hour debugging session. Use `batch` or another instructor-approved long-running partition for a 5-day assembly.
-
-`preempt` can provide more access, but the job can be interrupted by higher-priority work. It is useful for short, resumable jobs and risky for long, non-resumable jobs.
-
-</details>
-
 ### 1.3 Request a Compute Node
 
 ```bash
-srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash
+srun --pty -p batch -n 2 --mem=8g --time=0-01:30:00 bash
 hostname
 ```
 
@@ -129,7 +116,7 @@ sbatch count_job.sh
 squeue -u "$USER"
 ```
 
-The `cat` is not decoration. Read the file and confirm the `export` line landed *before* the `grep` line that needs it.
+The `cat` is not decoration. Read the file and confirm the `export` line landed _before_ the `grep` line that needs it.
 
 ### 2.3 Read the Result and the Cost
 
@@ -180,10 +167,16 @@ somebody else rebuild what you had:
 conda env create -f environment.yml
 ```
 
-Pin the version once you know which one you want, so the file describes something exact:
+If you want to see what is available in the channels, search for a package:
 
 ```bash
-conda search -c conda-forge -c bioconda seqkit | tail -5
+conda search -c bioconda seqkit
+```
+
+We will not use this environment for the rest of the lab, so deactivate it:
+
+```bash
+conda deactivate
 ```
 
 ### 3.2 Nextflow and Containers for Pipelines
@@ -194,12 +187,12 @@ You are about to test a real pipeline. Nextflow manages the workflow, and contai
 module load nextflow
 nextflow -version
 
-module load singularity 2>/dev/null || module load apptainer
-singularity --version 2>/dev/null || apptainer --version
+module load singularity
+singularity --version
 ```
 
 Conda and containers both provide software, but they are not equally reproducible. A
-conda environment is *solved* at install time against channels that keep moving, so
+conda environment is _solved_ at install time against channels that keep moving, so
 rebuilding the same specification in two years can give you different versions. A
 container is a fixed filesystem image pinned by tag or digest, identical whenever you
 pull it.
@@ -253,59 +246,54 @@ SRR18210286     PACBIO_SMRT           SINGLE           ...
 SRR17374240     OXFORD_NANOPORE       SINGLE           ...
 ```
 
-### 4.2 Extract One Run Per Platform
+### 4.2 Choose One Run Per Platform
 
 This project sequenced the same yeast genome on four different platforms. That is unusual
 and useful: next week you will compare QC output across all four, and any difference you
 see is the platform rather than the sample.
 
-You want one run from each platform, not all five. Session 1's `awk` does it:
+Look at your table again. There are five runs but only four platforms, because the study
+includes two Illumina runs. You want one run from each platform.
+
+Write the four accessions into the file fetchngs expects:
 
 ```bash
-awk -F'\t' 'NR>1 && !seen[$2]++ {print $1}' runs.tsv > ids.csv
-cat ids.csv
-```
-
-Expected:
-
-```text
+cat > ids.csv <<'EOF'
 SRR27956204
 SRR18210286
 SRR17374239
 SRR17374240
+EOF
+
+cat ids.csv
 ```
 
-**Question 2.** `!seen[$2]++` is doing the work. Explain what it does.
+One run accession per line, no header, no commas. That is the whole format.
 
-<details>
-<summary>Answer</summary>
+Which platform each one is:
 
-`seen` is an array indexed by column 2, the platform name. `seen[$2]++` returns the
-current count for that platform and *then* increments it.
+```text
+SRR27956204   Illumina          paired-end short reads
+SRR18210286   PacBio HiFi       long and accurate
+SRR17374239   BGISEQ            a second short-read technology
+SRR17374240   Oxford Nanopore   long, less accurate
+```
 
-The first time a platform appears the count is 0, which is false, so `!` makes it true
-and the line prints. Every later line for that platform returns 1 or more, which is true,
-so `!` makes it false and the line is skipped.
-
-The result is the first run of each platform. It is a very common idiom for
-deduplicating on a field, and it needs no `sort`.
-
-</details>
-
-`ids.csv` should contain one run accession per line, with no header and no commas.
-
-**Question 3.** Work out the coverage each of these runs gives, for a 12.1 Mb genome, and
+**Question 2.** Work out the coverage each of these runs gives, for a 12.1 Mb genome, and
 the total you are about to download.
 
 <details>
 <summary>Answer</summary>
 
 ```bash
-awk -F'\t' 'NR>1 && !seen[$2]++ {
+grep -f ids.csv runs.tsv | awk -F'\t' '{
   printf "%-13s %-16s %6.0fx  %5.1f Gbp\n", $1, $2, $5/12100000, $5/1e9
   t += $5
-} END { printf "\nTOTAL %.1f Gbp, roughly %.0f GB once gzipped\n", t/1e9, t*0.35/1e9 }' runs.tsv
+} END { printf "\nTOTAL %.1f Gbp, roughly %.0f GB once gzipped\n", t/1e9, t*0.35/1e9 }'
 ```
+
+`grep -f ids.csv` keeps only the rows whose accession appears in your list, so the totals
+describe what you are actually fetching.
 
 Every run is enormously oversequenced for a 12 Mb genome — hundreds of times coverage.
 That is normal for deposited data and it is why you will subsample before doing anything
@@ -377,7 +365,7 @@ Three details in that script are worth understanding rather than copying.
 
 The heredoc delimiter is quoted, as shown on the `cat` line above. That writes the file exactly as you see it, leaving every variable to be resolved when the job runs.
 
-`COURSE` and `MYWORK` are therefore defined *inside* the script. This is Question 1 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
+`COURSE` and `MYWORK` are therefore defined _inside_ the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
 
 `set -euo pipefail` makes the job stop at the first failure. Without it, a failed `mkdir` would not stop anything, and you would get a confusing container error several minutes later instead of a clear permissions error immediately.
 
@@ -432,7 +420,7 @@ for f in *.fastq.gz; do
   printf "%-30s %12d reads\n" "$f" "$n"
 done
 
-awk -F'\t' 'NR>1 && !seen[$2]++ {printf "%-13s %-16s %12d reads (ENA)\n", $1, $2, $4}' ../../runs.tsv
+grep -f ../../ids.csv ../../runs.tsv | awk -F'\t' '{printf "%-13s %-16s %12d reads (ENA)\n", $1, $2, $4}'
 ```
 
 For the paired runs the two mates should have identical counts, and each should match the
@@ -442,7 +430,7 @@ Counting header lines rather than dividing the line count by four is deliberate.
 truncated file gives a line count that is not a multiple of four, so dividing returns a
 plausible wrong number with no warning.
 
-**Question 4.** Look at the read counts and the file sizes together. Which platform
+**Question 3.** Look at the read counts and the file sizes together. Which platform
 produced the fewest reads, and why is that not a sign that anything went wrong?
 
 <details>
@@ -451,7 +439,7 @@ produced the fewest reads, and why is that not a sign that anything went wrong?
 The long-read platforms, by a wide margin. PacBio produced a few hundred thousand reads
 where Illumina produced tens of millions.
 
-Read *count* and sequence *yield* are different things. A nanopore read averaging well
+Read _count_ and sequence _yield_ are different things. A nanopore read averaging well
 over 10 kb carries as much sequence as a hundred Illumina reads. Comparing platforms on
 read count alone is meaningless; compare total bases, which is what you did in Question 4.
 
@@ -491,7 +479,7 @@ A failed download is normal. Not noticing that it failed is the problem.
 Get a compute node, then submit real work to the scheduler:
 
 ```bash
-srun --pty -p interactive -n 2 --mem=8g --time=0-02:00:00 bash
+srun --pty -p batch -n 2 --mem=8g --time=0-01:30:00 bash
 sbatch script.sh
 squeue -u "$USER"
 seff JOBID
@@ -509,7 +497,10 @@ Query ENA, then keep the first run of each platform:
 
 ```bash
 curl -sS --fail "${ENA_API}?accession=${PROJECT}&result=read_run&fields=${FIELDS}&format=tsv" -o runs.tsv
-awk -F'\t' 'NR>1 && !seen[$2]++ {print $1}' runs.tsv > ids.csv
+cat > ids.csv <<'EOF'      # one accession per line
+SRR27956204
+SRR18210286
+EOF
 ```
 
 Test a pipeline before trusting it, then submit the real run as a job:
