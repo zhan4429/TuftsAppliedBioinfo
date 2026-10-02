@@ -16,7 +16,7 @@ Open a terminal on Pax:
 Set paths and make a work directory:
 
 ```bash
-export COURSE=/cluster/tufts/bio_appbio
+export COURSE=/cluster/tufts/bio_appbio ## ToDo
 export WEEK1_DATA=$COURSE/shared/wk1
 export MYWORK=$COURSE/$USER
 
@@ -376,7 +376,7 @@ cat > fetch_job.sh <<'EOF'
 #!/bin/bash
 #SBATCH --job-name=fetchngs
 #SBATCH --partition=batch
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=6
 #SBATCH --mem=16G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
@@ -387,11 +387,12 @@ set -euo pipefail
 module load nextflow
 module load singularity 2>/dev/null || module load apptainer
 
-export COURSE=/cluster/tufts/bio_appbio
+export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
 export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
 mkdir -p "$NXF_SINGULARITY_CACHEDIR"
 
+cd $MYWORK/week-01/session-02/fetch
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
   -profile singularity \
