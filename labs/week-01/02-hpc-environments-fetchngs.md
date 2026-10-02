@@ -58,15 +58,11 @@ sinfo -s
 You may see partitions such as:
 
 ```text
-PARTITION    AVAIL  TIMELIMIT   NODES(A/I/O/T)
-batch*       up     7-00:00:00  ...
-gpu          up     7-00:00:00  ...
-interactive  up     4:00:00     ...
-largemem     up     7-00:00:00  ...
-preempt      up     7-00:00:00  ...
+PARTITION    AVAIL  TIMELIMIT   NODES(A/I/O/T) NODELIST
+batch*          up 2-00:00:00      46/21/23/90 pax[001-002,004-006,012-019,027-033,035-046,054-061,069,072-075,078-085,107-109,120,145-149,154-171,188-197]
+gpu             up 2-00:00:00       14/12/1/27 pax[003,007-011,020-026,049-052,063,105-106,142-144,184-187]
+preempt         up 2-00:00:00     65/71/33/169 pax[001-002,004-006,012-019,027-048,053-062,064-075,077-104,107-141,145-183,188-197]
 ```
-
-**Question 1.** Which partition is appropriate for a 3-hour debugging session? Which is more appropriate for a 5-day assembly?
 
 <details>
 <summary>Answer</summary>
@@ -113,7 +109,7 @@ EOF
 
 ### 2.2 Spot the Bug Before Submitting
 
-**Question 2.** This job will fail as written. Why?
+**Question 1.** This job will fail as written. Why?
 
 <details>
 <summary>Answer</summary>
@@ -279,7 +275,7 @@ SRR17374239
 SRR17374240
 ```
 
-**Question 3.** `!seen[$2]++` is doing the work. Explain what it does.
+**Question 2.** `!seen[$2]++` is doing the work. Explain what it does.
 
 <details>
 <summary>Answer</summary>
@@ -298,7 +294,7 @@ deduplicating on a field, and it needs no `sort`.
 
 `ids.csv` should contain one run accession per line, with no header and no commas.
 
-**Question 4.** Work out the coverage each of these runs gives, for a 12.1 Mb genome, and
+**Question 3.** Work out the coverage each of these runs gives, for a 12.1 Mb genome, and
 the total you are about to download.
 
 <details>
@@ -381,7 +377,7 @@ Three details in that script are worth understanding rather than copying.
 
 The heredoc delimiter is quoted, as shown on the `cat` line above. That writes the file exactly as you see it, leaving every variable to be resolved when the job runs.
 
-`COURSE` and `MYWORK` are therefore defined *inside* the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
+`COURSE` and `MYWORK` are therefore defined *inside* the script. This is Question 1 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
 
 `set -euo pipefail` makes the job stop at the first failure. Without it, a failed `mkdir` would not stop anything, and you would get a confusing container error several minutes later instead of a clear permissions error immediately.
 
@@ -446,7 +442,7 @@ Counting header lines rather than dividing the line count by four is deliberate.
 truncated file gives a line count that is not a multiple of four, so dividing returns a
 plausible wrong number with no warning.
 
-**Question 5.** Look at the read counts and the file sizes together. Which platform
+**Question 4.** Look at the read counts and the file sizes together. Which platform
 produced the fewest reads, and why is that not a sign that anything went wrong?
 
 <details>
