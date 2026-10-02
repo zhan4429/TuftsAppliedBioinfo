@@ -63,7 +63,7 @@ preempt         up 2-00:00:00     65/71/33/169 pax[001-002,004-006,012-019,027-0
 ### 1.3 Request a Compute Node
 
 ```bash
-srun --pty -p batch -n 2 --mem=8g --time=0-01:30:00 bash
+srun --pty -p batch -n 4 --mem=8g --time=0-01:30:00 bash
 hostname
 ```
 
@@ -376,8 +376,8 @@ cat > fetch_job.sh <<'EOF'
 #!/bin/bash
 #SBATCH --job-name=fetchngs
 #SBATCH --partition=batch
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=8G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
