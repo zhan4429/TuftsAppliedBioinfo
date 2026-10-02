@@ -2,7 +2,7 @@
 
 Applied Bioinformatics - Tufts University Department of Biology
 
-In this lab you will log in to the Pax cluster, orient yourself in the filesystem, inspect a real GFF3 annotation file, practice common Unix text-processing patterns, and create your first Git repository for course work.
+In this lab you will log in to the Tufts HPC cluster, orient yourself in the filesystem, inspect a real GFF3 annotation file, practice common Unix text-processing patterns, and create your first Git repository for course work.
 
 ## Before You Start
 
@@ -24,12 +24,12 @@ You should land in your home directory, with a path like `/cluster/home/your_utl
 
 ## Shared Setup
 
-Set the course data path once. If your instructor gives a different course path, change only the first line.
+We can set up a few environment variables to store the course path we will use repeatedly. This is a common practice in bioinformatics pipelines.
 
 ```bash
 export COURSE=/cluster/tufts/bio_appbio
 export WEEK1_DATA=$COURSE/shared/wk1
-ls -hl "$WEEK1_DATA"
+ls "$WEEK1_DATA"
 ```
 
 Expected file:
@@ -38,7 +38,7 @@ Expected file:
 anno.gff3
 ```
 
-Do not run real software on the login node. The commands in this lab are tiny and safe; Session 2 covers how to request a compute node.
+Do not run real software on the login node. The commands in this lab are tiny and safe; Lab2 will introduce how to request a compute node.
 
 ## Part 1: Where Am I?
 
@@ -53,11 +53,15 @@ ls -lha
 
 **Question 1.** What is the full path to your home directory?
 
+<details>
+<summary>Answer</summary>
+At Tufts HPC, your home directory is `/cluster/home/your_utln`.
+</details>
 ### 1.2 Make a Working Directory
 
 ```bash
-mkdir -p ~/appbio/week-01/session-01
-cd ~/appbio/week-01/session-01
+mkdir -p $COURSE/week-01/session-01
+cd $COURSE/week-01/session-01
 pwd
 ```
 
@@ -72,26 +76,26 @@ cd -                  # return to the previous directory
 pwd
 ```
 
-**Question 2.** If you are in `~/appbio/week-01/session-01`, what does `../..` refer to?
+**Question 2.** If you are in `$COURSE/week-01/session-01`, what does `../..` refer to?
 
 <details>
 <summary>Answer</summary>
 
-`..` is `~/appbio/week-01`, so `../..` is `~/appbio`.
+`..` is `$COURSE/week-01`, so `../..` is `$COURSE`.
 
 </details>
 
 ### 1.4 Link the Data Instead of Copying It
 
 ```bash
-cd ~/appbio/week-01/session-01
+cd $COURSE/week-01/session-01
 ln -sf "$WEEK1_DATA/anno.gff3" .
 ls -la
 ```
 
 The arrow in the listing shows that `anno.gff3` is a symbolic link. You can use the file without making a second copy, which matters when the file is 40 GB instead of 40 KB.
 
-**Checkpoint 1.** You should be in `~/appbio/week-01/session-01` with one symbolic link to `anno.gff3`.
+**Checkpoint 1.** You should be in `$COURSE/week-01/session-01` with one symbolic link to `anno.gff3`.
 
 ## Part 2: Interrogating a Real Annotation File
 
@@ -109,12 +113,10 @@ Press `q` to leave `less`.
 Lines starting with `#` are header comments, not data. Compare these counts:
 
 ```bash
-grep -c '' anno.gff3       # every line
-grep -c '^#' anno.gff3     # header lines
-grep -vc '^#' anno.gff3    # data lines only
+grep -c '' anno.gff3       # count every line
+grep -c '^#' anno.gff3     # headers and ### separators — expect thousands, not five
+grep -vc '^#' anno.gff3    # count data lines only
 ```
-
-**Question 3.** How many header lines does the file have?
 
 ### 2.2 `cut`: Pull Out Columns
 
@@ -135,7 +137,7 @@ grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c
 grep -v '^#' anno.gff3 | cut -f3 | sort | uniq -c | sort -rn
 ```
 
-**Question 4.** Remove the `sort` before `uniq -c` and run the command again. What happens, and why?
+**Question 3.** Remove the `sort` before `uniq -c` and run the command again. What happens, and why?
 
 <details>
 <summary>Answer</summary>
@@ -168,7 +170,7 @@ Columns 4 and 5 are start and end.
 awk -F'\t' '$3 == "exon" { s += $5 - $4 + 1 } END { print s }' anno.gff3
 ```
 
-**Question 5.** Why is there a `+ 1`? Try the command without it and see how much the answer changes.
+**Question 4.** Why is there a `+ 1`? Try the command without it and see how much the answer changes.
 
 <details>
 <summary>Answer</summary>
@@ -197,7 +199,7 @@ Now try the obvious fix, and look carefully at what it did:
 sed 's/^/chr/' anno.gff3 | head -3
 ```
 
-**Question 6.** Look at the first three lines of that output. What did you just break?
+**Question 5.** Look at the first three lines of that output. What did you just break?
 
 <details>
 <summary>Answer</summary>
@@ -218,7 +220,7 @@ grep -v '^#' anno_chr.gff3 | cut -f1 | sort -u
 
 The `/^#/!` prefix means: on lines that do **not** match a leading hash. Confirm two things: the headers survived, and every sequence name gained its prefix.
 
-**Question 7.** Your `sort -u` output puts `IX` between `IV` and `Mito`, and `V` after `Mito`. Why, and does it matter here?
+**Question 6.** Your `sort -u` output puts `IX` between `IV` and `Mito`, and `V` after `Mito`. Why, and does it matter here?
 
 <details>
 <summary>Answer</summary>
@@ -345,7 +347,7 @@ git status
 rm bigfile.fastq.gz
 ```
 
-**Question 8.** Write a commit message for "I fixed the awk command that was counting exons wrong." What makes it better than `fixed bug`?
+**Question 7.** Write a commit message for "I fixed the awk command that was counting exons wrong." What makes it better than `fixed bug`?
 
 <details>
 <summary>Answer</summary>
