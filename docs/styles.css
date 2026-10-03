@@ -572,6 +572,12 @@ pre {
   color: var(--muted);
 }
 
+.lab-article hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
 .lab-article details {
   margin: 1rem 0;
   padding: 1rem;

@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Lab 3B — Annotation, and What Counts as Evidence for Applied Bioinformatics.">
+    <title>Lab 3B — Annotation, and What Counts as Evidence | Applied Bioinformatics</title>
+    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../assets/lab-code-copy.js" defer></script>
+  </head>
+  <body class="lab-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header" id="top">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
+          <span class="brand-mark" aria-hidden="true">AB</span>
+          <span>Applied Bioinformatics</span>
+        </a>
+        <div class="nav-links">
+          <a href="../../index.html#labs">Labs</a>
+          <a href="../../index.html#tutorials">Tutorials</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main class="lab-main" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Page table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to labs</a>
+          <p class="section-kicker">Week 3 Session 2</p>
+          <nav><a class="toc-level-2" href="#before-you-start">Before you start</a>
+<a class="toc-level-2" href="#part-1-submit-the-annotation-then-stop-waiting-for-it-5-minutes">Part 1 — Submit the annotation, then stop waiting for it (5 minutes)</a>
+<a class="toc-level-2" href="#part-2-make-the-evidence-11-minutes">Part 2 — Make the evidence (11 minutes)</a>
+<a class="toc-level-3" href="#2-1-index-the-assembly">2.1 Index the assembly</a>
+<a class="toc-level-3" href="#2-2-align-the-rna-seq">2.2 Align the RNA-seq</a>
+<a class="toc-level-3" href="#2-3-find-the-introns">2.3 Find the introns</a>
+<a class="toc-level-3" href="#2-4-coverage-over-the-assembly">2.4 Coverage over the assembly</a>
+<a class="toc-level-2" href="#part-3-judge-gene-models-against-evidence-10-minutes">Part 3 — Judge gene models against evidence (10 minutes)</a>
+<a class="toc-level-3" href="#3-1-look-at-the-annotation">3.1 Look at the annotation</a>
+<a class="toc-level-3" href="#3-2-how-many-genes-have-evidence">3.2 How many genes have evidence?</a>
+<a class="toc-level-3" href="#3-3-look-at-it">3.3 Look at it</a>
+<a class="toc-level-2" href="#part-4-functional-annotation-and-what-it-is-worth-4-minutes">Part 4 — Functional annotation, and what it is worth (4 minutes)</a>
+<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="section-kicker">Week 3 Session 2</p>
+            <h1>Lab 3B — Annotation, and What Counts as Evidence</h1>
+            <p>You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.</p>
+            <span>Applied Bioinformatics · Week 3, Session 2</span>
+          </header>
+          <p><strong>Time: 30 minutes · Runs alongside the lecture</strong></p>
+<blockquote>You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.</blockquote>
+<hr>
+<h2 id="before-you-start">Before you start</h2>
+<pre class="lab-code"><code class=" language-bash">srun --pty -p interactive -n 8 --mem=32g --time=0-03:00:00 bash
+hostname
+
+export COURSE=/cluster/tufts/bio_appbio/shared/wk3
+export ASM=~/appbio/wk3/assembly/asm.p_ctg.fa
+export RNA=~/appbio/wk3/fetch_rna/results/fastq
+
+mkdir -p ~/appbio/wk3/annot &amp;&amp; cd ~/appbio/wk3/annot
+ls -lh $ASM
+ls -lh $RNA</code></pre>
+<p>Fallbacks if either is missing:</p>
+<pre class="lab-code"><code class=" language-bash">export ASM=$COURSE/fallback_assembly/asm.p_ctg.fa
+export RNA=$COURSE/fallback_rna</code></pre>
+<pre class="lab-code"><code class=" language-bash">module load anaconda
+source activate appbio
+conda install -y -c conda-forge -c bioconda hisat2 samtools agat</code></pre>
+<hr>
+<h2 id="part-1-submit-the-annotation-then-stop-waiting-for-it-5-minutes">Part 1 — Submit the annotation, then stop waiting for it (5 minutes)</h2>
+<p>Structural annotation of a eukaryote is a <strong>project, not a step</strong>. A full BRAKER3 run on this genome takes hours. Submit it now; it will be there for your homework.</p>
+<pre class="lab-code"><code class=" language-bash">mkdir -p logs
+
+cat &gt; annotate.sh &lt;&lt;&#x27;EOF&#x27;
+#!/bin/bash
+#SBATCH --job-name=annotate
+#SBATCH --partition=batch
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=64G
+#SBATCH --time=24:00:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+
+module load singularity
+# Instructor will give you the exact command for the tool we are using.
+# It will be roughly:
+#   singularity exec &lt;braker3.sif&gt; braker.pl \
+#       --genome=asm.p_ctg.fa --bam=rna.sorted.bam \
+#       --prot_seq=proteins.fa --softmasking --threads=16
+EOF
+
+echo &quot;Annotation script written — the instructor will complete it with the site-specific command.&quot;</code></pre>
+<p><strong>Question 1.</strong> Why is eukaryotic annotation hours of work when the bacterial equivalent is four minutes?</p>
+<p>::: Answer Introns. A bacterial coding sequence is a continuous open reading frame, so you find ORFs and you are largely done. In a eukaryote the coding sequence is scattered across exons separated by tens of kilobases, so there <em>are</em> no long ORFs to find.</p>
+<p>Add alternative splicing, untranslated regions with no coding signal at all, repeats that contain their own ORFs and get annotated as genes unless masked first, and pseudogenes that look exactly like genes — and you have a problem that needs evidence, training, and reconciliation rather than a scan. :::</p>
+<p><strong>So what can you do in thirty minutes?</strong> Produce the evidence yourself, and use it to judge gene models. That is today&#x27;s lab, and it is the part that actually teaches you something.</p>
+<hr>
+<h2 id="part-2-make-the-evidence-11-minutes">Part 2 — Make the evidence (11 minutes)</h2>
+<h3 id="2-1-index-the-assembly">2.1 Index the assembly</h3>
+<pre class="lab-code"><code class=" language-bash">hisat2-build -p 8 $ASM asm_idx 2&gt; logs/hisat2_build.log
+ls asm_idx*</code></pre>
+<h3 id="2-2-align-the-rna-seq">2.2 Align the RNA-seq</h3>
+<pre class="lab-code"><code class=" language-bash">R1=$(ls $RNA/*_1.fastq.gz | head -1)
+R2=${R1/_1.fastq.gz/_2.fastq.gz}
+echo &quot;Aligning: $(basename $R1)&quot;
+
+hisat2 -p 8 -x asm_idx -1 $R1 -2 $R2 --summary-file rna_summary.txt \
+  | samtools sort -@ 4 -o rna.sorted.bam -
+samtools index rna.sorted.bam
+
+cat rna_summary.txt</code></pre>
+<p><strong>Question 2.</strong> What overall alignment rate did you get? What would a low rate mean here, and what does a <em>spliced</em> aligner do that <code>bwa</code> would not?</p>
+<p>::: Answer For RNA-seq against its own genome, expect 80–95%. Substantially lower means the RNA came from a different organism or strain, the assembly is poor, or there is heavy contamination.</p>
+<p>HISAT2 is <strong>splice-aware</strong>: it can place one read across an intron, producing a CIGAR string containing <code>N</code>. A DNA aligner like <code>bwa</code> would either soft-clip the read at the junction or fail to place it — and you would lose exactly the reads that tell you where introns are. :::</p>
+<h3 id="2-3-find-the-introns">2.3 Find the introns</h3>
+<pre class="lab-code"><code class=" language-bash">samtools view rna.sorted.bam | awk &#x27;$6 ~ /N/&#x27; | wc -l
+samtools view rna.sorted.bam | grep -o &#x27;[0-9]*N&#x27; | sort -n | uniq -c | sort -rn | head</code></pre>
+<p><strong>Question 3.</strong> Those <code>N</code> operations are introns your data observed directly. Why is that different in kind from a gene finder predicting an intron?</p>
+<p>::: Answer A prediction says <em>this looks like a splice site, based on a model of what splice sites look like in this kind of organism.</em></p>
+<p>A spliced read says <em>a transcript was here, and it was spliced at this exact position.</em> One is a hypothesis; the other is an observation.</p>
+<p>This is the whole distinction between <em>ab initio</em> and evidence-based annotation. Neither is sufficient alone — prediction finds genes that were not expressed, evidence confirms genes that were. :::</p>
+<h3 id="2-4-coverage-over-the-assembly">2.4 Coverage over the assembly</h3>
+<pre class="lab-code"><code class=" language-bash">samtools depth -a rna.sorted.bam | \
+  awk &#x27;{t++; if($3&gt;0) c++} END {printf &quot;bases with any RNA coverage: %.1f%%\n&quot;, 100*c/t}&#x27;</code></pre>
+<p><strong>Question 4.</strong> Only a fraction of the genome is covered. Is that a problem?</p>
+<p>::: Answer No — it is the expected result and an important one. Only transcribed regions get reads. Intergenic sequence, introns (mostly), and genes not expressed in this condition all sit at zero.</p>
+<p>The corollary matters: <strong>absence of RNA-seq coverage is not evidence that there is no gene there.</strong> It may mean the gene was silent in the tissue and condition that was sequenced. This is why evidence alone cannot annotate a genome. :::</p>
+<blockquote><strong>CHECKPOINT 1</strong> — Everyone has a sorted, indexed RNA-seq BAM against their own assembly.</blockquote>
+<hr>
+<h2 id="part-3-judge-gene-models-against-evidence-10-minutes">Part 3 — Judge gene models against evidence (10 minutes)</h2>
+<p>A reference annotation for this organism is staged. Load it alongside your evidence and see how they compare.</p>
+<h3 id="3-1-look-at-the-annotation">3.1 Look at the annotation</h3>
+<pre class="lab-code"><code class=" language-bash">cp $COURSE/reference.gff3 .
+grep -v &#x27;^#&#x27; reference.gff3 | cut -f3 | sort | uniq -c | sort -rn</code></pre>
+<p>That is the Week 1 counting idiom, on a file you now understand.</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3==&quot;gene&quot;&#x27; reference.gff3 | wc -l
+awk -F&#x27;\t&#x27; &#x27;$3==&quot;mRNA&quot;&#x27; reference.gff3 | wc -l
+awk -F&#x27;\t&#x27; &#x27;$3==&quot;exon&quot; {s+=$5-$4+1} END {print &quot;exonic bases:&quot;, s}&#x27; reference.gff3</code></pre>
+<p><strong>Question 5.</strong> There are more mRNA features than gene features. Why, and what does that mean for counting &quot;how many genes are expressed&quot;?</p>
+<p>::: Answer Alternative splicing — one gene locus produces several transcripts. The GFF3 hierarchy is <code>gene → mRNA → exon/CDS</code>, and a gene can parent many mRNAs.</p>
+<p>For counting, it means you must decide what you are counting <em>before</em> you count. &quot;2,000 transcripts detected&quot; and &quot;1,400 genes detected&quot; can describe the same result. This is the transcript-choice problem from the lecture, and it is why MANE Select exists for human. :::</p>
+<h3 id="3-2-how-many-genes-have-evidence">3.2 How many genes have evidence?</h3>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3==&quot;gene&quot;&#x27; reference.gff3 | \
+  awk &#x27;BEGIN{OFS=&quot;\t&quot;} {print $1, $4-1, $5}&#x27; | sort -k1,1 -k2,2n &gt; genes.bed
+
+samtools bedcov genes.bed rna.sorted.bam | \
+  awk &#x27;{n++; if($4&gt;0) e++} END {printf &quot;genes with RNA-seq support: %d / %d (%.1f%%)\n&quot;, e, n, 100*e/n}&#x27;</code></pre>
+<p><strong>Question 6.</strong> You get some percentage well below 100. Give two different explanations, and say how you would distinguish them.</p>
+<p>::: Answer</p>
+<ol>
+<li><strong>The gene is real but not expressed</strong> in the condition sequenced. Most likely, and expected — a typical single-condition RNA-seq experiment detects perhaps 50–70% of annotated genes.</li>
+<li><strong>The gene model is wrong</strong> — an over-prediction from an <em>ab initio</em> method, a repeat annotated as a gene, or a pseudogene.</li>
+</ol>
+<p>To distinguish them: sequence more conditions or tissues, which raises the detection fraction for explanation 1 and leaves explanation 2 untouched. Also check whether the unsupported models cluster in repetitive regions, have unusual codon usage, or lack homologues — all signatures of over-prediction.</p>
+<p>Note what you cannot do: conclude from one RNA-seq sample that a gene does not exist. :::</p>
+<h3 id="3-3-look-at-it">3.3 Look at it</h3>
+<p>Open IGV through OnDemand (<strong>Interactive Apps → IGV</strong>, or Files → download and use IGV on your laptop). Load:</p>
+<ol>
+<li><strong>Genome:</strong> <code>asm.p_ctg.fa</code> (Genomes → Load Genome from File)</li>
+<li><strong>Annotation:</strong> <code>reference.gff3</code></li>
+<li><strong>Evidence:</strong> <code>rna.sorted.bam</code></li>
+</ol>
+<p>Find a well-covered gene and zoom in.</p>
+<p><strong>Question 7.</strong> Looking at one gene with good coverage: do the RNA-seq reads agree with the exon boundaries? Find one place where they do not and describe it.</p>
+<p>::: Answer Common disagreements worth spotting:</p>
+<ul>
+<li><strong>Reads extending past the annotated gene end</strong> — the UTR is longer than annotated. UTRs have no coding signal and are the first thing <em>ab initio</em> methods get wrong</li>
+<li><strong>A spliced read crossing where the model shows an exon</strong> — an unannotated intron, or a different isoform</li>
+<li><strong>Coverage in an annotated intron</strong> — retained intron, an unannotated exon, or genomic DNA contamination in the library</li>
+<li><strong>A gap in coverage inside an exon</strong> — usually just low expression, sometimes a mis-assembly</li>
+</ul>
+<p>Any of these, described accurately, is a full answer. The skill is looking rather than trusting. :::</p>
+<blockquote><strong>CHECKPOINT 2</strong> — Everyone has IGV open with three tracks and has found one disagreement.</blockquote>
+<hr>
+<h2 id="part-4-functional-annotation-and-what-it-is-worth-4-minutes">Part 4 — Functional annotation, and what it is worth (4 minutes)</h2>
+<p>Structural annotation says <em>where</em>. Functional annotation says <em>what it does</em> — and it is inference all the way down.</p>
+<pre class="lab-code"><code class=" language-bash">head -3 $COURSE/reference_functional.tsv
+awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; $2 ~ /hypothetical|unknown|uncharacterized/&#x27; $COURSE/reference_functional.tsv | wc -l
+awk -F&#x27;\t&#x27; &#x27;NR&gt;1&#x27; $COURSE/reference_functional.tsv | wc -l</code></pre>
+<p><strong>Question 8.</strong> A large fraction come back &quot;hypothetical protein&quot;. Is that a failure of the annotation?</p>
+<p>::: Answer No. It means nobody has characterised anything similar enough to transfer a name from. It is an honest statement about the reference databases, not about your assembly or the organism.</p>
+<p>For a well-studied fungus expect 20–35% hypothetical; for an under-studied lineage, far more. Lowering thresholds to reduce that number does not create knowledge — it creates confident wrong names, which are worse than honest silence. :::</p>
+<p><strong>Question 9.</strong> Your structural annotation truncated a gene because of a frameshift in the assembly. What does the functional step do?</p>
+<p>::: Answer It faithfully assigns a product name to the truncated protein, with no warning. You now have a confident functional annotation for a protein that does not exist.</p>
+<p>Functional annotation <strong>inherits structural errors</strong>. This is why Tuesday&#x27;s correctness question matters even when all you want is a gene list — and why an assembly with residual indel errors produces systematically shorter predicted proteins. Check mean CDS length against expectation; it is the cheapest diagnostic you have. :::</p>
+<blockquote><strong>CHECKPOINT 3</strong> — Everyone can state why functional annotation cannot be more reliable than the structural annotation beneath it.</blockquote>
+<hr>
+<h2 id="takeaways">Takeaways</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Task</th>
+<th>Command</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Index a genome for RNA</td>
+<td><code>hisat2-build -p 8 asm.fa asm_idx</code></td>
+</tr>
+<tr>
+<td>Spliced alignment</td>
+<td>`hisat2 -x idx -1 R1 -2 R2 \</td>
+<td>samtools sort -o out.bam`</td>
+</tr>
+<tr>
+<td>Find observed introns</td>
+<td>filter the BAM for CIGAR strings containing N</td>
+</tr>
+<tr>
+<td>Coverage per feature</td>
+<td><code>samtools bedcov genes.bed rna.sorted.bam</code></td>
+</tr>
+<tr>
+<td>Annotation summary</td>
+<td><code>agat_sp_statistics.pl --gff file.gff3</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Four things to carry forward:</strong></p>
+<ol>
+<li>A predicted intron is a hypothesis; a spliced read is an observation. Good annotation uses both, because each covers the other&#x27;s blind spot.</li>
+<li>Absence of RNA-seq coverage is not evidence of absence of a gene. It may just not have been expressed.</li>
+<li>&quot;Hypothetical protein&quot; is an honest answer about the databases, not a failure.</li>
+<li>Functional annotation inherits every structural error, silently. Correctness upstream is not optional.</li>
+</ol>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
+      <a href="../../index.html#labs">Course labs</a>
+    </footer>
+  </body>
+</html>

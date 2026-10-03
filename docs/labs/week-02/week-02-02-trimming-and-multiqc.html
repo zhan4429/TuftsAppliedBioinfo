@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Week 2 Session 2: Trimming, Filtering, and Reading QC Across Samples for Applied Bioinformatics.">
+    <title>Week 2 Session 2: Trimming, Filtering, and Reading QC Across Samples | Applied Bioinformatics</title>
+    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../assets/lab-code-copy.js" defer></script>
+  </head>
+  <body class="lab-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header" id="top">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
+          <span class="brand-mark" aria-hidden="true">AB</span>
+          <span>Applied Bioinformatics</span>
+        </a>
+        <div class="nav-links">
+          <a href="../../index.html#labs">Labs</a>
+          <a href="../../index.html#tutorials">Tutorials</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main class="lab-main" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Page table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to labs</a>
+          <p class="section-kicker">Week 2 Session 2</p>
+          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
+<a class="toc-level-2" href="#part-1-trim-the-short-reads">Part 1: Trim the Short Reads</a>
+<a class="toc-level-3" href="#1-1-run-fastp-on-one-sample">1.1 Run fastp on One Sample</a>
+<a class="toc-level-3" href="#1-2-how-much-survived">1.2 How Much Survived</a>
+<a class="toc-level-3" href="#1-3-trim-the-other-short-read-sample">1.3 Trim the Other Short-Read Sample</a>
+<a class="toc-level-2" href="#part-2-long-reads-are-filtered-not-trimmed">Part 2: Long Reads Are Filtered, Not Trimmed</a>
+<a class="toc-level-3" href="#2-1-why-the-difference">2.1 Why the Difference</a>
+<a class="toc-level-3" href="#2-2-filter-with-chopper">2.2 Filter with chopper</a>
+<a class="toc-level-2" href="#part-3-aggregate-everything">Part 3: Aggregate Everything</a>
+<a class="toc-level-3" href="#3-1-one-report-for-all-four-platforms">3.1 One Report for All Four Platforms</a>
+<a class="toc-level-3" href="#3-2-start-at-the-general-statistics-table">3.2 Start at the General Statistics Table</a>
+<a class="toc-level-3" href="#3-3-what-one-report-cannot-show">3.3 What One Report Cannot Show</a>
+<a class="toc-level-2" href="#part-4-four-samples-that-are-not-fine">Part 4: Four Samples That Are Not Fine</a>
+<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="section-kicker">Week 2 Session 2</p>
+            <h1>Week 2 Session 2: Trimming, Filtering, and Reading QC Across Samples</h1>
+            <p>On Tuesday you measured four platforms. Today you act on what you found: trim the short reads, filter the long reads, aggregate everything into one report, and diagnose four...</p>
+            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+          </header>
+          <p>On Tuesday you measured four platforms. Today you act on what you found: trim the short reads, filter the long reads, aggregate everything into one report, and diagnose four samples that are deliberately broken.</p>
+<p>The last part is the point of the session. Running QC is easy. Deciding what a bad plot means is the skill.</p>
+<h2 id="before-you-start">Before You Start</h2>
+<pre class="lab-code"><code class=" language-bash">srun --pty -p interactive -n 4 --mem=16g --time=0-03:00:00 bash
+hostname
+
+export COURSE=/cluster/tufts/bio_appbio
+export MYWORK=$COURSE/$USER
+export SUB=$MYWORK/week-02/session-01/sub
+
+mkdir -p &quot;$MYWORK/week-02/session-02&quot;
+cd &quot;$MYWORK/week-02/session-02&quot;
+
+ls -lh &quot;$SUB&quot;</code></pre>
+<p>If <code>$SUB</code> is empty, you did not finish Tuesday&#x27;s lab. Use the staged subsamples:</p>
+<pre class="lab-code"><code class=" language-bash">export SUB=$COURSE/shared/wk2/sub
+ls -lh &quot;$SUB&quot;</code></pre>
+<pre class="lab-code"><code class=" language-bash">module load miniforge
+conda activate appbio-week1
+conda install -y -c conda-forge -c bioconda fastp multiqc chopper</code></pre>
+<h2 id="part-1-trim-the-short-reads">Part 1: Trim the Short Reads</h2>
+<h3 id="1-1-run-fastp-on-one-sample">1.1 Run fastp on One Sample</h3>
+<pre class="lab-code"><code class=" language-bash">mkdir -p trimmed reports
+
+S=$(basename $(ls &quot;$SUB&quot;/*_1.fastq.gz | head -1) _1.fastq.gz)
+echo &quot;working on $S&quot;
+
+fastp \
+  --in1 &quot;$SUB/${S}_1.fastq.gz&quot; \
+  --in2 &quot;$SUB/${S}_2.fastq.gz&quot; \
+  --out1 &quot;trimmed/${S}_1.trim.fq.gz&quot; \
+  --out2 &quot;trimmed/${S}_2.trim.fq.gz&quot; \
+  --detect_adapter_for_pe \
+  --json &quot;reports/${S}.fastp.json&quot; \
+  --html &quot;reports/${S}.fastp.html&quot; \
+  --thread 4</code></pre>
+<p><code>--detect_adapter_for_pe</code> is not on by default for paired-end data, and it is almost always what you want. That is the kind of default that quietly costs people a project.</p>
+<h3 id="1-2-how-much-survived">1.2 How Much Survived</h3>
+<pre class="lab-code"><code class=" language-bash">python3 -c &quot;
+import json, glob
+d = json.load(open(sorted(glob.glob(&#x27;reports/*.fastp.json&#x27;))[0]))
+b = d[&#x27;summary&#x27;][&#x27;before_filtering&#x27;][&#x27;total_reads&#x27;]
+a = d[&#x27;summary&#x27;][&#x27;after_filtering&#x27;][&#x27;total_reads&#x27;]
+print(f&#x27;before: {b:,}&#x27;)
+print(f&#x27;after : {a:,}&#x27;)
+print(f&#x27;kept  : {100*a/b:.1f}%&#x27;)
+&quot;</code></pre>
+<p><strong>Question 1.</strong> You keep 97%. Is that good? What retention would worry you, and in which direction?</p>
+<details>
+<summary>Answer</summary>
+<p>97% is healthy; 95 to 99 is typical.</p>
+<p>Below about 90% needs explaining, usually short inserts producing heavy adapter read-through, or genuinely poor data.</p>
+<p>But the direction people get wrong is the other one. Over-trimming is worse than under-trimming: it removes real sequence, biases you toward reads that were easy to sequence, and shortens reads so they map worse. Aligners already soft-clip bad ends. Trim adapters; leave quality mostly alone.</p>
+</details>
+<h3 id="1-3-trim-the-other-short-read-sample">1.3 Trim the Other Short-Read Sample</h3>
+<pre class="lab-code"><code class=" language-bash">for f in &quot;$SUB&quot;/*_1.fastq.gz; do
+  S=$(basename &quot;$f&quot; _1.fastq.gz)
+  [ -f &quot;reports/${S}.fastp.json&quot; ] &amp;&amp; continue
+  fastp \
+    --in1 &quot;$SUB/${S}_1.fastq.gz&quot; --in2 &quot;$SUB/${S}_2.fastq.gz&quot; \
+    --out1 &quot;trimmed/${S}_1.trim.fq.gz&quot; --out2 &quot;trimmed/${S}_2.trim.fq.gz&quot; \
+    --detect_adapter_for_pe \
+    --json &quot;reports/${S}.fastp.json&quot; --html &quot;reports/${S}.fastp.html&quot; \
+    --thread 4 2&gt;/dev/null
+  echo &quot;trimmed $S&quot;
+done
+ls reports/</code></pre>
+<p><strong>Checkpoint 1.</strong> Both short-read samples trimmed, with JSON and HTML reports.</p>
+<h2 id="part-2-long-reads-are-filtered-not-trimmed">Part 2: Long Reads Are Filtered, Not Trimmed</h2>
+<h3 id="2-1-why-the-difference">2.1 Why the Difference</h3>
+<p>A short read has adapter at a predictable end and quality that decays toward the 3&#x27; end, so trimming the ends is meaningful. A long read has errors distributed along its whole length. Trimming the ends of a 20 kb read removes almost nothing useful and leaves the problem untouched.</p>
+<p>So for long reads you make a keep-or-discard decision per read, on length and mean quality.</p>
+<h3 id="2-2-filter-with-chopper">2.2 Filter with chopper</h3>
+<pre class="lab-code"><code class=" language-bash">for f in &quot;$SUB&quot;/*.fastq.gz; do
+  base=$(basename &quot;$f&quot; .fastq.gz)
+  case &quot;$base&quot; in *_1|*_2) continue ;; esac
+  zcat &quot;$f&quot; | chopper -q 10 -l 1000 --threads 4 2&gt;/dev/null | gzip &gt; &quot;trimmed/${base}.filt.fq.gz&quot;
+  echo &quot;filtered $base&quot;
+done
+
+seqkit stats -a &quot;$SUB&quot;/*.fastq.gz trimmed/*.filt.fq.gz 2&gt;/dev/null | grep -v &#x27;_[12]&#x27;</code></pre>
+<p><strong>Question 2.</strong> Compare the before and after rows. What happened to read count, total bases, and N50?</p>
+<details>
+<summary>Answer</summary>
+<p>Read count falls, total bases falls by less, and N50 goes up or stays flat.</p>
+<p>That pattern is the filter working as intended: it removes short and low-quality reads, which are numerous but contribute few bases. You lose a lot of reads and little sequence, and what remains is longer on average.</p>
+<p>If N50 had fallen you would have been discarding your best reads, which would mean the thresholds were wrong.</p>
+</details>
+<p><strong>Question 3.</strong> Why <code>-q 10</code> rather than the <code>-q 20</code> you might use for short reads?</p>
+<details>
+<summary>Answer</summary>
+<p>Q10 is one error in ten; Q20 is one in a hundred. Those would be alarming thresholds for Illumina.</p>
+<p>For nanopore they are not, because the whole platform operates at a lower per-base accuracy and the value comes from length and from consensus across many reads. Filtering at Q20 would discard most of a perfectly usable run.</p>
+<p>Thresholds are platform-specific. Carrying a short-read instinct onto long-read data throws away good data.</p>
+</details>
+<p><strong>Checkpoint 2.</strong> Both long-read files filtered, and you can explain what the filter removed.</p>
+<h2 id="part-3-aggregate-everything">Part 3: Aggregate Everything</h2>
+<h3 id="3-1-one-report-for-all-four-platforms">3.1 One Report for All Four Platforms</h3>
+<pre class="lab-code"><code class=" language-bash">mkdir -p fastqc_trimmed
+fastqc -t 4 -o fastqc_trimmed trimmed/*.trim.fq.gz
+
+multiqc --force --title &quot;Week 2 all platforms&quot; -o multiqc \
+  &quot;$MYWORK/week-02/session-01/fastqc&quot; fastqc_trimmed reports</code></pre>
+<p>Open <code>multiqc/multiqc_report.html</code> through OnDemand Files.</p>
+<h3 id="3-2-start-at-the-general-statistics-table">3.2 Start at the General Statistics Table</h3>
+<p>Click the column headers to sort: <strong>M Seqs</strong>, <strong>% Dups</strong>, <strong>% GC</strong>, <strong>% Passed</strong>.</p>
+<p><strong>Question 4.</strong> You are looking at raw and trimmed versions of two platforms in one table. What does sorting by %GC show you, and why is that reassuring?</p>
+<details>
+<summary>Answer</summary>
+<p>All samples should sit at roughly the same %GC, because they are the same yeast genome. Yeast is around 38%.</p>
+<p>That is reassuring because it is an independent check that you are looking at what you think you are. If one platform&#x27;s %GC were markedly different, it would point at contamination, a sample swap, or a coverage bias in the library prep rather than at anything the sequencer did.</p>
+<p>Agreement across platforms on a biological property is evidence; disagreement is a lead worth following.</p>
+</details>
+<h3 id="3-3-what-one-report-cannot-show">3.3 What One Report Cannot Show</h3>
+<p>Scroll to the overlaid per-base quality and adapter content plots.</p>
+<p><strong>Question 5.</strong> Pick one thing visible here that you could not have seen in any single FastQC report.</p>
+<details>
+<summary>Answer</summary>
+<p>Anything that is a comparison rather than a measurement: that one platform&#x27;s quality decays faster than another&#x27;s, that trimming removed adapter from one sample and there was none in the other to remove, that read counts differ by an order of magnitude.</p>
+<p>The general point is that a sample&#x27;s own report shows its numbers without context. A sample with a tenth of the reads of its siblings looks fine alone and is obviously wrong in a table.</p>
+</details>
+<p><strong>Checkpoint 3.</strong> One MultiQC report covering raw and trimmed data from both short-read platforms.</p>
+<h2 id="part-4-four-samples-that-are-not-fine">Part 4: Four Samples That Are Not Fine</h2>
+<p>Your own data was reasonably well behaved. Public data usually is, because it was deposited by people who had already fixed the obvious problems.</p>
+<p>These four have not been fixed. <strong>Each has exactly one thing wrong with it.</strong></p>
+<pre class="lab-code"><code class=" language-bash">mkdir -p mystery_qc
+fastqc -t 4 -o mystery_qc &quot;$COURSE&quot;/shared/wk2/mystery/*.fastq.gz
+multiqc --force --title &quot;Mystery samples&quot; -o multiqc_mystery mystery_qc</code></pre>
+<p>Open <code>multiqc_mystery/multiqc_report.html</code>.</p>
+<p>For each sample write one sentence: <strong>what is wrong, what is the evidence, what would you do?</strong></p>
+<pre class="lab-code"><code class=" language-text">Sample A
+Sample B
+Sample C
+Sample D</code></pre>
+<p>Useful extra checks:</p>
+<pre class="lab-code"><code class=" language-bash">cd mystery_qc
+for z in *_fastqc.zip; do unzip -o -q &quot;$z&quot;; done
+grep -H &#x27;^FAIL&#x27; */summary.txt | sed &#x27;s|/summary.txt||&#x27; | sort
+cd ..</code></pre>
+<details>
+<summary>Answers — do not open until you have written yours</summary>
+<p><strong>Sample A — adapter contamination.</strong> Adapter content rises sharply from around position 100 and overrepresented sequences include adapter. The insert was shorter than the read length, so the sequencer read through into the adapter. Trimming with <code>--detect_adapter_for_pe</code> fixes it. Not a reason to discard the sample.</p>
+<p><strong>Sample B — low yield.</strong> An order of magnitude fewer reads than the others. Invisible in its own report and obvious in the MultiQC table. Under-loading, failed quantification, or a pooling error. This sample cannot support the same analysis as the others; re-sequence or exclude, and say which in your methods.</p>
+<p><strong>Sample C — quality crash partway through the run.</strong> Per-base quality is fine and then collapses at a specific cycle, the same cycle in both mates. A run-level problem — a reagent issue or a bubble in the flow cell. Hard-trim to before the crash and accept shorter reads, or re-sequence. Check whether other samples on the same run show it, which tells you whether it is the sample or the run.</p>
+<p><strong>Sample D — contamination.</strong> The per-sequence GC plot has two peaks rather than one, and overall %GC does not match the others. Another organism in the library, or a sample swap. Trimming will not touch this. Screen taxonomically before doing anything else.</p>
+<p><strong>The general lesson.</strong> A, C and D would each have been missed by looking only at pass/fail flags. B was invisible in its own report entirely. QC is reading numbers across samples, not collecting green ticks.</p>
+</details>
+<p><strong>Checkpoint 4.</strong> Four diagnoses written down before you opened the answers.</p>
+<h2 id="takeaways">Takeaways</h2>
+<p>Trim short reads, filter long reads:</p>
+<pre class="lab-code"><code class=" language-bash">fastp --in1 R1.fq.gz --in2 R2.fq.gz --out1 t1.fq.gz --out2 t2.fq.gz \
+      --detect_adapter_for_pe --json report.json
+
+zcat long.fastq.gz | chopper -q 10 -l 1000 | gzip &gt; filt.fq.gz</code></pre>
+<p>Aggregate before you decide anything:</p>
+<pre class="lab-code"><code class=" language-bash">multiqc --force -o multiqc fastqc_dir reports_dir</code></pre>
+<p>Three things to carry forward:</p>
+<ol>
+<li>Over-trimming is worse than under-trimming. Trim adapters; leave quality mostly alone.</li>
+<li>Thresholds are platform-specific. Q20 is routine for Illumina and would destroy a</li>
+<p>nanopore run.</p>
+<li>Run MultiQC even on one sample, and always before deciding a dataset is fine. The</li>
+<p>problems that matter most are only visible across samples.</p>
+</ol>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
+      <a href="../../index.html#labs">Course labs</a>
+    </footer>
+  </body>
+</html>

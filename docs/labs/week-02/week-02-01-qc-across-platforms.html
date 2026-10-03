@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Week 2 Session 1: QC Across Four Sequencing Platforms for Applied Bioinformatics.">
+    <title>Week 2 Session 1: QC Across Four Sequencing Platforms | Applied Bioinformatics</title>
+    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../assets/lab-code-copy.js" defer></script>
+  </head>
+  <body class="lab-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header" id="top">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
+          <span class="brand-mark" aria-hidden="true">AB</span>
+          <span>Applied Bioinformatics</span>
+        </a>
+        <div class="nav-links">
+          <a href="../../index.html#labs">Labs</a>
+          <a href="../../index.html#tutorials">Tutorials</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <main class="lab-main" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Page table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to labs</a>
+          <p class="section-kicker">Week 2 Session 1</p>
+          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
+<a class="toc-level-2" href="#part-1-subsample-before-you-measure">Part 1: Subsample Before You Measure</a>
+<a class="toc-level-3" href="#1-1-why-this-comes-first">1.1 Why This Comes First</a>
+<a class="toc-level-3" href="#1-2-take-a-slice-of-each">1.2 Take a Slice of Each</a>
+<a class="toc-level-2" href="#part-2-measure-all-four-side-by-side">Part 2: Measure All Four Side by Side</a>
+<a class="toc-level-3" href="#2-1-one-command-every-platform">2.1 One Command, Every Platform</a>
+<a class="toc-level-3" href="#2-2-quality-is-not-one-number-either">2.2 Quality Is Not One Number Either</a>
+<a class="toc-level-3" href="#2-3-read-length-as-a-distribution">2.3 Read Length as a Distribution</a>
+<a class="toc-level-2" href="#part-3-fastqc-and-where-it-applies">Part 3: FastQC, and Where It Applies</a>
+<a class="toc-level-3" href="#3-1-run-it-on-the-short-reads-only">3.1 Run It on the Short Reads Only</a>
+<a class="toc-level-3" href="#3-2-read-it-properly">3.2 Read It Properly</a>
+<a class="toc-level-3" href="#3-3-try-it-where-it-does-not-belong">3.3 Try It Where It Does Not Belong</a>
+<a class="toc-level-2" href="#part-4-the-right-tool-for-long-reads">Part 4: The Right Tool for Long Reads</a>
+<a class="toc-level-3" href="#4-1-nanoplot">4.1 NanoPlot</a>
+<a class="toc-level-3" href="#4-2-four-numbers-that-matter">4.2 Four Numbers That Matter</a>
+<a class="toc-level-3" href="#4-3-compare-the-two-long-read-platforms">4.3 Compare the Two Long-Read Platforms</a>
+<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="section-kicker">Week 2 Session 1</p>
+            <h1>Week 2 Session 1: QC Across Four Sequencing Platforms</h1>
+            <p>Last week you fetched the same yeast genome sequenced four different ways: Illumina, BGISEQ, PacBio HiFi and Oxford Nanopore. In this lab you subsample all four, measure them, and...</p>
+            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+          </header>
+          <p>Last week you fetched the same yeast genome sequenced four different ways: Illumina, BGISEQ, PacBio HiFi and Oxford Nanopore. In this lab you subsample all four, measure them, and run the right QC tool for each.</p>
+<p>Because the sample is identical across all four, every difference you see is the platform. That is unusual and it is the point of the exercise.</p>
+<h2 id="before-you-start">Before You Start</h2>
+<p>Get a compute node. This lab runs real tools and does not belong on a login node.</p>
+<pre class="lab-code"><code class=" language-bash">srun --pty -p interactive -n 4 --mem=16g --time=0-03:00:00 bash
+hostname</code></pre>
+<p>Set your paths:</p>
+<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/bio_appbio
+export MYWORK=$COURSE/$USER
+export READS=$MYWORK/week-01/session-02/fetch/results/fastq
+export GENOME=12100000
+
+mkdir -p &quot;$MYWORK/week-02/session-01&quot;
+cd &quot;$MYWORK/week-02/session-01&quot;
+
+ls -lh &quot;$READS&quot;</code></pre>
+<p>You should see six files: two paired-end runs with <code>_1</code> and <code>_2</code>, and two single-file long-read runs.</p>
+<p>If that directory is empty, your download did not finish. Use the staged copies and sort yours out afterwards:</p>
+<pre class="lab-code"><code class=" language-bash">export READS=$COURSE/shared/wk2/fallback_fastq
+ls -lh &quot;$READS&quot;</code></pre>
+<p>Load the software:</p>
+<pre class="lab-code"><code class=" language-bash">module load miniforge
+conda activate appbio-week1
+conda install -y -c conda-forge -c bioconda fastqc nanoplot</code></pre>
+<h2 id="part-1-subsample-before-you-measure">Part 1: Subsample Before You Measure</h2>
+<h3 id="1-1-why-this-comes-first">1.1 Why This Comes First</h3>
+<p>Your Illumina run has about 45 million reads. FastQC on a file that size takes longer than this lab slot, and it would tell you nothing that 400,000 reads will not.</p>
+<p>Remind yourself of the scale:</p>
+<pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-01/session-02/fetch&quot;
+awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; !seen[$2]++ {printf &quot;%-13s %-16s %6.0fx coverage\n&quot;, $1, $2, $5/12100000}&#x27; runs.tsv
+cd &quot;$MYWORK/week-02/session-01&quot;</code></pre>
+<h3 id="1-2-take-a-slice-of-each">1.2 Take a Slice of Each</h3>
+<pre class="lab-code"><code class=" language-bash">mkdir -p sub
+
+# short-read runs: 400,000 reads from each mate, order preserved so pairs stay matched
+for f in &quot;$READS&quot;/*_1.fastq.gz; do
+  base=$(basename &quot;$f&quot; _1.fastq.gz)
+  seqkit head -n 400000 &quot;$READS/${base}_1.fastq.gz&quot; -o &quot;sub/${base}_1.fastq.gz&quot;
+  seqkit head -n 400000 &quot;$READS/${base}_2.fastq.gz&quot; -o &quot;sub/${base}_2.fastq.gz&quot;
+  echo &quot;subsampled $base&quot;
+done
+
+# long-read runs: fewer reads, because each one is far longer
+for f in &quot;$READS&quot;/*.fastq.gz; do
+  base=$(basename &quot;$f&quot; .fastq.gz)
+  case &quot;$base&quot; in *_1|*_2) continue ;; esac
+  seqkit head -n 20000 &quot;$f&quot; -o &quot;sub/${base}.fastq.gz&quot;
+  echo &quot;subsampled $base&quot;
+done
+
+ls -lh sub/</code></pre>
+<p><strong>Question 1.</strong> <code>seqkit head</code> takes the first N reads rather than a random sample. What bias does that introduce, and why is it acceptable here?</p>
+<details>
+<summary>Answer</summary>
+<p>Reads are stored roughly in the order they came off the instrument, so the first N come disproportionately from one region of the flow cell. If that region ran badly, your slice looks worse than the run really is.</p>
+<p>It is acceptable here because you are comparing platforms, not certifying a dataset, and the bias applies equally to all four. For a real QC report you would use <code>seqkit sample</code> to draw randomly, which is slower because it has to read the whole file.</p>
+<p>The habit worth keeping: know which shortcut you took, and say so.</p>
+</details>
+<p><strong>Checkpoint 1.</strong> <code>ls sub/</code> shows six files, and they are far smaller than the originals.</p>
+<h2 id="part-2-measure-all-four-side-by-side">Part 2: Measure All Four Side by Side</h2>
+<h3 id="2-1-one-command-every-platform">2.1 One Command, Every Platform</h3>
+<pre class="lab-code"><code class=" language-bash">seqkit stats -a sub/*.fastq.gz</code></pre>
+<p>Fill this in from the output. One row per file.</p>
+<pre class="lab-code"><code class=" language-text">file                 num_seqs    sum_len    avg_len    N50     Q20(%)   Q30(%)</code></pre>
+<p><strong>Question 2.</strong> Compare <code>avg_len</code> across the four platforms. Which two are nearly constant, and which two vary? Why?</p>
+<details>
+<summary>Answer</summary>
+<p>Illumina and BGISEQ are nearly constant, because read length is set by the number of sequencing cycles the operator chose. Every cluster is read the same fixed number of times.</p>
+<p>PacBio and Nanopore vary enormously, because read length is set by the length of the DNA molecule that went through the pore or polymerase. That is determined by your extraction, not by the instrument — which is why high molecular weight extraction is the part of a long-read project that actually decides the result.</p>
+</details>
+<h3 id="2-2-quality-is-not-one-number-either">2.2 Quality Is Not One Number Either</h3>
+<p>Look at the <code>Q20(%)</code> and <code>Q30(%)</code> columns.</p>
+<p><strong>Question 3.</strong> Rank the four platforms by Q30. Does that ranking tell you which platform is best?</p>
+<details>
+<summary>Answer</summary>
+<p>Expect the short-read platforms highest, PacBio HiFi close behind, and Nanopore lowest.</p>
+<p>It does not tell you which is best, because accuracy is only one axis. The nanopore run has far lower Q30 and reads that are a hundred times longer, and length is what resolves repeats. A platform is only &quot;best&quot; relative to a question.</p>
+<p>Week 3 makes this concrete: you will assemble the HiFi reads, because they are the only ones that are both long and accurate.</p>
+</details>
+<h3 id="2-3-read-length-as-a-distribution">2.3 Read Length as a Distribution</h3>
+<p>An average hides the shape. Look at the real distribution for one long-read file:</p>
+<pre class="lab-code"><code class=" language-bash">LONG=$(ls sub/*.fastq.gz | grep -v &#x27;_[12].fastq.gz&#x27; | head -1)
+echo &quot;$LONG&quot;
+
+seqkit fx2tab -nl &quot;$LONG&quot; | awk &#x27;{print $NF}&#x27; | sort -n | \
+  awk &#x27;{a[NR]=$1} END {
+    printf &quot;min    %8d\n&quot;, a[1]
+    printf &quot;Q1     %8d\n&quot;, a[int(NR*0.25)]
+    printf &quot;median %8d\n&quot;, a[int(NR*0.50)]
+    printf &quot;Q3     %8d\n&quot;, a[int(NR*0.75)]
+    printf &quot;max    %8d\n&quot;, a[NR] }&#x27;</code></pre>
+<p>Now the same for a short-read file:</p>
+<pre class="lab-code"><code class=" language-bash">seqkit fx2tab -nl sub/*_1.fastq.gz | awk &#x27;{print $NF}&#x27; | sort -n | uniq -c | head</code></pre>
+<p><strong>Question 4.</strong> The short-read file gives one length repeated hundreds of thousands of times. Why does that make the mean a useful summary there and a misleading one for long reads?</p>
+<details>
+<summary>Answer</summary>
+<p>When every value is the same, the mean describes the data perfectly.</p>
+<p>For long reads the distribution spans orders of magnitude and is heavily skewed, so the mean sits far from the typical read and far from where the bases actually are. A run with a mean of 4 kb and an N50 of 22 kb is a good run with a lot of short junk in it. A mean of 4 kb and an N50 of 6 kb has no long reads at all. The mean cannot tell those apart.</p>
+<p>This is why long-read reports lead with N50, and it comes back in Week 3 when contiguity depends on whether reads span repeats.</p>
+</details>
+<p><strong>Checkpoint 2.</strong> You have a filled-in stats table and can name one thing each platform does that the others cannot.</p>
+<h2 id="part-3-fastqc-and-where-it-applies">Part 3: FastQC, and Where It Applies</h2>
+<h3 id="3-1-run-it-on-the-short-reads-only">3.1 Run It on the Short Reads Only</h3>
+<pre class="lab-code"><code class=" language-bash">mkdir -p fastqc
+fastqc -t 4 -o fastqc sub/*_1.fastq.gz sub/*_2.fastq.gz
+ls fastqc/</code></pre>
+<p>View a report through OnDemand: <strong>Files &gt; Home Directory</strong>, navigate to your <code>week-02/session-01/fastqc/</code> directory, and click an <code>.html</code> file.</p>
+<h3 id="3-2-read-it-properly">3.2 Read It Properly</h3>
+<p>Work through these panels for one Illumina sample and write down what you see.</p>
+<pre class="lab-code"><code class=" language-text">Basic Statistics          total sequences, length, %GC
+Per base sequence quality where does it start dropping?
+Per base sequence content skewed at the start, or all the way through?
+Per sequence GC content   one peak, or two?
+Adapter content           does it rise, and from which position?
+Overrepresented sequences anything named?</code></pre>
+<p><strong>Question 5.</strong> Compare the Illumina and BGISEQ reports. Both are short-read platforms. Name one panel where they differ.</p>
+<details>
+<summary>Answer</summary>
+<p>Any accurate observation earns this. Common differences: the per-base quality profile has a different shape, because the chemistry and error model differ; adapter content differs because the library kits use different adapter sequences; %GC may differ slightly from coverage bias.</p>
+<p>The general point is that &quot;short read&quot; is not one thing. FastQC&#x27;s thresholds were set with Illumina in mind, so another short-read platform can trip flags that mean nothing.</p>
+</details>
+<h3 id="3-3-try-it-where-it-does-not-belong">3.3 Try It Where It Does Not Belong</h3>
+<pre class="lab-code"><code class=" language-bash">fastqc -t 4 -o fastqc &quot;$LONG&quot;</code></pre>
+<p>Open that report.</p>
+<p><strong>Question 6.</strong> Look at Basic Statistics and Per base sequence quality. Why is this report close to useless?</p>
+<details>
+<summary>Answer</summary>
+<p>Sequence length is reported as a range spanning orders of magnitude, so &quot;per base&quot; position has no consistent meaning — position 5,000 exists in a handful of reads and not in most of them. The per-base quality plot bins positions that are not comparable, and the tail is computed from a shrinking and unrepresentative set of reads.</p>
+<p>FastQC also assumes a fixed length for several modules, and silently produces something anyway rather than refusing.</p>
+<p>A tool producing output is not the same as a tool being appropriate. That judgement is yours.</p>
+</details>
+<p><strong>Checkpoint 3.</strong> You have FastQC reports for both short-read platforms and have seen one fail on long reads.</p>
+<h2 id="part-4-the-right-tool-for-long-reads">Part 4: The Right Tool for Long Reads</h2>
+<h3 id="4-1-nanoplot">4.1 NanoPlot</h3>
+<pre class="lab-code"><code class=" language-bash">mkdir -p nanoplot
+NanoPlot --fastq &quot;$LONG&quot; -o nanoplot -t 4 --N50 --loglength 2&gt;/dev/null
+cat nanoplot/NanoStats.txt</code></pre>
+<h3 id="4-2-four-numbers-that-matter">4.2 Four Numbers That Matter</h3>
+<p>From <code>NanoStats.txt</code>, record:</p>
+<pre class="lab-code"><code class=" language-text">Mean read length
+Median read length
+Read length N50
+Mean read quality
+Number of reads</code></pre>
+<p><strong>Question 7.</strong> NanoPlot reports both mean and median read length, and they differ substantially. Which is larger, and what does that tell you about the run?</p>
+<details>
+<summary>Answer</summary>
+<p>The mean is larger than the median, because the distribution has a long right tail — a small number of very long reads pull the average up while most reads are shorter.</p>
+<p>N50 is larger still, because it weights by bases rather than by reads. The gap between median and N50 is a quick read on how much of your sequence sits in long molecules, which is what matters for assembly.</p>
+</details>
+<h3 id="4-3-compare-the-two-long-read-platforms">4.3 Compare the Two Long-Read Platforms</h3>
+<p>Run NanoPlot on the PacBio file as well, then compare:</p>
+<pre class="lab-code"><code class=" language-bash">PB=$(ls sub/*.fastq.gz | grep -v &#x27;_[12].fastq.gz&#x27; | sed -n 2p)
+mkdir -p nanoplot_pb
+NanoPlot --fastq &quot;$PB&quot; -o nanoplot_pb -t 4 --N50 2&gt;/dev/null
+grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/NanoStats.txt nanoplot_pb/NanoStats.txt</code></pre>
+<p><strong>Question 8.</strong> Both are long-read platforms. Which has higher read quality, and which has longer reads? What does that trade-off mean for choosing between them?</p>
+<details>
+<summary>Answer</summary>
+<p>PacBio HiFi has substantially higher quality; nanopore typically has longer reads.</p>
+<p>HiFi earns its accuracy by reading the same molecule repeatedly and taking a consensus, which costs length. Nanopore reads the molecule once, so length is limited only by your DNA.</p>
+<p>Choose HiFi when you need per-base accuracy — assembly you intend to annotate, variant calling. Choose nanopore when you need to span something very long, or need the answer today. Many projects use both, which is why this study has both.</p>
+</details>
+<p><strong>Checkpoint 4.</strong> You have NanoPlot stats for both long-read platforms and can state the trade-off between them.</p>
+<h2 id="takeaways">Takeaways</h2>
+<p>Measure every platform the same way first:</p>
+<pre class="lab-code"><code class=" language-bash">seqkit stats -a sub/*.fastq.gz</code></pre>
+<p>Subsample before QC, and know which shortcut you took:</p>
+<pre class="lab-code"><code class=" language-bash">seqkit head -n 400000 in.fastq.gz -o out.fastq.gz</code></pre>
+<p>Use FastQC for short reads and NanoPlot for long ones:</p>
+<pre class="lab-code"><code class=" language-bash">fastqc -t 4 -o fastqc sub/*_1.fastq.gz
+NanoPlot --fastq long.fastq.gz -o nanoplot --N50</code></pre>
+<p>Three things to carry forward:</p>
+<ol>
+<li>Read length is fixed by the operator on short-read platforms and by your DNA extraction</li>
+<p>on long-read platforms. That single difference explains most of what you measured today.</p>
+<li>A tool that produces output is not a tool that applies. FastQC runs happily on nanopore</li>
+<p>data and tells you almost nothing true.</p>
+<li>No platform is best. Accuracy, length, throughput and turnaround trade against each</li>
+<p>other, and which one you need is a property of your question.</p>
+</ol>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
+      <a href="../../index.html#labs">Course labs</a>
+    </footer>
+  </body>
+</html>
