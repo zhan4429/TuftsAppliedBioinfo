@@ -3,56 +3,62 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Week 2 Session 1: QC Across Four Sequencing Platforms for Applied Bioinformatics.">
+    <meta name="description" content="Week 2 Session 1: QC Across Four Sequencing Platforms for Applied Bioinformatics, Tufts University.">
     <title>Week 2 Session 1: QC Across Four Sequencing Platforms | Applied Bioinformatics</title>
     <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../../styles.css">
     <script src="../../assets/lab-code-copy.js" defer></script>
   </head>
-  <body class="lab-page">
+  <body class="doc-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="../../index.html#labs">Labs</a>
-          <a href="../../index.html#tutorials">Tutorials</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../../index.html#labs">Schedule</a>
+          <a href="../../index.html#setup">Setup</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
-    <main class="lab-main" id="main">
+    <main class="lab-main wrap" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Page table of contents">
-          <a class="back-link" href="../../index.html#labs">Back to labs</a>
-          <p class="section-kicker">Week 2 Session 1</p>
-          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
-<a class="toc-level-2" href="#part-1-subsample-before-you-measure">Part 1: Subsample Before You Measure</a>
-<a class="toc-level-3" href="#1-1-why-this-comes-first">1.1 Why This Comes First</a>
-<a class="toc-level-3" href="#1-2-take-a-slice-of-each">1.2 Take a Slice of Each</a>
-<a class="toc-level-2" href="#part-2-measure-all-four-side-by-side">Part 2: Measure All Four Side by Side</a>
-<a class="toc-level-3" href="#2-1-one-command-every-platform">2.1 One Command, Every Platform</a>
-<a class="toc-level-3" href="#2-2-quality-is-not-one-number-either">2.2 Quality Is Not One Number Either</a>
-<a class="toc-level-3" href="#2-3-read-length-as-a-distribution">2.3 Read Length as a Distribution</a>
-<a class="toc-level-2" href="#part-3-fastqc-and-where-it-applies">Part 3: FastQC, and Where It Applies</a>
-<a class="toc-level-3" href="#3-1-run-it-on-the-short-reads-only">3.1 Run It on the Short Reads Only</a>
-<a class="toc-level-3" href="#3-2-read-it-properly">3.2 Read It Properly</a>
-<a class="toc-level-3" href="#3-3-try-it-where-it-does-not-belong">3.3 Try It Where It Does Not Belong</a>
-<a class="toc-level-2" href="#part-4-the-right-tool-for-long-reads">Part 4: The Right Tool for Long Reads</a>
-<a class="toc-level-3" href="#4-1-nanoplot">4.1 NanoPlot</a>
-<a class="toc-level-3" href="#4-2-four-numbers-that-matter">4.2 Four Numbers That Matter</a>
-<a class="toc-level-3" href="#4-3-compare-the-two-long-read-platforms">4.3 Compare the Two Long-Read Platforms</a>
-<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to schedule</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#before-you-start">Before You Start</a>
+            <a class="toc-level-2" href="#part-1-subsample-before-you-measure">Part 1: Subsample Before You Measure</a>
+            <a class="toc-level-3" href="#1-1-why-this-comes-first">1.1 Why This Comes First</a>
+            <a class="toc-level-3" href="#1-2-take-a-slice-of-each">1.2 Take a Slice of Each</a>
+            <a class="toc-level-2" href="#part-2-measure-all-four-side-by-side">Part 2: Measure All Four Side by Side</a>
+            <a class="toc-level-3" href="#2-1-one-command-every-platform">2.1 One Command, Every Platform</a>
+            <a class="toc-level-3" href="#2-2-quality-is-not-one-number-either">2.2 Quality Is Not One Number Either</a>
+            <a class="toc-level-3" href="#2-3-read-length-as-a-distribution">2.3 Read Length as a Distribution</a>
+            <a class="toc-level-2" href="#part-3-fastqc-and-where-it-applies">Part 3: FastQC, and Where It Applies</a>
+            <a class="toc-level-3" href="#3-1-run-it-on-the-short-reads-only">3.1 Run It on the Short Reads Only</a>
+            <a class="toc-level-3" href="#3-2-read-it-properly">3.2 Read It Properly</a>
+            <a class="toc-level-3" href="#3-3-try-it-where-it-does-not-belong">3.3 Try It Where It Does Not Belong</a>
+            <a class="toc-level-2" href="#part-4-the-right-tool-for-long-reads">Part 4: The Right Tool for Long Reads</a>
+            <a class="toc-level-3" href="#4-1-nanoplot">4.1 NanoPlot</a>
+            <a class="toc-level-3" href="#4-2-four-numbers-that-matter">4.2 Four Numbers That Matter</a>
+            <a class="toc-level-3" href="#4-3-compare-the-two-long-read-platforms">4.3 Compare the Two Long-Read Platforms</a>
+            <a class="toc-level-2" href="#takeaways">Takeaways</a>
+            </nav>
+          </details>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
-            <p class="section-kicker">Week 2 Session 1</p>
-            <h1>Week 2 Session 1: QC Across Four Sequencing Platforms</h1>
-            <p>Last week you fetched the same yeast genome sequenced four different ways: Illumina, BGISEQ, PacBio HiFi and Oxford Nanopore. In this lab you subsample all four, measure them, and...</p>
-            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+            <p class="lab-label">Week 2, Session 1</p>
+            <h1>QC Across Four Sequencing Platforms</h1>
           </header>
           <p>Last week you fetched the same yeast genome sequenced four different ways: Illumina, BGISEQ, PacBio HiFi and Oxford Nanopore. In this lab you subsample all four, measure them, and run the right QC tool for each.</p>
 <p>Because the sample is identical across all four, every difference you see is the platform. That is unusual and it is the point of the exercise.</p>
@@ -228,19 +234,31 @@ grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/
 NanoPlot --fastq long.fastq.gz -o nanoplot --N50</code></pre>
 <p>Three things to carry forward:</p>
 <ol>
-<li>Read length is fixed by the operator on short-read platforms and by your DNA extraction</li>
-<p>on long-read platforms. That single difference explains most of what you measured today.</p>
-<li>A tool that produces output is not a tool that applies. FastQC runs happily on nanopore</li>
-<p>data and tells you almost nothing true.</p>
-<li>No platform is best. Accuracy, length, throughput and turnaround trade against each</li>
-<p>other, and which one you need is a property of your question.</p>
+<li>Read length is fixed by the operator on short-read platforms and by your DNA extraction on long-read platforms. That single difference explains most of what you measured today.</li>
+<li>A tool that produces output is not a tool that applies. FastQC runs happily on nanopore data and tells you almost nothing true.</li>
+<li>No platform is best. Accuracy, length, throughput and turnaround trade against each other, and which one you need is a property of your question.</li>
 </ol>
+          <nav class="lab-pager" aria-label="Lab sequence">
+            <a class="pager-prev" href="../week-01/02-hpc-environments-fetchngs.html"><span>Previous lab: Week 1, Session 2</span>HPC, Environments, and Fetching Public Data</a>
+            <a class="pager-next" href="week-02-02-trimming-and-multiqc.html"><span>Next lab: Week 2, Session 2</span>Trimming, Filtering, and Reading QC Across Samples</a>
+          </nav>
         </article>
       </div>
     </main>
     <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="../../index.html#labs">Course labs</a>
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
     </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
   </body>
 </html>

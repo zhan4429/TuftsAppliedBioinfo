@@ -3,64 +3,70 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Week 1 Session 1: Command Line, Text Processing, and Git for Applied Bioinformatics.">
+    <meta name="description" content="Week 1 Session 1: Command Line, Text Processing, and Git for Applied Bioinformatics, Tufts University.">
     <title>Week 1 Session 1: Command Line, Text Processing, and Git | Applied Bioinformatics</title>
     <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../../styles.css">
     <script src="../../assets/lab-code-copy.js" defer></script>
   </head>
-  <body class="lab-page">
+  <body class="doc-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="../../index.html#labs">Labs</a>
-          <a href="../../index.html#tutorials">Tutorials</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../../index.html#labs">Schedule</a>
+          <a href="../../index.html#setup">Setup</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
-    <main class="lab-main" id="main">
+    <main class="lab-main wrap" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Page table of contents">
-          <a class="back-link" href="../../index.html#labs">Back to labs</a>
-          <p class="section-kicker">Week 1 Session 1</p>
-          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
-<a class="toc-level-2" href="#shared-setup">Shared Setup</a>
-<a class="toc-level-2" href="#part-1-where-am-i">Part 1: Where Am I?</a>
-<a class="toc-level-3" href="#1-1-orient-yourself">1.1 Orient Yourself</a>
-<a class="toc-level-3" href="#1-2-make-a-working-directory">1.2 Make a Working Directory</a>
-<a class="toc-level-3" href="#1-3-relative-and-absolute-paths">1.3 Relative and Absolute Paths</a>
-<a class="toc-level-3" href="#1-4-link-the-data-instead-of-copying-it">1.4 Link the Data Instead of Copying It</a>
-<a class="toc-level-2" href="#part-2-interrogating-a-real-annotation-file">Part 2: Interrogating a Real Annotation File</a>
-<a class="toc-level-3" href="#2-1-look-before-you-leap">2.1 Look Before You Leap</a>
-<a class="toc-level-3" href="#2-2-cut-pull-out-columns">2.2 cut: Pull Out Columns</a>
-<a class="toc-level-3" href="#2-3-the-counting-idiom">2.3 The Counting Idiom</a>
-<a class="toc-level-3" href="#2-4-awk-filter-on-a-column">2.4 awk: Filter on a Column</a>
-<a class="toc-level-3" href="#2-5-awk-do-arithmetic-across-lines">2.5 awk: Do Arithmetic Across Lines</a>
-<a class="toc-level-3" href="#how-much-of-this-genome-is-transcribed">How much of this genome is transcribed?</a>
-<a class="toc-level-3" href="#2-6-sed-make-a-targeted-substitution">2.6 sed: Make a Targeted Substitution</a>
-<a class="toc-level-2" href="#part-3-git">Part 3: Git</a>
-<a class="toc-level-3" href="#3-1-configure-git-once-per-account">3.1 Configure Git Once Per Account</a>
-<a class="toc-level-3" href="#3-2-create-a-repository">3.2 Create a Repository</a>
-<a class="toc-level-3" href="#3-3-add-gitignore-first">3.3 Add .gitignore First</a>
-<a class="toc-level-3" href="#3-4-make-your-first-commits">3.4 Make Your First Commits</a>
-<a class="toc-level-3" href="#3-5-prove-gitignore-works">3.5 Prove .gitignore Works</a>
-<a class="toc-level-2" href="#takeaways">Takeaways</a>
-<a class="toc-level-3" href="#commands-from-this-lab">Commands from this lab</a>
-<a class="toc-level-3" href="#two-habits-that-will-save-you-time-all-semester">Two habits that will save you time all semester</a>
-<a class="toc-level-3" href="#the-idea-underneath-both">The idea underneath both</a></nav>
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to schedule</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#before-you-start">Before You Start</a>
+            <a class="toc-level-2" href="#shared-setup">Shared Setup</a>
+            <a class="toc-level-2" href="#part-1-where-am-i">Part 1: Where Am I?</a>
+            <a class="toc-level-3" href="#1-1-orient-yourself">1.1 Orient Yourself</a>
+            <a class="toc-level-3" href="#1-2-make-a-working-directory">1.2 Make a Working Directory</a>
+            <a class="toc-level-3" href="#1-3-relative-and-absolute-paths">1.3 Relative and Absolute Paths</a>
+            <a class="toc-level-3" href="#1-4-link-the-data-instead-of-copying-it">1.4 Link the Data Instead of Copying It</a>
+            <a class="toc-level-2" href="#part-2-interrogating-a-real-annotation-file">Part 2: Interrogating a Real Annotation File</a>
+            <a class="toc-level-3" href="#2-1-look-before-you-leap">2.1 Look Before You Leap</a>
+            <a class="toc-level-3" href="#2-2-cut-pull-out-columns">2.2 cut: Pull Out Columns</a>
+            <a class="toc-level-3" href="#2-3-the-counting-idiom">2.3 The Counting Idiom</a>
+            <a class="toc-level-3" href="#2-4-awk-filter-on-a-column">2.4 awk: Filter on a Column</a>
+            <a class="toc-level-3" href="#2-5-awk-do-arithmetic-across-lines">2.5 awk: Do Arithmetic Across Lines</a>
+            <a class="toc-level-3" href="#how-much-of-this-genome-is-transcribed">How much of this genome is transcribed?</a>
+            <a class="toc-level-3" href="#2-6-sed-make-a-targeted-substitution">2.6 sed: Make a Targeted Substitution</a>
+            <a class="toc-level-2" href="#part-3-git">Part 3: Git</a>
+            <a class="toc-level-3" href="#3-1-configure-git-once-per-account">3.1 Configure Git Once Per Account</a>
+            <a class="toc-level-3" href="#3-2-create-a-repository">3.2 Create a Repository</a>
+            <a class="toc-level-3" href="#3-3-add-gitignore-first">3.3 Add .gitignore First</a>
+            <a class="toc-level-3" href="#3-4-make-your-first-commits">3.4 Make Your First Commits</a>
+            <a class="toc-level-3" href="#3-5-prove-gitignore-works">3.5 Prove .gitignore Works</a>
+            <a class="toc-level-2" href="#takeaways">Takeaways</a>
+            <a class="toc-level-3" href="#commands-from-this-lab">Commands from this lab</a>
+            <a class="toc-level-3" href="#two-habits-that-will-save-you-time-all-semester">Two habits that will save you time all semester</a>
+            <a class="toc-level-3" href="#the-idea-underneath-both">The idea underneath both</a>
+            </nav>
+          </details>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
-            <p class="section-kicker">Week 1 Session 1</p>
-            <h1>Week 1 Session 1: Command Line, Text Processing, and Git</h1>
-            <p>Use Tufts HPC, inspect a GFF3 file, practice shell pipelines, and create a homework Git repository.</p>
-            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+            <p class="lab-label">Week 1, Session 1</p>
+            <h1>Command Line, Text Processing, and Git</h1>
           </header>
           <p>In this lab you will log in to the Tufts HPC cluster, orient yourself in the filesystem, inspect a real GFF3 annotation file, practice common Unix text-processing patterns, and create your first Git repository for course work.</p>
 <h2 id="before-you-start">Before You Start</h2>
@@ -321,12 +327,27 @@ git log --oneline       # what has happened so far</code></pre>
 <h3 id="the-idea-underneath-both">The idea underneath both</h3>
 <p>Every command in this lab ran successfully. None of them checked whether the answer made sense. <code>uniq</code> without <code>sort</code> returns a wrong count with no error. Forgetting <code>+ 1</code> returns a total that is off by the number of features. <code>sed</code> without the comment filter quietly corrupts your header lines.</p>
 <p>Deciding whether an answer is plausible is your job, not the tool&#x27;s. That is most of what this course is about, and it starts here.</p>
+          <nav class="lab-pager" aria-label="Lab sequence">
+            <span class="pager-prev"></span>
+            <a class="pager-next" href="02-hpc-environments-fetchngs.html"><span>Next lab: Week 1, Session 2</span>HPC, Environments, and Fetching Public Data</a>
+          </nav>
         </article>
       </div>
     </main>
     <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="../../index.html#labs">Course labs</a>
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
     </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
   </body>
 </html>

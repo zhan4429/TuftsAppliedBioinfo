@@ -3,55 +3,61 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Lab 3B — Annotation, and What Counts as Evidence for Applied Bioinformatics.">
+    <meta name="description" content="Lab 3B — Annotation, and What Counts as Evidence for Applied Bioinformatics, Tufts University.">
     <title>Lab 3B — Annotation, and What Counts as Evidence | Applied Bioinformatics</title>
     <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../../styles.css">
     <script src="../../assets/lab-code-copy.js" defer></script>
   </head>
-  <body class="lab-page">
+  <body class="doc-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="../../index.html#labs">Labs</a>
-          <a href="../../index.html#tutorials">Tutorials</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../../index.html#labs">Schedule</a>
+          <a href="../../index.html#setup">Setup</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
-    <main class="lab-main" id="main">
+    <main class="lab-main wrap" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Page table of contents">
-          <a class="back-link" href="../../index.html#labs">Back to labs</a>
-          <p class="section-kicker">Week 3 Session 2</p>
-          <nav><a class="toc-level-2" href="#before-you-start">Before you start</a>
-<a class="toc-level-2" href="#part-1-submit-the-annotation-then-stop-waiting-for-it-5-minutes">Part 1 — Submit the annotation, then stop waiting for it (5 minutes)</a>
-<a class="toc-level-2" href="#part-2-make-the-evidence-11-minutes">Part 2 — Make the evidence (11 minutes)</a>
-<a class="toc-level-3" href="#2-1-index-the-assembly">2.1 Index the assembly</a>
-<a class="toc-level-3" href="#2-2-align-the-rna-seq">2.2 Align the RNA-seq</a>
-<a class="toc-level-3" href="#2-3-find-the-introns">2.3 Find the introns</a>
-<a class="toc-level-3" href="#2-4-coverage-over-the-assembly">2.4 Coverage over the assembly</a>
-<a class="toc-level-2" href="#part-3-judge-gene-models-against-evidence-10-minutes">Part 3 — Judge gene models against evidence (10 minutes)</a>
-<a class="toc-level-3" href="#3-1-look-at-the-annotation">3.1 Look at the annotation</a>
-<a class="toc-level-3" href="#3-2-how-many-genes-have-evidence">3.2 How many genes have evidence?</a>
-<a class="toc-level-3" href="#3-3-look-at-it">3.3 Look at it</a>
-<a class="toc-level-2" href="#part-4-functional-annotation-and-what-it-is-worth-4-minutes">Part 4 — Functional annotation, and what it is worth (4 minutes)</a>
-<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to schedule</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#before-you-start">Before you start</a>
+            <a class="toc-level-2" href="#part-1-submit-the-annotation-then-stop-waiting-for-it-5-minutes">Part 1 — Submit the annotation, then stop waiting for it (5 minutes)</a>
+            <a class="toc-level-2" href="#part-2-make-the-evidence-11-minutes">Part 2 — Make the evidence (11 minutes)</a>
+            <a class="toc-level-3" href="#2-1-index-the-assembly">2.1 Index the assembly</a>
+            <a class="toc-level-3" href="#2-2-align-the-rna-seq">2.2 Align the RNA-seq</a>
+            <a class="toc-level-3" href="#2-3-find-the-introns">2.3 Find the introns</a>
+            <a class="toc-level-3" href="#2-4-coverage-over-the-assembly">2.4 Coverage over the assembly</a>
+            <a class="toc-level-2" href="#part-3-judge-gene-models-against-evidence-10-minutes">Part 3 — Judge gene models against evidence (10 minutes)</a>
+            <a class="toc-level-3" href="#3-1-look-at-the-annotation">3.1 Look at the annotation</a>
+            <a class="toc-level-3" href="#3-2-how-many-genes-have-evidence">3.2 How many genes have evidence?</a>
+            <a class="toc-level-3" href="#3-3-look-at-it">3.3 Look at it</a>
+            <a class="toc-level-2" href="#part-4-functional-annotation-and-what-it-is-worth-4-minutes">Part 4 — Functional annotation, and what it is worth (4 minutes)</a>
+            <a class="toc-level-2" href="#takeaways">Takeaways</a>
+            </nav>
+          </details>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
-            <p class="section-kicker">Week 3 Session 2</p>
-            <h1>Lab 3B — Annotation, and What Counts as Evidence</h1>
-            <p>You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.</p>
-            <span>Applied Bioinformatics · Week 3, Session 2</span>
+            <p class="lab-label">Week 3, Session 2</p>
+            <h1>Annotation, and What Counts as Evidence</h1>
+            <p class="lab-time">Time: 30 minutes · Runs alongside the lecture</p>
           </header>
-          <p><strong>Time: 30 minutes · Runs alongside the lecture</strong></p>
-<blockquote>You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.</blockquote>
+          <blockquote>You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.</blockquote>
 <hr>
 <h2 id="before-you-start">Before you start</h2>
 <pre class="lab-code"><code class=" language-bash">srun --pty -p interactive -n 8 --mem=32g --time=0-03:00:00 bash
@@ -226,12 +232,27 @@ awk -F&#x27;\t&#x27; &#x27;NR&gt;1&#x27; $COURSE/reference_functional.tsv | wc -
 <li>&quot;Hypothetical protein&quot; is an honest answer about the databases, not a failure.</li>
 <li>Functional annotation inherits every structural error, silently. Correctness upstream is not optional.</li>
 </ol>
+          <nav class="lab-pager" aria-label="Lab sequence">
+            <a class="pager-prev" href="Lab_Week03_Session1_Genome_Assembly.html"><span>Previous lab: Week 3, Session 1</span>Assembling a Genome</a>
+            <span class="pager-next"></span>
+          </nav>
         </article>
       </div>
     </main>
     <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="../../index.html#labs">Course labs</a>
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
     </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
   </body>
 </html>

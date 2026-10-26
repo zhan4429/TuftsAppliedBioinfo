@@ -3,60 +3,66 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Week 1 Session 2: HPC, Environments, and Fetching Public Data for Applied Bioinformatics.">
+    <meta name="description" content="Week 1 Session 2: HPC, Environments, and Fetching Public Data for Applied Bioinformatics, Tufts University.">
     <title>Week 1 Session 2: HPC, Environments, and Fetching Public Data | Applied Bioinformatics</title>
     <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../../styles.css">
     <script src="../../assets/lab-code-copy.js" defer></script>
   </head>
-  <body class="lab-page">
+  <body class="doc-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="../../index.html#labs">Labs</a>
-          <a href="../../index.html#tutorials">Tutorials</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../../index.html#labs">Schedule</a>
+          <a href="../../index.html#setup">Setup</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
-    <main class="lab-main" id="main">
+    <main class="lab-main wrap" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Page table of contents">
-          <a class="back-link" href="../../index.html#labs">Back to labs</a>
-          <p class="section-kicker">Week 1 Session 2</p>
-          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
-<a class="toc-level-2" href="#part-1-get-off-the-login-node">Part 1: Get Off the Login Node</a>
-<a class="toc-level-3" href="#1-1-see-where-you-are">1.1 See Where You Are</a>
-<a class="toc-level-3" href="#1-2-inspect-the-cluster">1.2 Inspect the Cluster</a>
-<a class="toc-level-3" href="#1-3-request-a-compute-node">1.3 Request a Compute Node</a>
-<a class="toc-level-2" href="#part-2-submit-a-batch-job">Part 2: Submit a Batch Job</a>
-<a class="toc-level-3" href="#2-1-write-the-job-script">2.1 Write the Job Script</a>
-<a class="toc-level-3" href="#2-2-spot-the-bug-before-submitting">2.2 Spot the Bug Before Submitting</a>
-<a class="toc-level-3" href="#2-3-read-the-result-and-the-cost">2.3 Read the Result and the Cost</a>
-<a class="toc-level-2" href="#part-3-two-ways-to-get-software">Part 3: Two Ways to Get Software</a>
-<a class="toc-level-3" href="#3-1-conda-for-your-own-tools">3.1 Conda for Your Own Tools</a>
-<a class="toc-level-3" href="#3-2-nextflow-and-containers-for-pipelines">3.2 Nextflow and Containers for Pipelines</a>
-<a class="toc-level-2" href="#part-4-fetch-public-data-with-nf-core-fetchngs">Part 4: Fetch Public Data with nf-core/fetchngs</a>
-<a class="toc-level-3" href="#4-1-understand-what-you-are-asking-for">4.1 Understand What You Are Asking For</a>
-<a class="toc-level-3" href="#4-2-choose-one-run-per-platform">4.2 Choose One Run Per Platform</a>
-<a class="toc-level-3" href="#4-3-test-the-pipeline-first">4.3 Test the Pipeline First</a>
-<a class="toc-level-3" href="#4-4-submit-the-real-download-as-a-job">4.4 Submit the Real Download as a Job</a>
-<a class="toc-level-3" href="#4-5-check-after-class">4.5 Check After Class</a>
-<a class="toc-level-3" href="#4-6-verify-the-download">4.6 Verify the Download</a>
-<a class="toc-level-2" href="#if-your-job-fails">If Your Job Fails</a>
-<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to schedule</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#before-you-start">Before You Start</a>
+            <a class="toc-level-2" href="#part-1-get-off-the-login-node">Part 1: Get Off the Login Node</a>
+            <a class="toc-level-3" href="#1-1-see-where-you-are">1.1 See Where You Are</a>
+            <a class="toc-level-3" href="#1-2-inspect-the-cluster">1.2 Inspect the Cluster</a>
+            <a class="toc-level-3" href="#1-3-request-a-compute-node">1.3 Request a Compute Node</a>
+            <a class="toc-level-2" href="#part-2-submit-a-batch-job">Part 2: Submit a Batch Job</a>
+            <a class="toc-level-3" href="#2-1-write-the-job-script">2.1 Write the Job Script</a>
+            <a class="toc-level-3" href="#2-2-spot-the-bug-before-submitting">2.2 Spot the Bug Before Submitting</a>
+            <a class="toc-level-3" href="#2-3-read-the-result-and-the-cost">2.3 Read the Result and the Cost</a>
+            <a class="toc-level-2" href="#part-3-two-ways-to-get-software">Part 3: Two Ways to Get Software</a>
+            <a class="toc-level-3" href="#3-1-conda-for-your-own-tools">3.1 Conda for Your Own Tools</a>
+            <a class="toc-level-3" href="#3-2-nextflow-and-containers-for-pipelines">3.2 Nextflow and Containers for Pipelines</a>
+            <a class="toc-level-2" href="#part-4-fetch-public-data-with-nf-core-fetchngs">Part 4: Fetch Public Data with nf-core/fetchngs</a>
+            <a class="toc-level-3" href="#4-1-understand-what-you-are-asking-for">4.1 Understand What You Are Asking For</a>
+            <a class="toc-level-3" href="#4-2-choose-one-run-per-platform">4.2 Choose One Run Per Platform</a>
+            <a class="toc-level-3" href="#4-3-test-the-pipeline-first">4.3 Test the Pipeline First</a>
+            <a class="toc-level-3" href="#4-4-submit-the-real-download-as-a-job">4.4 Submit the Real Download as a Job</a>
+            <a class="toc-level-3" href="#4-5-check-after-class">4.5 Check After Class</a>
+            <a class="toc-level-3" href="#4-6-verify-the-download">4.6 Verify the Download</a>
+            <a class="toc-level-2" href="#if-your-job-fails">If Your Job Fails</a>
+            <a class="toc-level-2" href="#takeaways">Takeaways</a>
+            </nav>
+          </details>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
-            <p class="section-kicker">Week 1 Session 2</p>
-            <h1>Week 1 Session 2: HPC, Environments, and Fetching Public Data</h1>
-            <p>Request compute resources, submit SLURM jobs, test containers, and start an nf-core/fetchngs download.</p>
-            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+            <p class="lab-label">Week 1, Session 2</p>
+            <h1>HPC, Environments, and Fetching Public Data</h1>
           </header>
           <p>In this lab you will move from the login node to a compute node, submit a small SLURM batch job, create a reproducible software environment, test Nextflow and container support, and start a real public-data download with <code>nf-core/fetchngs</code>.</p>
 <p>This lab produces the sequencing data used in Week 2 and Week 3. You will fetch one run from each of the four platforms in a single study, which is what makes next week&#x27;s QC comparison possible. The download will finish after class, so do not skip the job submission and verification steps.</p>
@@ -372,12 +378,27 @@ zcat file.fastq.gz | awk &#x27;NR % 4 == 1&#x27; | wc -l</code></pre>
 <li>Put long jobs in the scheduler, not in an interactive terminal.</li>
 <li>Keep everything under <code>$MYWORK</code>. Home directory quotas are small and sequencing data is not.</li>
 </ol>
+          <nav class="lab-pager" aria-label="Lab sequence">
+            <a class="pager-prev" href="01-command-line-git.html"><span>Previous lab: Week 1, Session 1</span>Command Line, Text Processing, and Git</a>
+            <a class="pager-next" href="../week-02/week-02-01-qc-across-platforms.html"><span>Next lab: Week 2, Session 1</span>QC Across Four Sequencing Platforms</a>
+          </nav>
         </article>
       </div>
     </main>
     <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="../../index.html#labs">Course labs</a>
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
     </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
   </body>
 </html>

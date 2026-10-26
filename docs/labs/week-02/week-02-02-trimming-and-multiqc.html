@@ -3,53 +3,59 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Week 2 Session 2: Trimming, Filtering, and Reading QC Across Samples for Applied Bioinformatics.">
+    <meta name="description" content="Week 2 Session 2: Trimming, Filtering, and Reading QC Across Samples for Applied Bioinformatics, Tufts University.">
     <title>Week 2 Session 2: Trimming, Filtering, and Reading QC Across Samples | Applied Bioinformatics</title>
     <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../../styles.css">
     <script src="../../assets/lab-code-copy.js" defer></script>
   </head>
-  <body class="lab-page">
+  <body class="doc-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="../../index.html#labs" aria-label="Applied Bioinformatics">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="../../index.html#labs">Labs</a>
-          <a href="../../index.html#tutorials">Tutorials</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../../index.html#labs">Schedule</a>
+          <a href="../../index.html#setup">Setup</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
-    <main class="lab-main" id="main">
+    <main class="lab-main wrap" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Page table of contents">
-          <a class="back-link" href="../../index.html#labs">Back to labs</a>
-          <p class="section-kicker">Week 2 Session 2</p>
-          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
-<a class="toc-level-2" href="#part-1-trim-the-short-reads">Part 1: Trim the Short Reads</a>
-<a class="toc-level-3" href="#1-1-run-fastp-on-one-sample">1.1 Run fastp on One Sample</a>
-<a class="toc-level-3" href="#1-2-how-much-survived">1.2 How Much Survived</a>
-<a class="toc-level-3" href="#1-3-trim-the-other-short-read-sample">1.3 Trim the Other Short-Read Sample</a>
-<a class="toc-level-2" href="#part-2-long-reads-are-filtered-not-trimmed">Part 2: Long Reads Are Filtered, Not Trimmed</a>
-<a class="toc-level-3" href="#2-1-why-the-difference">2.1 Why the Difference</a>
-<a class="toc-level-3" href="#2-2-filter-with-chopper">2.2 Filter with chopper</a>
-<a class="toc-level-2" href="#part-3-aggregate-everything">Part 3: Aggregate Everything</a>
-<a class="toc-level-3" href="#3-1-one-report-for-all-four-platforms">3.1 One Report for All Four Platforms</a>
-<a class="toc-level-3" href="#3-2-start-at-the-general-statistics-table">3.2 Start at the General Statistics Table</a>
-<a class="toc-level-3" href="#3-3-what-one-report-cannot-show">3.3 What One Report Cannot Show</a>
-<a class="toc-level-2" href="#part-4-four-samples-that-are-not-fine">Part 4: Four Samples That Are Not Fine</a>
-<a class="toc-level-2" href="#takeaways">Takeaways</a></nav>
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to schedule</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#before-you-start">Before You Start</a>
+            <a class="toc-level-2" href="#part-1-trim-the-short-reads">Part 1: Trim the Short Reads</a>
+            <a class="toc-level-3" href="#1-1-run-fastp-on-one-sample">1.1 Run fastp on One Sample</a>
+            <a class="toc-level-3" href="#1-2-how-much-survived">1.2 How Much Survived</a>
+            <a class="toc-level-3" href="#1-3-trim-the-other-short-read-sample">1.3 Trim the Other Short-Read Sample</a>
+            <a class="toc-level-2" href="#part-2-long-reads-are-filtered-not-trimmed">Part 2: Long Reads Are Filtered, Not Trimmed</a>
+            <a class="toc-level-3" href="#2-1-why-the-difference">2.1 Why the Difference</a>
+            <a class="toc-level-3" href="#2-2-filter-with-chopper">2.2 Filter with chopper</a>
+            <a class="toc-level-2" href="#part-3-aggregate-everything">Part 3: Aggregate Everything</a>
+            <a class="toc-level-3" href="#3-1-one-report-for-all-four-platforms">3.1 One Report for All Four Platforms</a>
+            <a class="toc-level-3" href="#3-2-start-at-the-general-statistics-table">3.2 Start at the General Statistics Table</a>
+            <a class="toc-level-3" href="#3-3-what-one-report-cannot-show">3.3 What One Report Cannot Show</a>
+            <a class="toc-level-2" href="#part-4-four-samples-that-are-not-fine">Part 4: Four Samples That Are Not Fine</a>
+            <a class="toc-level-2" href="#takeaways">Takeaways</a>
+            </nav>
+          </details>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
-            <p class="section-kicker">Week 2 Session 2</p>
-            <h1>Week 2 Session 2: Trimming, Filtering, and Reading QC Across Samples</h1>
-            <p>On Tuesday you measured four platforms. Today you act on what you found: trim the short reads, filter the long reads, aggregate everything into one report, and diagnose four...</p>
-            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+            <p class="lab-label">Week 2, Session 2</p>
+            <h1>Trimming, Filtering, and Reading QC Across Samples</h1>
           </header>
           <p>On Tuesday you measured four platforms. Today you act on what you found: trim the short reads, filter the long reads, aggregate everything into one report, and diagnose four samples that are deliberately broken.</p>
 <p>The last part is the point of the session. Running QC is easy. Deciding what a bad plot means is the skill.</p>
@@ -210,17 +216,30 @@ zcat long.fastq.gz | chopper -q 10 -l 1000 | gzip &gt; filt.fq.gz</code></pre>
 <p>Three things to carry forward:</p>
 <ol>
 <li>Over-trimming is worse than under-trimming. Trim adapters; leave quality mostly alone.</li>
-<li>Thresholds are platform-specific. Q20 is routine for Illumina and would destroy a</li>
-<p>nanopore run.</p>
-<li>Run MultiQC even on one sample, and always before deciding a dataset is fine. The</li>
-<p>problems that matter most are only visible across samples.</p>
+<li>Thresholds are platform-specific. Q20 is routine for Illumina and would destroy a nanopore run.</li>
+<li>Run MultiQC even on one sample, and always before deciding a dataset is fine. The problems that matter most are only visible across samples.</li>
 </ol>
+          <nav class="lab-pager" aria-label="Lab sequence">
+            <a class="pager-prev" href="week-02-01-qc-across-platforms.html"><span>Previous lab: Week 2, Session 1</span>QC Across Four Sequencing Platforms</a>
+            <a class="pager-next" href="../week-03/Lab_Week03_Session1_Genome_Assembly.html"><span>Next lab: Week 3, Session 1</span>Assembling a Genome</a>
+          </nav>
         </article>
       </div>
     </main>
     <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="../../index.html#labs">Course labs</a>
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
     </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
   </body>
 </html>

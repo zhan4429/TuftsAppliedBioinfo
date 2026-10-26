@@ -3,182 +3,249 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta
-      name="description"
-      content="Applied Bioinformatics course lab hub for Tufts University Department of Biology."
-    >
-    <title>Applied Bioinformatics | Tufts Biology</title>
+    <meta name="description" content="Applied Bioinformatics: course schedule, labs, and setup guides. Department of Biology, Tufts University.">
+    <title>Applied Bioinformatics | Tufts University</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="styles.css">
+    <script src="assets/lab-code-copy.js" defer></script>
   </head>
-  <body>
+  <body class="home-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="#top" aria-label="Applied Bioinformatics home">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="#labs">Labs</a>
-          <a href="#tutorials">Tutorials</a>
-          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="course-header">
+      <div class="wrap course-header-main">
+        <h1 class="course-title">Applied Bioinformatics</h1>
+        <p class="course-lede">Hands-on bioinformatics with real datasets: reproducible workflows on the Tufts HPC cluster, critical evaluation of results, and clear scientific reporting. Weekly labs and setup guides are posted here.</p>
+        <dl class="course-details">
+          <div><dt>Computing</dt><dd>Tufts HPC cluster (Pax)</dd></div>
+        </dl>
+      </div>
     </header>
+    <nav class="course-nav" aria-label="Main navigation">
+      <div class="wrap">
+        <a href="#labs">Schedule</a>
+        <a href="#setup">Setup</a>
+        <a href="#expectations">Expectations</a>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+      </div>
+    </nav>
 
-    <main id="main">
-      <section class="masthead" aria-labelledby="page-title">
-        <div class="masthead-inner">
-          <p class="eyebrow">Tufts University - Department of Biology</p>
-          <h1 id="page-title">Applied Bioinformatics</h1>
-          <p class="lede">
-            A lab hub for hands-on bioinformatics work on Pax, with copyable
-            commands, GitHub-friendly Markdown, and short notes students can
-            use during class.
-          </p>
-          <div class="hero-actions" aria-label="Primary actions">
-            <a class="button primary" href="#labs">Open labs</a>
-            <a class="button secondary" href="#tutorials">Open tutorials</a>
-            <a class="button secondary" href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub repository</a>
-          </div>
+    <main id="main" class="wrap home-main">
+      <section class="home-section" id="labs" aria-labelledby="schedule-title">
+        <h2 id="schedule-title">Schedule and labs</h2>
+        <p class="section-note">
+          Lab links appear in each week as they are posted. Due dates, grading,
+          and course policies are set by the official syllabus.
+        </p>
+        <div class="table-scroll">
+          <table class="schedule">
+            <thead>
+              <tr>
+                <th scope="col" class="col-week">Week</th>
+                <th scope="col" class="col-topic">Topics</th>
+                <th scope="col" class="col-labs">Labs</th>
+              </tr>
+            </thead>
+            <tbody>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">0</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Optional preparation</span>
+              <p class="topic-detail">Self-paced practice with shell navigation and basic Python or R syntax.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="has-labs">
+            <th scope="row" class="col-week"><span class="week-num">1</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Command line, HPC, and reproducible environments</span>
+              <p class="topic-detail">Linux command line, text processing, Git/GitHub basics, HPC job submission with SLURM, conda/mamba environments, containers, public databases, and dataset inspection.</p>
+            </td>
+            <td class="col-labs">
+              <ul class="session-list">
+                <li><span class="session">Session 1</span><a href="labs/week-01/01-command-line-git.html">Command Line, Text Processing, and Git</a></li>
+                <li><span class="session">Session 2</span><a href="labs/week-01/02-hpc-environments-fetchngs.html">HPC, Environments, and Fetching Public Data</a></li>
+              </ul>
+            </td>
+          </tr>
+          <tr class="has-labs">
+            <th scope="row" class="col-week"><span class="week-num">2</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Sequencing design and quality control</span>
+              <p class="topic-detail">Sequencing technologies, experimental design, replication, confounding, batch effects, FASTQ format, FastQC, fastp, MultiQC, and QC interpretation.</p>
+            </td>
+            <td class="col-labs">
+              <ul class="session-list">
+                <li><span class="session">Session 1</span><a href="labs/week-02/week-02-01-qc-across-platforms.html">QC Across Four Sequencing Platforms</a></li>
+                <li><span class="session">Session 2</span><a href="labs/week-02/week-02-02-trimming-and-multiqc.html">Trimming, Filtering, and Reading QC Across Samples</a></li>
+              </ul>
+            </td>
+          </tr>
+          <tr class="has-labs">
+            <th scope="row" class="col-week"><span class="week-num">3</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Genome assembly and annotation</span>
+              <p class="topic-detail">Assembly QC, contamination screening, GFF3/GTF structure, functional annotation, annotation version issues, and IGV inspection.</p>
+            </td>
+            <td class="col-labs">
+              <ul class="session-list">
+                <li><span class="session">Session 1</span><a href="labs/week-03/Lab_Week03_Session1_Genome_Assembly.html">Assembling a Genome</a></li>
+                <li><span class="session">Session 2</span><a href="labs/week-03/Lab_Week03_Session2_Annotation_Evidence.html">Annotation, and What Counts as Evidence</a></li>
+              </ul>
+            </td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">4</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Read alignment and variant calling</span>
+              <p class="topic-detail">SAM/BAM processing, alignment QC, variant calling with GATK HaplotypeCaller and DeepVariant, filtering, benchmarking, annotation, and VCF interpretation.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">5</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Bulk RNA-seq quantification</span>
+              <p class="topic-detail">RNA-seq design, pseudoalignment, alignment-based quantification, library type and strandedness, nf-core/rnaseq, count matrices, metadata, and exploratory analysis.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">6</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Differential expression</span>
+              <p class="topic-detail">DESeq2, design formulas, covariates and batch effects, multiple testing, visualization, enrichment analysis, and notebook/report preparation.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">7</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Chromatin accessibility and binding</span>
+              <p class="topic-detail">ATAC-seq, peak calling with MACS3, nf-core/atacseq, ChIP-seq and CUT&amp;RUN/CUT&amp;Tag concepts, QC metrics, peak annotation, motif enrichment, and integration with expression results.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">8</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Single-cell RNA-seq preprocessing</span>
+              <p class="topic-detail">10x barcodes and UMIs, Cell Ranger, STARsolo, alevin-fry, nf-core/scrnaseq, AnnData and Seurat objects, QC, filtering, normalization, and feature selection.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">9</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Single-cell analysis and spatial transcriptomics</span>
+              <p class="topic-detail">Dimensionality reduction, clustering, marker genes, cell type annotation, batch integration, pseudobulk differential expression, and spatial transcriptomics.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">10</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Microbiome and metagenomics</span>
+              <p class="topic-detail">16S amplicon workflows, QIIME2/DADA2, compositional data, shotgun taxonomic and functional profiling, metagenome-assembled genomes, diversity metrics, and differential abundance.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">11</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Mini-project preparation</span>
+              <p class="topic-detail">Dataset acquisition and QC as assigned.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+          <tr class="upcoming">
+            <th scope="row" class="col-week"><span class="week-num">12–14</span></th>
+            <td class="col-topic">
+              <span class="topic-title">Mini-project</span>
+              <p class="topic-detail">Reproduce key findings from a published paper, maintain a reproducible GitHub repository, prepare notebooks and reports, and present results.</p>
+            </td>
+            <td class="col-labs"></td>
+          </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <section class="quick-strip" aria-label="Course workflow highlights">
-        <div class="quick-item">
-          <span class="quick-number">01</span>
-          <strong>Clone once</strong>
-          <span>Keep the lab files local for class.</span>
-        </div>
-        <div class="quick-item">
-          <span class="quick-number">02</span>
-          <strong>Pull often</strong>
-          <span>Refresh before each lab session.</span>
-        </div>
-        <div class="quick-item">
-          <span class="quick-number">03</span>
-          <strong>Open a lab</strong>
-          <span>Use the course pages during class.</span>
-        </div>
-        <div class="quick-item">
-          <span class="quick-number">04</span>
-          <strong>Run carefully</strong>
-          <span>Use Tufts HPC and course storage as directed.</span>
-        </div>
-      </section>
-
-      <section class="lab-hub" id="labs" aria-labelledby="labs-title">
-        <div class="section-copy wide">
-          <p class="section-kicker">Available Labs</p>
-          <h2 id="labs-title">Course labs</h2>
-          <p>
-            Open these labs during class. They are organized
-            for reading, copying commands, checking expected outputs, and
-            revisiting answers after trying each question.
-          </p>
-        </div>
-
-        <div class="lab-card-grid">
-          <a
-            class="lab-card"
-            href="labs/week-01/01-command-line-git.html"
-          >
-            <span class="lab-session">Week 1 Session 1</span>
-            <strong>Command Line, Text Processing, and Git</strong>
-            <span>Use Tufts HPC, inspect a GFF3 file, practice shell pipelines, and create a homework Git repository.</span>
-          </a>
-          <a
-            class="lab-card"
-            href="labs/week-01/02-hpc-environments-fetchngs.html"
-          >
-            <span class="lab-session">Week 1 Session 2</span>
-            <strong>HPC, Environments, and Fetching Public Data</strong>
-            <span>Request compute resources, submit SLURM jobs, test containers, and start an nf-core/fetchngs download.</span>
-          </a>
-          <a
-            class="lab-card"
-            href="labs/week-02/week-02-01-qc-across-platforms.html"
-          >
-            <span class="lab-session">Week 2 Session 1</span>
-            <strong>QC Across Four Sequencing Platforms</strong>
-            <span>Last week you fetched the same yeast genome sequenced four different ways: Illumina, BGISEQ, PacBio HiFi and Oxford Nanopore. In this lab you subsample all four, measure them, and...</span>
-          </a>
-          <a
-            class="lab-card"
-            href="labs/week-02/week-02-02-trimming-and-multiqc.html"
-          >
-            <span class="lab-session">Week 2 Session 2</span>
-            <strong>Trimming, Filtering, and Reading QC Across Samples</strong>
-            <span>On Tuesday you measured four platforms. Today you act on what you found: trim the short reads, filter the long reads, aggregate everything into one report, and diagnose four...</span>
-          </a>
-          <a
-            class="lab-card"
-            href="labs/week-03/Lab_Week03_Session1_Genome_Assembly.html"
-          >
-            <span class="lab-session">Week 3 Session 1</span>
-            <strong>Assembling a Genome</strong>
-            <span>Read Part 1 first and submit the assembly immediately. It runs while you do the rest of the lab. Do not read the whole handout before starting.</span>
-          </a>
-          <a
-            class="lab-card"
-            href="labs/week-03/Lab_Week03_Session2_Annotation_Evidence.html"
-          >
-            <span class="lab-session">Week 3 Session 2</span>
-            <strong>Annotation, and What Counts as Evidence</strong>
-            <span>You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.</span>
-          </a>
-        </div>
-
-        <div class="lab-setup">
-          <div class="section-copy">
-            <p class="section-kicker">Using the Repository</p>
-            <h2>Keep your copy current</h2>
-            <p>
-              Clone once, then pull before each class. Large data and generated
-              results should stay on Pax or course storage, not in GitHub.
+      <section class="home-section" id="setup" aria-labelledby="setup-title">
+        <h2 id="setup-title">Setup and tutorials</h2>
+        <div class="two-col setup-cols">
+          <div>
+            <h3>Get the course repository</h3>
+            <p>Clone the repository once on Pax:</p>
+            <pre class="lab-code"><code>git clone https://github.com/zhan4429/TuftsAppliedBioinfo.git</code></pre>
+            <p>Then pull before each class to get the latest labs:</p>
+            <pre class="lab-code"><code>cd TuftsAppliedBioinfo
+git pull</code></pre>
+            <p class="muted">
+              Keep large data and generated results on Pax or course storage, not in GitHub.
             </p>
           </div>
-          <div class="command-panel" aria-label="Basic repository commands">
-            <div class="panel-bar">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <pre><code>git clone &lt;repository-url&gt;
-cd &lt;repository-name&gt;
-git pull</code></pre>
+          <div>
+            <h3 id="tutorials">Tutorials</h3>
+            <ul class="resource-list">
+              <li><a href="tutorials/guide-git-github-on-pax.html">Set Up Git and GitHub on Pax</a><p>Configure Git identity, add an SSH key to GitHub, and connect Pax repositories safely.</p></li>
+            </ul>
           </div>
         </div>
       </section>
 
-      <section class="lab-hub" id="tutorials" aria-labelledby="tutorials-title">
-        <div class="section-copy wide">
-          <p class="section-kicker">Tutorials</p>
-          <h2 id="tutorials-title">Setup guides</h2>
-          <p>
-            Use these short guides when you need a one-time setup step or a
-            refresher for course tools.
-          </p>
-        </div>
-
-        <div class="lab-card-grid tutorial-card-grid">
-          <a
-            class="lab-card"
-            href="tutorials/guide-git-github-on-pax.html"
-          >
-            <span class="lab-session">Tutorial</span>
-            <strong>Set Up Git and GitHub on Pax</strong>
-            <span>Configure Git identity, add an SSH key to GitHub, and connect Pax repositories safely.</span>
-          </a>
+      <section class="home-section" id="expectations" aria-labelledby="expectations-title">
+        <h2 id="expectations-title">Course expectations</h2>
+        <div class="two-col">
+          <div>
+            <h3>Reproducible work</h3>
+            <p>
+              Bioinformatics work should be understandable and rerunnable by someone else,
+              including your future self. A pipeline result is not automatically correct
+              because it ran successfully.
+            </p>
+            <ul class="plain-list">
+              <li>Keep commands, parameters, sample IDs, and software versions visible.</li>
+              <li>Use relative paths when possible.</li>
+              <li>Separate raw data, intermediate files, final outputs, and reports.</li>
+              <li>Document where input data came from.</li>
+              <li>Preserve small configuration files and sample sheets.</li>
+              <li>Avoid committing large generated files unless instructed.</li>
+              <li>Record failed or unexpected results when they affect interpretation.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Using AI assistants</h3>
+            <p>
+              AI coding assistants are permitted and expected as part of the course,
+              but they do not replace scientific judgment.
+            </p>
+            <ul class="plain-list">
+              <li>Disclose AI use in submitted notebooks or reports, including the tool used and what it helped with.</li>
+              <li>Verify generated commands and code against documentation, error messages, and expected outputs.</li>
+              <li>You are responsible for every line you submit.</li>
+              <li>Written interpretation, discussion, and limitations sections should be your own scientific reasoning.</li>
+              <li>Watch for hallucinated arguments, deprecated APIs, plausible but inappropriate statistical choices, and code that runs while producing the wrong analysis.</li>
+            </ul>
+          </div>
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub repository</a>
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
     </footer>
   </body>
 </html>

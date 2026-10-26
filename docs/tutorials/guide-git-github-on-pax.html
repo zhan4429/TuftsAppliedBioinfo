@@ -3,54 +3,61 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Tutorial: Set Up Git and GitHub on Pax for Applied Bioinformatics.">
+    <meta name="description" content="Tutorial: Set Up Git and GitHub on Pax for Applied Bioinformatics, Tufts University.">
     <title>Tutorial: Set Up Git and GitHub on Pax | Applied Bioinformatics</title>
     <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../styles.css">
+    <script src="../assets/lab-code-copy.js" defer></script>
   </head>
-  <body class="lab-page">
+  <body class="doc-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="../index.html#labs" aria-label="Applied Bioinformatics">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="../index.html#labs">Labs</a>
-          <a href="../index.html#tutorials">Tutorials</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../index.html#labs">Schedule</a>
+          <a href="../index.html#setup">Setup</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
-    <main class="lab-main" id="main">
+    <main class="lab-main wrap" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Page table of contents">
-          <a class="back-link" href="../index.html#tutorials">Back to tutorials</a>
-          <p class="section-kicker">Tutorial</p>
-          <nav><a class="toc-level-2" href="#before-you-start">Before You Start</a>
-<a class="toc-level-3" href="#one-exception-to-the-mywork-rule">One exception to the $MYWORK rule</a>
-<a class="toc-level-2" href="#part-1-tell-git-who-you-are">Part 1: Tell Git Who You Are</a>
-<a class="toc-level-2" href="#part-2-create-an-ssh-key">Part 2: Create an SSH Key</a>
-<a class="toc-level-3" href="#permissions-matter">Permissions Matter</a>
-<a class="toc-level-2" href="#part-3-add-the-public-key-to-github">Part 3: Add the Public Key to GitHub</a>
-<a class="toc-level-2" href="#part-4-test-github-login-from-pax">Part 4: Test GitHub Login from Pax</a>
-<a class="toc-level-3" href="#if-you-set-a-passphrase">If you set a passphrase</a>
-<a class="toc-level-2" href="#part-5-use-port-443-if-port-22-is-blocked">Part 5: Use Port 443 If Port 22 Is Blocked</a>
-<a class="toc-level-2" href="#part-6-connect-a-repository">Part 6: Connect a Repository</a>
-<a class="toc-level-3" href="#if-you-are-creating-a-new-homework-repository">If you are creating a new homework repository</a>
-<a class="toc-level-3" href="#if-the-repository-already-exists-on-github">If the repository already exists on GitHub</a>
-<a class="toc-level-2" href="#part-7-protect-your-repository-before-you-push-data">Part 7: Protect Your Repository Before You Push Data</a>
-<a class="toc-level-2" href="#everyday-git-cycle">Everyday Git Cycle</a>
-<a class="toc-level-2" href="#troubleshooting">Troubleshooting</a>
-<a class="toc-level-2" href="#quick-reference">Quick Reference</a></nav>
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../index.html#setup">Back to setup and tutorials</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#before-you-start">Before You Start</a>
+            <a class="toc-level-3" href="#one-exception-to-the-mywork-rule">One exception to the $MYWORK rule</a>
+            <a class="toc-level-2" href="#part-1-tell-git-who-you-are">Part 1: Tell Git Who You Are</a>
+            <a class="toc-level-2" href="#part-2-create-an-ssh-key">Part 2: Create an SSH Key</a>
+            <a class="toc-level-3" href="#permissions-matter">Permissions Matter</a>
+            <a class="toc-level-2" href="#part-3-add-the-public-key-to-github">Part 3: Add the Public Key to GitHub</a>
+            <a class="toc-level-2" href="#part-4-test-github-login-from-pax">Part 4: Test GitHub Login from Pax</a>
+            <a class="toc-level-3" href="#if-you-set-a-passphrase">If you set a passphrase</a>
+            <a class="toc-level-2" href="#part-5-use-port-443-if-port-22-is-blocked">Part 5: Use Port 443 If Port 22 Is Blocked</a>
+            <a class="toc-level-2" href="#part-6-connect-a-repository">Part 6: Connect a Repository</a>
+            <a class="toc-level-3" href="#if-you-are-creating-a-new-homework-repository">If you are creating a new homework repository</a>
+            <a class="toc-level-3" href="#if-the-repository-already-exists-on-github">If the repository already exists on GitHub</a>
+            <a class="toc-level-2" href="#part-7-protect-your-repository-before-you-push-data">Part 7: Protect Your Repository Before You Push Data</a>
+            <a class="toc-level-2" href="#everyday-git-cycle">Everyday Git Cycle</a>
+            <a class="toc-level-2" href="#troubleshooting">Troubleshooting</a>
+            <a class="toc-level-2" href="#quick-reference">Quick Reference</a>
+            </nav>
+          </details>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
-            <p class="section-kicker">Tutorial</p>
-            <h1>Tutorial: Set Up Git and GitHub on Pax</h1>
-            <p>Configure Git identity, add an SSH key to GitHub, and connect Pax repositories safely.</p>
-            <span>Applied Bioinformatics - Tufts University Department of Biology</span>
+            <p class="lab-label">Tutorial</p>
+            <h1>Set Up Git and GitHub on Pax</h1>
           </header>
           <p>You will use Git and GitHub throughout the course to save work, share homework repositories, and make your analyses easier to reproduce. This guide sets up GitHub access from the Pax terminal once. After that, the everyday workflow is usually just:</p>
 <pre class="lab-code"><code class=" language-bash">git status
@@ -276,8 +283,19 @@ git push</code></pre>
       </div>
     </main>
     <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="../index.html#labs">Course labs</a>
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
     </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
   </body>
 </html>

@@ -78,6 +78,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".lab-article pre.lab-code").forEach(enhanceCodeBlock);
+    document.querySelectorAll("pre.lab-code").forEach(enhanceCodeBlock);
   });
 })();

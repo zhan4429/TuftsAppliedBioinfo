@@ -9,6 +9,7 @@ default runner.
 from __future__ import annotations
 
 import html
+import os
 import re
 from pathlib import Path
 
@@ -27,6 +28,163 @@ SUMMARY_OVERRIDES = {
         "Configure Git identity, add an SSH key to GitHub, and connect Pax repositories safely."
     ),
 }
+
+
+REPO_URL = "https://github.com/zhan4429/TuftsAppliedBioinfo"
+
+COURSE_TITLE = "Applied Bioinformatics"
+COURSE_LEDE = (
+    "Hands-on bioinformatics with real datasets: reproducible workflows on the "
+    "Tufts HPC cluster, critical evaluation of results, and clear scientific "
+    "reporting. Weekly labs and setup guides are posted here."
+)
+
+# Shown under the course description on the home page. Fill in what applies;
+# entries left as "" are not displayed.
+COURSE_DETAILS = [
+    ("Course", ""),          # course number, e.g. as listed in SIS
+    ("Term", ""),
+    ("Instructor", ""),
+    ("Class meetings", ""),
+    ("Computing", "Tufts HPC cluster (Pax)"),
+]
+
+# Week-by-week schedule for the home page. Lab pages are attached to a row
+# automatically from the week number in their path (labs/week-NN/...).
+SCHEDULE = [
+    {
+        "label": "0",
+        "weeks": [0],
+        "title": "Optional preparation",
+        "topics": "Self-paced practice with shell navigation and basic Python or R syntax.",
+    },
+    {
+        "label": "1",
+        "weeks": [1],
+        "title": "Command line, HPC, and reproducible environments",
+        "topics": (
+            "Linux command line, text processing, Git/GitHub basics, HPC job submission with "
+            "SLURM, conda/mamba environments, containers, public databases, and dataset inspection."
+        ),
+    },
+    {
+        "label": "2",
+        "weeks": [2],
+        "title": "Sequencing design and quality control",
+        "topics": (
+            "Sequencing technologies, experimental design, replication, confounding, batch effects, "
+            "FASTQ format, FastQC, fastp, MultiQC, and QC interpretation."
+        ),
+    },
+    {
+        "label": "3",
+        "weeks": [3],
+        "title": "Genome assembly and annotation",
+        "topics": (
+            "Assembly QC, contamination screening, GFF3/GTF structure, functional annotation, "
+            "annotation version issues, and IGV inspection."
+        ),
+    },
+    {
+        "label": "4",
+        "weeks": [4],
+        "title": "Read alignment and variant calling",
+        "topics": (
+            "SAM/BAM processing, alignment QC, variant calling with GATK HaplotypeCaller and "
+            "DeepVariant, filtering, benchmarking, annotation, and VCF interpretation."
+        ),
+    },
+    {
+        "label": "5",
+        "weeks": [5],
+        "title": "Bulk RNA-seq quantification",
+        "topics": (
+            "RNA-seq design, pseudoalignment, alignment-based quantification, library type and "
+            "strandedness, nf-core/rnaseq, count matrices, metadata, and exploratory analysis."
+        ),
+    },
+    {
+        "label": "6",
+        "weeks": [6],
+        "title": "Differential expression",
+        "topics": (
+            "DESeq2, design formulas, covariates and batch effects, multiple testing, "
+            "visualization, enrichment analysis, and notebook/report preparation."
+        ),
+    },
+    {
+        "label": "7",
+        "weeks": [7],
+        "title": "Chromatin accessibility and binding",
+        "topics": (
+            "ATAC-seq, peak calling with MACS3, nf-core/atacseq, ChIP-seq and CUT&RUN/CUT&Tag "
+            "concepts, QC metrics, peak annotation, motif enrichment, and integration with "
+            "expression results."
+        ),
+    },
+    {
+        "label": "8",
+        "weeks": [8],
+        "title": "Single-cell RNA-seq preprocessing",
+        "topics": (
+            "10x barcodes and UMIs, Cell Ranger, STARsolo, alevin-fry, nf-core/scrnaseq, AnnData "
+            "and Seurat objects, QC, filtering, normalization, and feature selection."
+        ),
+    },
+    {
+        "label": "9",
+        "weeks": [9],
+        "title": "Single-cell analysis and spatial transcriptomics",
+        "topics": (
+            "Dimensionality reduction, clustering, marker genes, cell type annotation, batch "
+            "integration, pseudobulk differential expression, and spatial transcriptomics."
+        ),
+    },
+    {
+        "label": "10",
+        "weeks": [10],
+        "title": "Microbiome and metagenomics",
+        "topics": (
+            "16S amplicon workflows, QIIME2/DADA2, compositional data, shotgun taxonomic and "
+            "functional profiling, metagenome-assembled genomes, diversity metrics, and "
+            "differential abundance."
+        ),
+    },
+    {
+        "label": "11",
+        "weeks": [11],
+        "title": "Mini-project preparation",
+        "topics": "Dataset acquisition and QC as assigned.",
+    },
+    {
+        "label": "12\u201314",
+        "weeks": [12, 13, 14],
+        "title": "Mini-project",
+        "topics": (
+            "Reproduce key findings from a published paper, maintain a reproducible GitHub "
+            "repository, prepare notebooks and reports, and present results."
+        ),
+    },
+]
+
+REPRODUCIBILITY_POINTS = [
+    "Keep commands, parameters, sample IDs, and software versions visible.",
+    "Use relative paths when possible.",
+    "Separate raw data, intermediate files, final outputs, and reports.",
+    "Document where input data came from.",
+    "Preserve small configuration files and sample sheets.",
+    "Avoid committing large generated files unless instructed.",
+    "Record failed or unexpected results when they affect interpretation.",
+]
+
+AI_USE_POINTS = [
+    "Disclose AI use in submitted notebooks or reports, including the tool used and what it helped with.",
+    "Verify generated commands and code against documentation, error messages, and expected outputs.",
+    "You are responsible for every line you submit.",
+    "Written interpretation, discussion, and limitations sections should be your own scientific reasoning.",
+    "Watch for hallucinated arguments, deprecated APIs, plausible but inappropriate statistical "
+    "choices, and code that runs while producing the wrong analysis.",
+]
 
 
 def source_key(source: Path) -> str:
@@ -100,19 +258,23 @@ def extract_summary(markdown: str, fallback: str) -> str:
     return fallback
 
 
-def lab_label(source: Path, title: str) -> str:
+def lab_week_session(source: Path, title: str) -> tuple[int | None, int | None]:
     week_match = re.search(r"week-(\d+)", source.as_posix(), re.IGNORECASE)
     session_match = re.search(r"session[-_ ]?(\d+)", source.stem, re.IGNORECASE)
     if not session_match:
         session_match = re.search(r"week[-_ ]?\d+[-_ ]?(\d+)", source.stem, re.IGNORECASE)
     if not session_match:
-        title_match = re.search(r"week\s+\d+\s+session\s+(\d+)", title, re.IGNORECASE)
-        session_match = title_match
+        session_match = re.search(r"week\s+\d+\s+session\s+(\d+)", title, re.IGNORECASE)
+    week = int(week_match.group(1)) if week_match else None
+    session = int(session_match.group(1)) if session_match else None
+    return week, session
 
-    if week_match and session_match:
-        return f"Week {int(week_match.group(1))} Session {int(session_match.group(1))}"
-    if week_match:
-        return f"Week {int(week_match.group(1))}"
+
+def lab_label(week: int | None, session: int | None) -> str:
+    if week is not None and session is not None:
+        return f"Week {week}, Session {session}"
+    if week is not None:
+        return f"Week {week}"
     return "Lab"
 
 
@@ -136,7 +298,7 @@ def discover_lab_pages() -> list[dict[str, str | Path]]:
         {
             "source": source,
             "output": DOCS / source.relative_to(ROOT).with_suffix(".html"),
-            "back_label": "Back to labs",
+            "back_label": "Back to schedule",
             "back_fragment": "labs",
             "section": "labs",
         }
@@ -151,8 +313,8 @@ def discover_tutorial_pages() -> list[dict[str, str | Path]]:
             "source": source,
             "output": DOCS / source.relative_to(ROOT).with_suffix(".html"),
             "label": "Tutorial",
-            "back_label": "Back to tutorials",
-            "back_fragment": "tutorials",
+            "back_label": "Back to setup and tutorials",
+            "back_fragment": "setup",
             "section": "tutorials",
         }
         for source in sources
@@ -225,12 +387,13 @@ def render_table(rows: list[str]) -> str:
     return "\n".join(out)
 
 
-def render_markdown(markdown: str) -> tuple[str, str, str, list[tuple[int, str, str]]]:
+def render_markdown(markdown: str) -> tuple[str, str, str, str, list[tuple[int, str, str]]]:
     lines = markdown.splitlines()
     html_parts: list[str] = []
     toc: list[tuple[int, str, str]] = []
     title = "Lab"
     meta = ""
+    time_note = ""
     paragraph: list[str] = []
     list_stack: list[str] = []
     code_lines: list[str] | None = None
@@ -244,7 +407,16 @@ def render_markdown(markdown: str) -> tuple[str, str, str, list[tuple[int, str, 
             html_parts.append(f"<p>{inline_markdown(' '.join(paragraph))}</p>")
             paragraph = []
 
+    current_item: list[str] = []
+
+    def flush_item() -> None:
+        nonlocal current_item
+        if current_item:
+            html_parts.append(f"<li>{inline_markdown(' '.join(current_item))}</li>")
+            current_item = []
+
     def close_lists(target_depth: int = 0) -> None:
+        flush_item()
         while len(list_stack) > target_depth:
             html_parts.append(f"</{list_stack.pop()}>")
 
@@ -338,6 +510,9 @@ def render_markdown(markdown: str) -> tuple[str, str, str, list[tuple[int, str, 
         if seen_h1 and not meta and plain_line.startswith("Applied Bioinformatics"):
             meta = plain_line
             continue
+        if seen_h1 and not time_note and not html_parts and not paragraph and plain_line.startswith("Time:"):
+            time_note = plain_line
+            continue
 
         quote = re.match(r"^>\s*(.+)$", line)
         if quote:
@@ -356,7 +531,13 @@ def render_markdown(markdown: str) -> tuple[str, str, str, list[tuple[int, str, 
                 close_lists()
                 html_parts.append(f"<{kind}>")
                 list_stack.append(kind)
-            html_parts.append(f"<li>{inline_markdown(text)}</li>")
+            flush_item()
+            current_item = [text]
+            continue
+
+        if current_item:
+            # Wrapped continuation line of the current list item.
+            current_item.append(line.strip())
             continue
 
         paragraph.append(line.strip())
@@ -367,7 +548,7 @@ def render_markdown(markdown: str) -> tuple[str, str, str, list[tuple[int, str, 
     close_paragraph()
     close_lists()
     close_table()
-    return title, meta, "\n".join(html_parts), toc
+    return title, meta, time_note, "\n".join(html_parts), toc
 
 
 def relative_prefix(output: Path) -> str:
@@ -379,255 +560,321 @@ def prefixed(prefix: str, path: str) -> str:
     return f"{prefix}/{path}" if prefix else path
 
 
-def page_template(title: str, meta: str, body: str, toc: list[tuple[int, str, str]], page: dict[str, str]) -> str:
-    prefix = relative_prefix(Path(page["output"]))
-    index_href = prefixed(prefix, f'index.html#{page["back_fragment"]}')
-    labs_href = prefixed(prefix, "index.html#labs")
-    tutorials_href = prefixed(prefix, "index.html#tutorials")
+def esc(text: str) -> str:
+    return html.escape(text, quote=True)
+
+
+def head_markup(title: str, description: str, prefix: str, with_code_copy: bool) -> str:
     favicon_href = prefixed(prefix, "assets/favicon.svg")
     styles_href = prefixed(prefix, "styles.css")
-    code_copy_href = prefixed(prefix, "assets/lab-code-copy.js")
-    output_path = Path(page["output"])
-    is_lab_page = output_path.relative_to(DOCS).parts[0] == "labs"
-    code_copy_script = f'\n    <script src="{code_copy_href}" defer></script>' if is_lab_page else ""
-    toc_items = "\n".join(
-        f'<a class="toc-level-{level}" href="#{anchor}">{html.escape(text)}</a>'
-        for level, text, anchor in toc
-        if level <= 3
-    )
-    return f"""<!doctype html>
-<html lang="en">
-  <head>
+    font_href = prefixed(prefix, "assets/fonts/source-serif-4-latin-wght-normal.woff2")
+    script = ""
+    if with_code_copy:
+        script = f'\n    <script src="{prefixed(prefix, "assets/lab-code-copy.js")}" defer></script>'
+    return f"""  <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{html.escape(title)} for Applied Bioinformatics.">
-    <title>{html.escape(title)} | Applied Bioinformatics</title>
+    <meta name="description" content="{esc(description)}">
+    <title>{esc(title)}</title>
     <link rel="icon" href="{favicon_href}" type="image/svg+xml">
-    <link rel="stylesheet" href="{styles_href}">{code_copy_script}
-  </head>
-  <body class="lab-page">
+    <link rel="preload" href="{font_href}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{styles_href}">{script}
+  </head>"""
+
+
+def institution_bar() -> str:
+    return """    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>"""
+
+
+def site_footer(prefix: str) -> str:
+    return f"""    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          {esc(COURSE_TITLE)}, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="{REPO_URL}">Course repository on GitHub</a>
+      </div>
+    </footer>"""
+
+
+def page_template(page: dict) -> str:
+    prefix = relative_prefix(Path(page["output"]))
+    index_href = prefixed(prefix, "index.html")
+    back_href = prefixed(prefix, f'index.html#{page["back_fragment"]}')
+    is_lab_page = page["section"] == "labs"
+    title = str(page["title"])
+    heading = display_title(title)
+    toc_items = "\n".join(
+        f'            <a class="toc-level-{level}" href="#{anchor}">{esc(text)}</a>'
+        for level, text, anchor in page["toc"]
+        if level <= 3
+    )
+    time_note = f'\n            <p class="lab-time">{esc(page["time_note"])}</p>' if page["time_note"] else ""
+
+    pager = ""
+    if is_lab_page and (page.get("prev") or page.get("next")):
+        links = []
+        for key, label, cls in (("prev", "Previous lab", "pager-prev"), ("next", "Next lab", "pager-next")):
+            other = page.get(key)
+            if not other:
+                links.append(f'<span class="{cls}"></span>')
+                continue
+            href = Path(os.path.relpath(other["output"], Path(page["output"]).parent)).as_posix()
+            links.append(
+                f'<a class="{cls}" href="{esc(href)}"><span>{label}: {esc(str(other["label"]))}</span>'
+                f'{esc(display_title(str(other["title"])))}</a>'
+            )
+        pager = '\n          <nav class="lab-pager" aria-label="Lab sequence">\n            ' + "\n            ".join(links) + "\n          </nav>"
+
+    return f"""<!doctype html>
+<html lang="en">
+{head_markup(f"{title} | {COURSE_TITLE}", f"{title} for {COURSE_TITLE}, Tufts University.", prefix, True)}
+  <body class="doc-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="{labs_href}" aria-label="Applied Bioinformatics">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="{labs_href}">Labs</a>
-          <a href="{tutorials_href}">Tutorials</a>
-          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+{institution_bar()}
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="{index_href}">{esc(COURSE_TITLE)}</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="{prefixed(prefix, 'index.html#labs')}">Schedule</a>
+          <a href="{prefixed(prefix, 'index.html#setup')}">Setup</a>
+          <a href="{REPO_URL}">GitHub</a>
+        </nav>
+      </div>
     </header>
-    <main class="lab-main" id="main">
+    <main class="lab-main wrap" id="main">
       <div class="lab-shell">
-        <aside class="lab-toc" aria-label="Page table of contents">
-          <a class="back-link" href="{index_href}">{html.escape(page["back_label"])}</a>
-          <p class="section-kicker">{html.escape(page["label"])}</p>
-          <nav>{toc_items}</nav>
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="{back_href}">{esc(page["back_label"])}</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+{toc_items}
+            </nav>
+          </details>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
-            <p class="section-kicker">{html.escape(page["label"])}</p>
-            <h1>{html.escape(title)}</h1>
-            <p>{html.escape(page["summary"])}</p>
-            <span>{html.escape(meta)}</span>
+            <p class="lab-label">{esc(str(page["label"]))}</p>
+            <h1>{esc(heading)}</h1>{time_note}
           </header>
-          {body}
+          {page["body"]}{pager}
         </article>
       </div>
     </main>
-    <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="{labs_href}">Course labs</a>
-    </footer>
+{site_footer(prefix)}
+    <script>
+      (function () {{
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      }})();
+    </script>
   </body>
 </html>
 """
 
 
-def card_markup(cards: list[dict[str, str]]) -> str:
-    return "\n".join(
-        f"""          <a
-            class="lab-card"
-            href="{html.escape(card["href"], quote=True)}"
-          >
-            <span class="lab-session">{html.escape(card["label"])}</span>
-            <strong>{html.escape(card["title"])}</strong>
-            <span>{html.escape(card["summary"])}</span>
-          </a>"""
-        for card in cards
+def course_details_markup() -> str:
+    items = [(label, value) for label, value in COURSE_DETAILS if value]
+    if not items:
+        return ""
+    rows = "\n".join(
+        f"          <div><dt>{esc(label)}</dt><dd>{esc(value)}</dd></div>" for label, value in items
     )
+    return f'\n        <dl class="course-details">\n{rows}\n        </dl>'
 
 
-def index_template(lab_cards: list[dict[str, str]], tutorial_cards: list[dict[str, str]]) -> str:
+def schedule_row(label: str, title: str, topics: str, labs: list[dict]) -> str:
+    status = "has-labs" if labs else "upcoming"
+    lab_items = "\n".join(
+        f'                <li><span class="session">'
+        f'{esc(f"Session {lab["session"]}" if lab["session"] is not None else "Lab")}</span>'
+        f'<a href="{esc(Path(lab["output"]).relative_to(DOCS).as_posix())}">'
+        f'{esc(display_title(str(lab["title"])))}</a></li>'
+        for lab in labs
+    )
+    labs_cell = f'\n              <ul class="session-list">\n{lab_items}\n              </ul>\n            ' if labs else ""
+    topics_markup = f'\n              <p class="topic-detail">{esc(topics)}</p>' if topics else ""
+    return f"""          <tr class="{status}">
+            <th scope="row" class="col-week"><span class="week-num">{esc(label)}</span></th>
+            <td class="col-topic">
+              <span class="topic-title">{esc(title)}</span>{topics_markup}
+            </td>
+            <td class="col-labs">{labs_cell}</td>
+          </tr>"""
+
+
+def schedule_markup(lab_pages: list[dict]) -> str:
+    by_week: dict[int | None, list[dict]] = {}
+    for lab in lab_pages:
+        by_week.setdefault(lab["week"], []).append(lab)
+
+    rows = []
+    covered: set[int] = set()
+    for entry in SCHEDULE:
+        covered.update(entry["weeks"])
+        labs = [lab for week in entry["weeks"] for lab in by_week.get(week, [])]
+        rows.append(schedule_row(entry["label"], entry["title"], entry["topics"], labs))
+
+    # Labs for weeks not listed in SCHEDULE still get a row, so nothing is hidden.
+    for week in sorted(w for w in by_week if w is not None and w not in covered):
+        rows.append(schedule_row(str(week), f"Week {week}", "", by_week[week]))
+    if None in by_week:
+        rows.append(schedule_row("", "Other labs", "", by_week[None]))
+    return "\n".join(rows)
+
+
+def tutorial_markup(tutorial_pages: list[dict]) -> str:
+    if not tutorial_pages:
+        return '            <p class="muted">Setup guides will be posted here.</p>'
+    items = "\n".join(
+        f'              <li><a href="{esc(Path(t["output"]).relative_to(DOCS).as_posix())}">'
+        f'{esc(display_title(str(t["title"])))}</a><p>{esc(str(t["summary"]))}</p></li>'
+        for t in tutorial_pages
+    )
+    return f'            <ul class="resource-list">\n{items}\n            </ul>'
+
+
+def bullet_list(points: list[str]) -> str:
+    return "\n".join(f"              <li>{esc(point)}</li>" for point in points)
+
+
+def index_template(lab_pages: list[dict], tutorial_pages: list[dict]) -> str:
     return f"""<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta
-      name="description"
-      content="Applied Bioinformatics course lab hub for Tufts University Department of Biology."
-    >
-    <title>Applied Bioinformatics | Tufts Biology</title>
-    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles.css">
-  </head>
-  <body>
+{head_markup(f"{COURSE_TITLE} | Tufts University", f"{COURSE_TITLE}: course schedule, labs, and setup guides. Department of Biology, Tufts University.", "", True)}
+  <body class="home-page">
     <a class="skip-link" href="#main">Skip to main content</a>
-
-    <header class="site-header" id="top">
-      <nav class="nav" aria-label="Main navigation">
-        <a class="brand" href="#top" aria-label="Applied Bioinformatics home">
-          <span class="brand-mark" aria-hidden="true">AB</span>
-          <span>Applied Bioinformatics</span>
-        </a>
-        <div class="nav-links">
-          <a href="#labs">Labs</a>
-          <a href="#tutorials">Tutorials</a>
-          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
-        </div>
-      </nav>
+{institution_bar()}
+    <header class="course-header">
+      <div class="wrap course-header-main">
+        <h1 class="course-title">{esc(COURSE_TITLE)}</h1>
+        <p class="course-lede">{esc(COURSE_LEDE)}</p>{course_details_markup()}
+      </div>
     </header>
+    <nav class="course-nav" aria-label="Main navigation">
+      <div class="wrap">
+        <a href="#labs">Schedule</a>
+        <a href="#setup">Setup</a>
+        <a href="#expectations">Expectations</a>
+        <a href="{REPO_URL}">GitHub</a>
+      </div>
+    </nav>
 
-    <main id="main">
-      <section class="masthead" aria-labelledby="page-title">
-        <div class="masthead-inner">
-          <p class="eyebrow">Tufts University - Department of Biology</p>
-          <h1 id="page-title">Applied Bioinformatics</h1>
-          <p class="lede">
-            A lab hub for hands-on bioinformatics work on Pax, with copyable
-            commands, GitHub-friendly Markdown, and short notes students can
-            use during class.
-          </p>
-          <div class="hero-actions" aria-label="Primary actions">
-            <a class="button primary" href="#labs">Open labs</a>
-            <a class="button secondary" href="#tutorials">Open tutorials</a>
-            <a class="button secondary" href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub repository</a>
-          </div>
+    <main id="main" class="wrap home-main">
+      <section class="home-section" id="labs" aria-labelledby="schedule-title">
+        <h2 id="schedule-title">Schedule and labs</h2>
+        <p class="section-note">
+          Lab links appear in each week as they are posted. Due dates, grading,
+          and course policies are set by the official syllabus.
+        </p>
+        <div class="table-scroll">
+          <table class="schedule">
+            <thead>
+              <tr>
+                <th scope="col" class="col-week">Week</th>
+                <th scope="col" class="col-topic">Topics</th>
+                <th scope="col" class="col-labs">Labs</th>
+              </tr>
+            </thead>
+            <tbody>
+{schedule_markup(lab_pages)}
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <section class="quick-strip" aria-label="Course workflow highlights">
-        <div class="quick-item">
-          <span class="quick-number">01</span>
-          <strong>Clone once</strong>
-          <span>Keep the lab files local for class.</span>
-        </div>
-        <div class="quick-item">
-          <span class="quick-number">02</span>
-          <strong>Pull often</strong>
-          <span>Refresh before each lab session.</span>
-        </div>
-        <div class="quick-item">
-          <span class="quick-number">03</span>
-          <strong>Open a lab</strong>
-          <span>Use the course pages during class.</span>
-        </div>
-        <div class="quick-item">
-          <span class="quick-number">04</span>
-          <strong>Run carefully</strong>
-          <span>Use Tufts HPC and course storage as directed.</span>
-        </div>
-      </section>
-
-      <section class="lab-hub" id="labs" aria-labelledby="labs-title">
-        <div class="section-copy wide">
-          <p class="section-kicker">Available Labs</p>
-          <h2 id="labs-title">Course labs</h2>
-          <p>
-            Open these labs during class. They are organized
-            for reading, copying commands, checking expected outputs, and
-            revisiting answers after trying each question.
-          </p>
-        </div>
-
-        <div class="lab-card-grid">
-{card_markup(lab_cards)}
-        </div>
-
-        <div class="lab-setup">
-          <div class="section-copy">
-            <p class="section-kicker">Using the Repository</p>
-            <h2>Keep your copy current</h2>
-            <p>
-              Clone once, then pull before each class. Large data and generated
-              results should stay on Pax or course storage, not in GitHub.
+      <section class="home-section" id="setup" aria-labelledby="setup-title">
+        <h2 id="setup-title">Setup and tutorials</h2>
+        <div class="two-col setup-cols">
+          <div>
+            <h3>Get the course repository</h3>
+            <p>Clone the repository once on Pax:</p>
+            <pre class="lab-code"><code>git clone {REPO_URL}.git</code></pre>
+            <p>Then pull before each class to get the latest labs:</p>
+            <pre class="lab-code"><code>cd TuftsAppliedBioinfo
+git pull</code></pre>
+            <p class="muted">
+              Keep large data and generated results on Pax or course storage, not in GitHub.
             </p>
           </div>
-          <div class="command-panel" aria-label="Basic repository commands">
-            <div class="panel-bar">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <pre><code>git clone &lt;repository-url&gt;
-cd &lt;repository-name&gt;
-git pull</code></pre>
+          <div>
+            <h3 id="tutorials">Tutorials</h3>
+{tutorial_markup(tutorial_pages)}
           </div>
         </div>
       </section>
 
-      <section class="lab-hub" id="tutorials" aria-labelledby="tutorials-title">
-        <div class="section-copy wide">
-          <p class="section-kicker">Tutorials</p>
-          <h2 id="tutorials-title">Setup guides</h2>
-          <p>
-            Use these short guides when you need a one-time setup step or a
-            refresher for course tools.
-          </p>
-        </div>
-
-        <div class="lab-card-grid tutorial-card-grid">
-{card_markup(tutorial_cards)}
+      <section class="home-section" id="expectations" aria-labelledby="expectations-title">
+        <h2 id="expectations-title">Course expectations</h2>
+        <div class="two-col">
+          <div>
+            <h3>Reproducible work</h3>
+            <p>
+              Bioinformatics work should be understandable and rerunnable by someone else,
+              including your future self. A pipeline result is not automatically correct
+              because it ran successfully.
+            </p>
+            <ul class="plain-list">
+{bullet_list(REPRODUCIBILITY_POINTS)}
+            </ul>
+          </div>
+          <div>
+            <h3>Using AI assistants</h3>
+            <p>
+              AI coding assistants are permitted and expected as part of the course,
+              but they do not replace scientific judgment.
+            </p>
+            <ul class="plain-list">
+{bullet_list(AI_USE_POINTS)}
+            </ul>
+          </div>
         </div>
       </section>
     </main>
 
-    <footer class="site-footer">
-      <p>Applied Bioinformatics - Tufts University Department of Biology</p>
-      <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub repository</a>
-    </footer>
+{site_footer("")}
   </body>
 </html>
 """
 
 
-def build_card(page: dict[str, str | Path], title: str) -> dict[str, str]:
-    output = Path(page["output"])
-    return {
-        "href": output.relative_to(DOCS).as_posix(),
-        "label": str(page["label"]),
-        "title": display_title(title),
-        "summary": str(page["summary"]),
-        "section": str(page["section"]),
-    }
-
-
 def main() -> None:
-    cards: list[dict[str, str]] = []
+    pages = [*discover_lab_pages(), *discover_tutorial_pages()]
 
-    for page in [*discover_lab_pages(), *discover_tutorial_pages()]:
+    for page in pages:
         source = Path(page["source"])
-        output = Path(page["output"])
         markdown = source.read_text(encoding="utf-8")
-        title, meta, body, toc = render_markdown(markdown)
-        page["label"] = str(page.get("label") or lab_label(source, title))
+        title, _meta, time_note, body, toc = render_markdown(markdown)
+        page.update(title=title, time_note=time_note, body=body, toc=toc)
+        if page["section"] == "labs":
+            week, session = lab_week_session(source, title)
+            page.update(week=week, session=session, label=lab_label(week, session))
         page["summary"] = SUMMARY_OVERRIDES.get(
             source_key(source),
             extract_summary(markdown, f"Open {display_title(title)} for this course session."),
         )
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(page_template(title, meta, body, toc, page), encoding="utf-8")
-        print(f"Built {output.relative_to(ROOT)}")
-        cards.append(build_card(page, title))
 
-    lab_cards = [card for card in cards if card["section"] == "labs"]
-    tutorial_cards = [card for card in cards if card["section"] == "tutorials"]
+    lab_pages = [page for page in pages if page["section"] == "labs"]
+    tutorial_pages = [page for page in pages if page["section"] == "tutorials"]
+    for i, page in enumerate(lab_pages):
+        page["prev"] = lab_pages[i - 1] if i > 0 else None
+        page["next"] = lab_pages[i + 1] if i + 1 < len(lab_pages) else None
+
+    for page in pages:
+        output = Path(page["output"])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(page_template(page), encoding="utf-8")
+        print(f"Built {output.relative_to(ROOT)}")
+
     index_output = DOCS / "index.html"
-    index_output.write_text(index_template(lab_cards, tutorial_cards), encoding="utf-8")
+    index_output.write_text(index_template(lab_pages, tutorial_pages), encoding="utf-8")
     print(f"Built {index_output.relative_to(ROOT)}")
 
 
