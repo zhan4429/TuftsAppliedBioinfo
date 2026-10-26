@@ -407,6 +407,15 @@ summary:focus-visible {
 
 /* ---------- Lab and tutorial pages ---------- */
 
+.doc-page {
+  /* Wider working space for commands and tables, with modest outer gutters. */
+  --wrap: 100rem;
+}
+
+.doc-page .wrap {
+  width: min(var(--wrap), calc(100% - clamp(2rem, 4vw, 4rem)));
+}
+
 .site-header {
   border-bottom: 1px solid var(--rule);
 }
@@ -449,8 +458,8 @@ summary:focus-visible {
 
 .lab-shell {
   display: grid;
-  grid-template-columns: 14.5rem minmax(0, 1fr);
-  gap: 3.5rem;
+  grid-template-columns: clamp(12rem, 18vw, 15rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 2.5vw, 2.5rem);
   align-items: start;
 }
 
@@ -501,7 +510,7 @@ summary:focus-visible {
 
 .lab-article {
   min-width: 0;
-  max-width: var(--measure);
+  overflow-wrap: anywhere;
 }
 
 .lab-hero {
@@ -781,7 +790,7 @@ pre code {
 
   .two-col,
   .two-col.setup-cols {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
