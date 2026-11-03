@@ -377,7 +377,7 @@ cat > fetch_job.sh <<'EOF'
 #SBATCH --job-name=fetchngs
 #SBATCH --partition=batch
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=16G
+#SBATCH --mem=18G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
@@ -385,12 +385,13 @@ cat > fetch_job.sh <<'EOF'
 set -euo pipefail
 
 module load nextflow
-module load singularity 2>/dev/null || module load apptainer
+module load singularity
 
 export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
 export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
 mkdir -p "$NXF_SINGULARITY_CACHEDIR"
+mkdir -p $MYWORK/week-01/session-02/fetch
 
 cd $MYWORK/week-01/session-02/fetch
 nextflow run nf-core/fetchngs \
