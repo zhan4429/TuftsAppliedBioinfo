@@ -31,7 +31,8 @@ printf 'SRR27956204\nSRR18210286\nSRR17374240\n' > ids.csv
 
 ENA currently advertises about 27.75 Gbp and 18.56 GB for these three runs. If you
 change the list, also update the selection check, expected file count, and Week 2
-inputs; the current student script deliberately requires four platforms and six files.
+inputs; the handout checks for four selected platforms and asks students to confirm
+six FASTQ files after downloading.
 
 *Split the class.* Assign each student one platform, have them write the result into
 an instructor-managed shared directory, and everyone uses the shared copies next
@@ -63,8 +64,15 @@ also differs from this lab's output. Give students the actual verified
 `$MYWORK/week-01/session-02/fetch/results/fastq/` location rather than assuming those
 examples point to the same files.
 
-**Verification and retention.** Gzip testing and SeqKit parsing now run in the
-download batch job, not on the login node. Review mate counts and base totals;
+**Beginner workflow.** Keep `fetch_job.sh` focused on module loads, plain path
+assignments, cache settings, and the Nextflow command. Avoid positional-argument
+validation, grouped diagnostic redirection, shell arrays, and `shopt` in this lab.
+SeqKit is available as a module on Pax; no Conda installation or activation is needed.
+
+**Verification and retention.** Students run gzip testing and SeqKit statistics
+as separate steps in an interactive compute session after the download finishes.
+This lets them inspect the file count, errors, and statistics directly. Load SeqKit
+with `module load seqkit`. Review mate counts and base totals;
 archive `read_count` conventions and SRA-generated filenames need not match a
 naive six-file lookup by run accession. Keep `work/` and `.nextflow/cache/` until
 the real results are verified. Cleanup examples now use a dry run and a named

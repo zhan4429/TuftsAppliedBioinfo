@@ -68,7 +68,7 @@ This `exit` releases the interactive allocation. Do not type it again once you a
 
 ## Part 2: Submit a Batch Job
 
-### 2.1 Write a Script with an Explicit Input
+### 2.1 Write a Script with a Clear Input Path
 
 From the login node:
 
@@ -88,22 +88,19 @@ cat > count_job.sh <<'EOF'
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-set -euo pipefail
-
-annotation=${1:?Pass the full path to anno.gff3 after the script name}
-test -r "$annotation"
+WEEK1_DATA=/cluster/tufts/bio_appbio/shared/wk1
 echo "Running on: $(hostname)"
-grep -vc '^#' "$annotation"
+grep -vc '^#' "$WEEK1_DATA/anno.gff3"
 EOF
 
 bash -n count_job.sh
 cat count_job.sh
-COUNT_JOB_ID=$(sbatch --parsable count_job.sh "$WEEK1_DATA/anno.gff3")
+COUNT_JOB_ID=$(sbatch --parsable count_job.sh)
 printf 'Count job: %s\n' "$COUNT_JOB_ID"
 squeue -j "$COUNT_JOB_ID"
 ```
 
-The quoted heredoc delimiter, `<<'EOF'`, writes the script literally: `$1` and `$(hostname)` are evaluated when the job runs. `bash -n` checks syntax without running commands. `sbatch --parsable` returns the job ID, not proof that the job has finished.
+The quoted heredoc delimiter, `<<'EOF'`, writes the script literally: `$WEEK1_DATA` and `$(hostname)` are evaluated when the job runs. `bash -n` checks syntax without running commands. `sbatch --parsable` returns the job ID, not proof that the job has finished.
 
 SLURM reads `#SBATCH` directives before the shell runs. `$MYWORK` inside a directive would be literal text, so use relative log paths or pass expanded paths as `sbatch` command-line options. Create `logs/` before submission: SLURM opens those files before executing the script.
 
@@ -116,7 +113,7 @@ SLURM reads `#SBATCH` directives before the shell runs. `$MYWORK` inside a direc
 
 By default, `sbatch` exports the submitting process's environment, including variables you set with `export`. The `export WEEK1_DATA=...` in the setup block would normally be available in the job. An ordinary, unexported shell variable would not.
 
-A new job shell does not reproduce every interactive setup action, shell function, or environment activation. Explicitly load modules and activate environments in scripts that need them. Here, passing the annotation path as an argument makes the input visible without depending on environment inheritance.
+A new job shell does not reproduce every interactive setup action or shell function. Load the modules needed by each job inside its script. Here, defining `WEEK1_DATA` inside the script makes the input path easy to see and edit.
 
 </details>
 
@@ -141,7 +138,7 @@ The output should contain a compute-node hostname and the number of non-comment 
 
 ## Part 3: Two Ways to Get Software
 
-Request a new interactive compute session for environment creation and the pipeline test:
+Request a new interactive compute session to check the software modules and test the pipeline:
 
 ```bash
 srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=6 \
@@ -149,44 +146,18 @@ srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=6 \
 cd "$MYWORK/week-01/session-02"
 ```
 
-### 3.1 Conda for Individual Tools
+### 3.1 Modules for Individual Tools
 
-Check the modules available on Pax, then load Miniforge:
+Pax already provides SeqKit as a module. Load it and check its version:
 
 ```bash
-module avail miniforge
-module load miniforge
-source "$(conda info --base)/etc/profile.d/conda.sh"
-conda --version
-
-export CONDA_PKGS_DIRS="$MYWORK/.conda/pkgs"
-mkdir -p "$CONDA_PKGS_DIRS" "$MYWORK/envs"
-
-conda create -y --prefix "$MYWORK/envs/appbio-week1" \
-  --override-channels --strict-channel-priority \
-  -c conda-forge -c bioconda seqkit=2.14.0
-conda activate "$MYWORK/envs/appbio-week1"
+module avail seqkit
+module load seqkit
 seqkit version
-
-conda env export --from-history | sed '/^prefix:/d' > environment.yml
-conda list --explicit > environment-linux-64.explicit.txt
+module list
 ```
 
-If the environment already exists, activate it and check its version instead of creating it again. If the module name differs, use the version provided in class.
-
-The command gives `conda-forge` priority over `bioconda`, ignores channels from personal configuration, and keeps downloaded packages and the environment out of your home directory. `environment.yml` records the requested specification; the explicit file records the resolved builds for this platform. Keep both with your analysis notes.
-
-To rebuild into a different directory, you could run:
-
-```bash
-conda env create --prefix "$MYWORK/envs/appbio-week1-copy" -f environment.yml
-```
-
-You do not need a second copy for this lab. Deactivate the environment before loading the pipeline modules:
-
-```bash
-conda deactivate
-```
+`module avail` shows available software, `module load` makes a tool available in your current shell, and `module list` shows what you have loaded. Record the module names and versions in your notes so you can use the same software later. You do not need to install SeqKit or activate a Conda environment for this lab.
 
 ### 3.2 Nextflow and Containers for Pipelines
 
@@ -205,7 +176,7 @@ mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
 
 This lab pins **nf-core/fetchngs 1.13.0**, which requires **Nextflow 25.10.4 or later**. If the loaded module is older, ask for a compatible module before continuing. Keep the same pipeline version for the test and the real download.
 
-Nextflow schedules workflow tasks; Singularity supplies their software. A container tag can be changed by its publisher, so a tag alone does not guarantee an immutable image. Record the pipeline release, runtime versions, parameters, and container identifiers; image digests provide stronger identity. A Conda history export is also a specification, rather than a complete lock of every dependency.
+Nextflow schedules workflow tasks; Singularity supplies their software. A container tag can be changed by its publisher, so a tag alone does not guarantee an immutable image. Record the pipeline release, runtime versions, parameters, and container identifiers; image digests provide stronger identity.
 
 ### 3.3 Keep Tasks Inside the Allocation
 
@@ -381,29 +352,17 @@ cat > fetch_job.sh <<'EOF'
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-set -euo pipefail
-
-MYWORK=${1:?Pass your MYWORK directory after the script name}
-cd "${SLURM_SUBMIT_DIR:?}"
-test -s ids.csv
-test -s selected_runs.tsv
-test -r ../lab.config
-
 module load nextflow singularity
+
+export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export MYWORK="$COURSE/$USER"
+cd "$MYWORK/week-01/session-02/fetch"
+
 export NXF_HOME="$MYWORK/.nextflow"
 export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
 export SINGULARITY_CACHEDIR="$MYWORK/.singularity/oci"
 export NXF_OPTS='-Xms512m -Xmx4g'
 mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
-
-{
-  date -Is
-  hostname
-  module list
-  nextflow -version
-  java -version
-  singularity --version
-} > "runtime_versions_${SLURM_JOB_ID}.txt" 2>&1
 
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
@@ -414,36 +373,18 @@ nextflow run nf-core/fetchngs \
   --download_method sratools \
   -resume
 
-# Verify the published files on the compute node, not the login node.
-shopt -s nullglob
-fastqs=(results/fastq/*.fastq.gz)
-if (( ${#fastqs[@]} != 6 )); then
-  echo "Expected six FASTQ files; found ${#fastqs[@]}. Inspect the samplesheet." >&2
-  exit 1
-fi
-for f in "${fastqs[@]}"; do
-  gzip -t "$f"
-  printf 'GZIP OK: %s\n' "$f"
-done
-
-module load miniforge
-source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate "$MYWORK/envs/appbio-week1"
-seqkit version
-seqkit stats -T -j "$SLURM_CPUS_PER_TASK" "${fastqs[@]}" > fastq_stats.tsv
-echo "Download and FASTQ checks completed. Review fastq_stats.tsv and the samplesheet."
 EOF
 
 bash -n fetch_job.sh
 cat fetch_job.sh
-FETCH_JOB_ID=$(sbatch --parsable fetch_job.sh "$MYWORK")
+FETCH_JOB_ID=$(sbatch --parsable fetch_job.sh)
 printf '%s\n' "$FETCH_JOB_ID" > fetch_job_id.txt
 squeue -j "$FETCH_JOB_ID"
 ```
 
 We use `sratools` deliberately. ENA currently lists the paired BGISEQ run with a single FASTQ URL; downloading the SRA data and splitting biological reads avoids assuming that ENA's file listing already contains two mate files. The pipeline can also resolve run IDs back to their experiment and merge runs belonging to that experiment. Inspect the generated mappings and samplesheet to confirm what was actually fetched.
 
-The job receives `$MYWORK` as an explicit argument and starts in the submission directory, so no second course path is hidden in the script. It uses the same cache location as the test, without depending on an undefined `$SCRATCH`. `set -euo pipefail` catches unset variables and many command or pipeline failures; explicit input and output checks are still needed.
+Read the script from top to bottom: request resources, load the software, set the work directory and cache locations, then run Nextflow. If your course directory differs, change the `COURSE` line to match **Before You Start**. The cache settings match the test run. The download is the final command, so its exit status determines whether SLURM reports the job as successful. We will check the downloaded files separately below.
 
 ### 4.6 Check After Class
 
@@ -465,7 +406,6 @@ Once the job finishes, require `COMPLETED` with exit code `0:0`, then inspect:
 seff "$FETCH_JOB_ID"
 ls -lh results/fastq/
 head -n 5 results/samplesheet/samplesheet.csv
-cat fastq_stats.tsv
 ```
 
 Expected result directories:
@@ -479,7 +419,27 @@ pipeline_info/  execution reports, parameters, and software versions
 
 For these four experiments, expect six FASTQ files: two mates each for Illumina and BGISEQ, and one file each for PacBio and Nanopore. File names may use experiment identifiers or other pipeline-generated prefixes; use the samplesheet and mappings to connect them to your selected run IDs.
 
-The job already tests gzip integrity and parses the FASTQ files with SeqKit on a compute node. `num_seqs` counts records and `sum_len` counts sequence bases. The two files from each paired-end library should have equal record counts. Compare those figures with `selected_runs.tsv` and fetchngs metadata, checking whether an archive count means reads or read pairs before assuming equality.
+Now request a compute node to check the large files. Keep this separate from the download script so you can inspect each step:
+
+```bash
+srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=6 \
+  --mem=18G --time=01:30:00 --pty bash
+cd "$MYWORK/week-01/session-02/fetch"
+module load seqkit
+
+ls results/fastq/*.fastq.gz | wc -l
+gzip -t results/fastq/*.fastq.gz
+seqkit stats -T -j 6 results/fastq/*.fastq.gz > fastq_stats.tsv
+cat fastq_stats.tsv
+```
+
+The file count should be six. `gzip -t` prints nothing when all files pass; stop and ask for help if it reports an error. SeqKit should also finish without a parsing error. `num_seqs` counts records and `sum_len` counts sequence bases. The two files from each paired-end library should have equal record counts. Compare those figures with `selected_runs.tsv` and fetchngs metadata, checking whether an archive count means reads or read pairs before assuming equality.
+
+When you have reviewed the statistics, release the compute node:
+
+```bash
+exit
+```
 
 `gzip -t` detects damaged compressed data; it does not establish that all expected reads arrived. Likewise, counting every fourth line is not FASTQ validation: it can return a plausible count for a truncated record. Review parser success, expected file layout, mate counts, and total yield together. For direct archive downloads, also verify the archive's checksums; an ENA checksum will not necessarily match a FASTQ regenerated and recompressed from SRA.
 
@@ -502,7 +462,7 @@ If a job fails, diagnose and fix the cause before resubmitting. Return to the sa
 
 ```bash
 cd "$MYWORK/week-01/session-02/fetch"
-FETCH_JOB_ID=$(sbatch --parsable fetch_job.sh "$MYWORK")
+FETCH_JOB_ID=$(sbatch --parsable fetch_job.sh)
 printf '%s\n' "$FETCH_JOB_ID" > fetch_job_id.txt
 ```
 
@@ -544,9 +504,9 @@ If you need help, provide the job ID, the relevant error, and the failed task's 
 ## What to Keep
 
 - `count_job.sh`, its job ID, and its output/error logs.
-- `environment.yml` and `environment-linux-64.explicit.txt`.
+- The loaded module names and software versions in your notes.
 - `lab.config`, `fetch/ids.csv`, `runs.tsv`, and `selected_runs.tsv`.
-- `fetch_job.sh`, `fetch_job_id.txt`, runtime versions, and job logs.
+- `fetch_job.sh`, `fetch_job_id.txt`, and job logs.
 - `results/`, `fastq_stats.tsv`, and the Nextflow cache until verification is complete.
 - A short note explaining why these four runs are not a controlled comparison of platform alone.
 
