@@ -389,7 +389,7 @@ module load singularity 2>/dev/null || module load apptainer
 
 export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
-export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
+export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
 mkdir -p "$NXF_SINGULARITY_CACHEDIR"
 
 cd $MYWORK/week-01/session-02/fetch
@@ -552,6 +552,9 @@ EOF
 Test a pipeline before trusting it, then submit the real run as a job:
 
 ```bash
+export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
+mkdir -p "$NXF_SINGULARITY_CACHEDIR"
+module load nextflow singularity
 nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity --outdir test_out
 sbatch fetch_job.sh
 ```
