@@ -2,9 +2,9 @@
 
 Applied Bioinformatics - Tufts University Department of Biology
 
-In this lab you will move from the login node to a compute node, submit a small SLURM batch job, create a reproducible software environment, test Nextflow and container support, and start a real public-data download with `nf-core/fetchngs`.
+In this lab you will request a compute node, submit a SLURM batch job, record a software environment, and use Nextflow with containers to download public sequencing data. You will leave with a job ID and a way to verify the results after class.
 
-This lab produces the sequencing data used in Week 2 and Week 3. You will fetch one run from each of the four platforms in a single study, which is what makes next week's QC comparison possible. The download will finish after class, so do not skip the job submission and verification steps.
+These data support the four-platform QC exercise in Week 2; the PacBio HiFi run also supports genome assembly in Week 3. **The selected Illumina run is RNA-seq, while the other three runs are genomic sequencing.** You can compare file formats and QC reports, but differences cannot be attributed to sequencing platform alone.
 
 ## Before You Start
 
@@ -13,167 +13,176 @@ Open a terminal on Pax:
 - OnDemand: <https://ondemand-prod.pax.tufts.edu/> > **Clusters > Tufts HPC Shell Access**
 - SSH: `ssh your_utln@login-prod.pax.tufts.edu`
 
-Set paths and make a work directory:
+Use the course allocation announced in class. The shared annotation path comes from Session 1 and may be in a different allocation from your personal work:
 
 ```bash
-export COURSE=/cluster/tufts/bio_appbio ## ToDo
-export WEEK1_DATA=$COURSE/shared/wk1
-export MYWORK=$COURSE/$USER
+export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export WEEK1_DATA=/cluster/tufts/bio_appbio/shared/wk1
+export MYWORK="$COURSE/$USER"
 
-mkdir -p "$MYWORK/week-01/session-02"
+mkdir -p "$MYWORK/week-01/session-02/logs"
 cd "$MYWORK/week-01/session-02"
 pwd
+ls -lh "$WEEK1_DATA/anno.gff3"
 ```
 
-Three paths, and you will use all of them every week:
+If either directory is unavailable, ask for the correct path before continuing. `$COURSE` is shared; `$MYWORK` is your own directory, named after your UTLN. Keep large data, environments, and pipeline outputs under `$MYWORK`.
 
-- `$COURSE` — the course directory, shared by everyone in the class
-- `$WEEK1_DATA` — this week's staged data, read-only
-- `$MYWORK` — your own directory inside the course allocation, named after your UTLN
-
-**Do all your coursework under `$MYWORK`, not in your home directory.** Home has a small
-quota that sequencing data will exhaust immediately, and the course allocation is where
-the instructor can see and help with your work.
+If you reconnect later, repeat these path definitions before using commands that contain `$MYWORK` or `$WEEK1_DATA`.
 
 ## Part 1: Get Off the Login Node
 
-### 1.1 See Where You Are
+### 1.1 Inspect the Cluster
 
 ```bash
 hostname
-```
-
-If the hostname starts with `login`, you are on a login node shared by everyone on the cluster. Use login nodes for light work only.
-
-### 1.2 Inspect the Cluster
-
-```bash
 sinfo -s
 ```
 
-You may see partitions such as:
+A hostname beginning with `login` identifies a shared login node. Use it to edit files, submit jobs, and inspect small logs. Install environments, run pipelines, and scan large FASTQ files on compute nodes. `sinfo -s` lists partitions and their current availability. We use the CPU partition `batch`; node counts and time limits can change.
 
-```text
-PARTITION    AVAIL  TIMELIMIT   NODES(A/I/O/T) NODELIST
-batch*          up 2-00:00:00      46/21/23/90 pax[001-002,004-006,012-019,027-033,035-046,054-061,069,072-075,078-085,107-109,120,145-149,154-171,188-197]
-gpu             up 2-00:00:00       14/12/1/27 pax[003,007-011,020-026,049-052,063,105-106,142-144,184-187]
-preempt         up 2-00:00:00     65/71/33/169 pax[001-002,004-006,012-019,027-048,053-062,064-075,077-104,107-141,145-183,188-197]
-```
-
-### 1.3 Request a Compute Node
+### 1.2 Request One Task with Multiple CPUs
 
 ```bash
-srun --pty -p batch -n 4 --mem=8g --time=0-01:30:00 bash
+srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=6 \
+  --mem=18G --time=01:30:00 --pty bash
+
+hostname
+printf 'Job: %s; CPUs: %s\n' "$SLURM_JOB_ID" "$SLURM_CPUS_PER_TASK"
+```
+
+The request may wait in the queue. Once it starts, the hostname should identify a compute node.
+
+`--ntasks=1` requests one task; `--cpus-per-task=6` gives it six CPUs. Using `-n 6` would request six tasks, which is not what we want for one shell or one multithreaded program. `--mem=18G` requests memory for the node allocation, not 18 GB per CPU. Later, we will fit Nextflow and its tasks inside this same budget.
+
+**Checkpoint 1.** You are on a compute node and can identify your job ID and CPU allocation.
+
+Return to the login node before submitting the small batch job:
+
+```bash
+exit
 hostname
 ```
 
-The hostname should now look like a compute node, not a login node.
-
-**Checkpoint 1.** `hostname` should not start with `login`.
+This `exit` releases the interactive allocation. Do not type it again once you are back on the login node.
 
 ## Part 2: Submit a Batch Job
 
-### 2.1 Write the Job Script
+### 2.1 Write a Script with an Explicit Input
+
+From the login node:
 
 ```bash
-mkdir -p "$MYWORK/week-01/session-02/logs"
 cd "$MYWORK/week-01/session-02"
+mkdir -p logs
 
 cat > count_job.sh <<'EOF'
 #!/bin/bash
 #SBATCH --job-name=count
 #SBATCH --partition=batch
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=2G
 #SBATCH --time=00:10:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
+set -euo pipefail
+
+annotation=${1:?Pass the full path to anno.gff3 after the script name}
+test -r "$annotation"
 echo "Running on: $(hostname)"
-grep -vc '^#' "$WEEK1_DATA/anno.gff3"
+grep -vc '^#' "$annotation"
 EOF
+
+bash -n count_job.sh
+cat count_job.sh
+COUNT_JOB_ID=$(sbatch --parsable count_job.sh "$WEEK1_DATA/anno.gff3")
+printf 'Count job: %s\n' "$COUNT_JOB_ID"
+squeue -j "$COUNT_JOB_ID"
 ```
 
-### 2.2 Spot the Bug Before Submitting
+The quoted heredoc delimiter, `<<'EOF'`, writes the script literally: `$1` and `$(hostname)` are evaluated when the job runs. `bash -n` checks syntax without running commands. `sbatch --parsable` returns the job ID, not proof that the job has finished.
 
-**Question 1.** This job will fail as written. Why?
+SLURM reads `#SBATCH` directives before the shell runs. `$MYWORK` inside a directive would be literal text, so use relative log paths or pass expanded paths as `sbatch` command-line options. Create `logs/` before submission: SLURM opens those files before executing the script.
+
+### 2.2 Understand What the Job Inherits
+
+**Question 1.** Does a batch job inherit `WEEK1_DATA` from your current shell?
 
 <details>
 <summary>Answer</summary>
 
-`WEEK1_DATA` is set in your current shell, but a batch job starts a fresh shell. Unless you define the variable inside the script, the script does not know where the file is.
+By default, `sbatch` exports the submitting process's environment, including variables you set with `export`. The `export WEEK1_DATA=...` in the setup block would normally be available in the job. An ordinary, unexported shell variable would not.
 
-This is a common reason a command works interactively but fails in a batch job. The same issue can affect `module load`, `conda activate`, and any other setup step.
+A new job shell does not reproduce every interactive setup action, shell function, or environment activation. Explicitly load modules and activate environments in scripts that need them. Here, passing the annotation path as an argument makes the input visible without depending on environment inheritance.
 
 </details>
 
-Fix the script by defining `WEEK1_DATA` inside it, then submit:
+### 2.3 Confirm Completion and Read the Logs
 
 ```bash
-sed -i "/^echo \"Running on/a export WEEK1_DATA=$WEEK1_DATA" count_job.sh
-cat count_job.sh
-sbatch count_job.sh
-squeue -u "$USER"
+squeue -j "$COUNT_JOB_ID"
+sacct -j "$COUNT_JOB_ID" --format=JobID,JobName,State,ExitCode,Elapsed,MaxRSS
 ```
 
-The `cat` is not decoration. Read the file and confirm the `export` line landed _before_ the `grep` line that needs it.
-
-### 2.3 Read the Result and the Cost
-
-Replace JOBID below with your own job ID.
+A job disappearing from `squeue` may have completed, failed, or been cancelled. Check `sacct` for `COMPLETED` and exit code `0:0`; accounting information can take a short time to appear. Once the job finishes:
 
 ```bash
-cat logs/count_*.out
-seff JOBID
+cat "logs/count_${COUNT_JOB_ID}.out"
+cat "logs/count_${COUNT_JOB_ID}.err"
+seff "$COUNT_JOB_ID"
 ```
 
-`seff` reports what the job actually used against what you asked for. Memory efficiency
-will be close to zero here, because counting lines in a text file needs almost nothing.
+The output should contain a compute-node hostname and the number of non-comment lines in `anno.gff3`. `seff` compares measured use with requested resources. Very short jobs may have incomplete memory measurements, so do not size future jobs from this tiny example alone. For real workloads, measure representative inputs and leave a margin.
 
-Over-requesting is not free: SLURM has to find a node with that much memory available, so
-your job waits longer in the queue for resources it never touches. Run once with a
-generous request, read `seff`, then ask for roughly the observed peak plus a margin.
-
-**Checkpoint 2.** You have a completed job, an output log, and a `seff` report.
+**Checkpoint 2.** You have a completed job, its exact output and error logs, and a resource-use report.
 
 ## Part 3: Two Ways to Get Software
 
-### 3.1 Conda for Your Own Tools
-
-Conda is available on Pax as a module. Load it first:
+Request a new interactive compute session for environment creation and the pipeline test:
 
 ```bash
+srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=6 \
+  --mem=18G --time=01:30:00 --pty bash
+cd "$MYWORK/week-01/session-02"
+```
+
+### 3.1 Conda for Individual Tools
+
+Check the modules available on Pax, then load Miniforge:
+
+```bash
+module avail miniforge
 module load miniforge
+source "$(conda info --base)/etc/profile.d/conda.sh"
 conda --version
-```
 
-Then build an environment for this course and record it:
+export CONDA_PKGS_DIRS="$MYWORK/.conda/pkgs"
+mkdir -p "$CONDA_PKGS_DIRS" "$MYWORK/envs"
 
-```bash
-conda create -y -n appbio-week1 -c conda-forge -c bioconda seqkit
-conda activate appbio-week1
+conda create -y --prefix "$MYWORK/envs/appbio-week1" \
+  --override-channels --strict-channel-priority \
+  -c conda-forge -c bioconda seqkit=2.14.0
+conda activate "$MYWORK/envs/appbio-week1"
 seqkit version
-conda env export --from-history > "$MYWORK/week-01/session-02/environment.yml"
-cat "$MYWORK/week-01/session-02/environment.yml"
+
+conda env export --from-history | sed '/^prefix:/d' > environment.yml
+conda list --explicit > environment-linux-64.explicit.txt
 ```
 
-Channel order matters. The usual bioinformatics order is `conda-forge` first, then
-`bioconda`, and reversing it causes dependency conflicts that are painful to debug.
+If the environment already exists, activate it and check its version instead of creating it again. If the module name differs, use the version provided in class.
 
-That `environment.yml` is the deliverable, not the environment itself. It is what lets
-somebody else rebuild what you had:
+The command gives `conda-forge` priority over `bioconda`, ignores channels from personal configuration, and keeps downloaded packages and the environment out of your home directory. `environment.yml` records the requested specification; the explicit file records the resolved builds for this platform. Keep both with your analysis notes.
+
+To rebuild into a different directory, you could run:
 
 ```bash
-conda env create -f environment.yml
+conda env create --prefix "$MYWORK/envs/appbio-week1-copy" -f environment.yml
 ```
 
-If you want to see what is available in the channels, search for a package:
-
-```bash
-conda search -c bioconda seqkit
-```
-
-We will not use this environment for the rest of the lab, so deactivate it:
+You do not need a second copy for this lab. Deactivate the environment before loading the pipeline modules:
 
 ```bash
 conda deactivate
@@ -181,81 +190,81 @@ conda deactivate
 
 ### 3.2 Nextflow and Containers for Pipelines
 
-You are about to test a real pipeline. Nextflow manages the workflow, and containers provide the pipeline software.
-
 ```bash
-module load nextflow
+module load nextflow singularity
 nextflow -version
-
-module load singularity
+java -version
 singularity --version
+
+export NXF_HOME="$MYWORK/.nextflow"
+export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
+export SINGULARITY_CACHEDIR="$MYWORK/.singularity/oci"
+export NXF_OPTS='-Xms512m -Xmx4g'
+mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
 ```
 
-Conda and containers both provide software, but they are not equally reproducible. A
-conda environment is _solved_ at install time against channels that keep moving, so
-rebuilding the same specification in two years can give you different versions. A
-container is a fixed filesystem image pinned by tag or digest, identical whenever you
-pull it.
+This lab pins **nf-core/fetchngs 1.13.0**, which requires **Nextflow 25.10.4 or later**. If the loaded module is older, ask for a compatible module before continuing. Keep the same pipeline version for the test and the real download.
 
-Use containers where you can and conda where you must. The pipeline you are about to run
-provisions all of its own software as containers, which is why you installed none of the
-bioinformatics tools yourself.
+Nextflow schedules workflow tasks; Singularity supplies their software. A container tag can be changed by its publisher, so a tag alone does not guarantee an immutable image. Record the pipeline release, runtime versions, parameters, and container identifiers; image digests provide stronger identity. A Conda history export is also a specification, rather than a complete lock of every dependency.
 
-## Part 4: Fetch Public Data with `nf-core/fetchngs`
+### 3.3 Keep Tasks Inside the Allocation
 
-### 4.1 Understand What You Are Asking For
+We will run Nextflow and its tasks inside one SLURM allocation using Nextflow's `local` executor. Write a configuration shared by the test and the real run:
 
-Papers often cite a BioProject accession such as `PRJNA...`. Download tools usually need run accessions such as `SRR...`.
+```bash
+cat > lab.config <<'EOF'
+process {
+    executor = 'local'
+    resourceLimits = [cpus: 6, memory: 12.GB, time: 23.h]
+}
+executor {
+    cpus = 6
+    memory = 12.GB
+    queueSize = 1
+}
+EOF
+```
+
+The tasks share six CPUs and a 12 GB memory budget; the 18 GB SLURM allocation leaves room for Nextflow's JVM and other overhead. `queueSize = 1` runs one workflow task at a time. The outer SLURM time limit still applies, including the shorter limit of the interactive test.
+
+Without these limits, the pipeline's default requests can exceed this allocation. A per-task limit alone also does not bound the total resources of several concurrent tasks.
+
+Use `-profile singularity` for this lab. The separate `tufts` profile uses the SLURM executor to submit workflow tasks as additional jobs; that is a different execution model.
+
+## Part 4: Fetch Public Data with nf-core/fetchngs
+
+### 4.1 Inspect Metadata Before Downloading
+
+The pipeline accepts study, sample, experiment, and run accessions. A project accession can expand to many runs, so we will inspect the project and select explicit runs:
 
 ```text
 BioProject (PRJNA) -> BioSample (SAMN) -> Experiment (SRX) -> Run (SRR)
 ```
 
-Set up a clean download directory:
-
 ```bash
 mkdir -p "$MYWORK/week-01/session-02/fetch"
 cd "$MYWORK/week-01/session-02/fetch"
-```
 
-Set the project accession from class, then query ENA before downloading anything large:
-
-```bash
 export PROJECT=PRJNA792930
+ENA_API='https://www.ebi.ac.uk/ena/portal/api/filereport'
+FIELDS='run_accession,experiment_accession,instrument_platform,library_layout,library_strategy,library_source,read_count,base_count,fastq_bytes,experiment_title'
 
-ENA_API="https://www.ebi.ac.uk/ena/portal/api/filereport"
-FIELDS="run_accession,instrument_platform,library_layout,read_count,base_count"
-
-curl -sS --fail --max-time 120 \
-  "${ENA_API}?accession=${PROJECT}&result=read_run&fields=${FIELDS}&format=tsv" \
+curl --fail --silent --show-error --location --retry 3 --max-time 120 \
+  --get "$ENA_API" \
+  --data-urlencode "accession=$PROJECT" \
+  --data-urlencode 'result=read_run' \
+  --data-urlencode "fields=$FIELDS" \
+  --data-urlencode 'format=tsv' \
   -o runs.tsv
 
-[ "$(wc -l < runs.tsv)" -ge 2 ] \
-  && echo "OK: $(($(wc -l < runs.tsv) - 1)) runs" \
-  || echo "NO DATA: ask for help before continuing"
-
-awk -F'\t' '{ for (i=1; i<=NF; i++) printf "%-22s", ($i=="" ? "-" : $i); print "" }' runs.tsv
+awk -F'\t' 'NR == 1 { if ($1 != "run_accession") exit 1 }
+  END { if (NR < 2) exit 1 }' runs.tsv
+cut -f1,3-6 runs.tsv
 ```
 
-Expected shape:
+Stop if the request or validation fails; a header-only file is not a valid result. Save `runs.tsv` with your download date. The number of runs in a public project can change.
 
-```text
-run_accession   instrument_platform   library_layout   read_count   base_count
-SRR27956204     ILLUMINA              PAIRED           ...
-SRR18210286     PACBIO_SMRT           SINGLE           ...
-SRR17374240     OXFORD_NANOPORE       SINGLE           ...
-```
-
-### 4.2 Choose One Run Per Platform
-
-This project sequenced the same yeast genome on four different platforms. That is unusual
-and useful: next week you will compare QC output across all four, and any difference you
-see is the platform rather than the sample.
-
-Look at your table again. There are five runs but only four platforms, because the study
-includes two Illumina runs. You want one run from each platform.
-
-Write the four accessions into the file fetchngs expects:
+### 4.2 Select Four Runs and Check Their Meaning
 
 ```bash
 cat > ids.csv <<'EOF'
@@ -265,117 +274,107 @@ SRR17374239
 SRR17374240
 EOF
 
-cat ids.csv
+awk -F'\t' 'NR == FNR { wanted[$1] = 1; next }
+  FNR == 1 || ($1 in wanted)' ids.csv runs.tsv > selected_runs.tsv
+
+awk -F'\t' 'NR > 1 { platforms[$3] = 1 }
+  END {
+    for (p in platforms) n++
+    if (NR != 5 || n != 4) exit 1
+    print "OK: four selected runs from four platforms"
+  }' selected_runs.tsv
 ```
 
-One run accession per line, no header, no commas. That is the whole format.
+`ids.csv` contains one accession per line, with no header or commas. The `awk` join matches the complete accession field, rather than matching arbitrary text in a row. Stop if all four selected runs are not present.
 
-Which platform each one is:
+The ENA records checked on 2026-11-03 describe:
 
-```text
-SRR27956204   Illumina          paired-end short reads
-SRR18210286   PacBio HiFi       long and accurate
-SRR17374239   BGISEQ            a second short-read technology
-SRR17374240   Oxford Nanopore   long, less accurate
-```
+| Run | Platform | Library | Use in this course |
+| --- | --- | --- | --- |
+| SRR27956204 | Illumina NovaSeq 6000 | Paired-end RNA-seq, no-stress condition | Short-read QC; not a genomic coverage control |
+| SRR18210286 | PacBio Sequel, experiment titled HiFi-Seq | Single-end genomic sequencing | Long-read QC and HiFi assembly |
+| SRR17374239 | BGISEQ-500 | Paired-end genomic sequencing | Short-read genomic QC |
+| SRR17374240 | Oxford Nanopore PromethION | Single-end genomic sequencing | Long-read QC |
 
-**Question 2.** Work out the coverage each of these runs gives, for a 12.1 Mb genome, and
-the total you are about to download.
+**Question 2.** Why does a shared BioProject not make this a controlled comparison of sequencing platforms?
 
 <details>
 <summary>Answer</summary>
 
-```bash
-grep -f ids.csv runs.tsv | awk -F'\t' '{
-  printf "%-13s %-16s %6.0fx  %5.1f Gbp\n", $1, $2, $5/12100000, $5/1e9
-  t += $5
-} END { printf "\nTOTAL %.1f Gbp, roughly %.0f GB once gzipped\n", t/1e9, t*0.35/1e9 }'
-```
-
-`grep -f ids.csv` keeps only the rows whose accession appears in your list, so the totals
-describe what you are actually fetching.
-
-Every run is enormously oversequenced for a 12 Mb genome — hundreds of times coverage.
-That is normal for deposited data and it is why you will subsample before doing anything
-with it. Nobody needs 1,100x to run FastQC, and nobody needs more than about 30x to
-assemble HiFi reads.
-
-About 11 GB in total. That is why this is a batch job and not something you watch.
+A project groups related submissions; it does not guarantee the same library preparation or experimental conditions. Here, the Illumina data measure RNA abundance, while the other libraries sample genomic DNA. Read length, quality, duplication, and sequence composition can reflect library type, preparation, and processing as well as platform. Inspect `library_strategy`, `library_source`, and experiment descriptions before interpreting differences. Both Illumina runs currently in this project are RNA-seq.
 
 </details>
 
-### 4.3 Test the Pipeline First
+The PacBio experiment and sample are explicitly labelled HiFi in the archive, even though its ENA FASTQ filename contains `subreads`. Check the experiment metadata and publication rather than classifying the data from the filename alone.
+
+### 4.3 Estimate Yield and Storage
+
+**Question 3.** How many bases and how much compressed data are advertised for the selected runs?
 
 ```bash
-nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity --outdir test_out
+awk -F'\t' 'NR > 1 {
+  bytes = 0
+  n = split($9, sizes, ";")
+  for (i = 1; i <= n; i++) bytes += sizes[i]
+  printf "%-13s %-16s %6.2f Gbp  %6.2f GB advertised FASTQ\n", $1, $3, $8/1e9, bytes/1e9
+  total_bases += $8
+  total_bytes += bytes
+} END {
+  printf "TOTAL: %.2f Gbp; %.2f GB advertised FASTQ\n", total_bases/1e9, total_bytes/1e9
+}' selected_runs.tsv
+
+df -h .
+du -sh "$MYWORK"
 ```
 
-This uses a tiny built-in dataset to confirm that Nextflow runs, containers work, and the cluster can reach the internet.
+At the metadata check above, ENA advertised about **31.40 Gbp and 21.67 GB** of compressed FASTQ, not 11 GB. The byte estimate sums every semicolon-separated file size, including both mates where listed. The SRA conversion used below can produce different files and compression sizes, so this is an estimate, not a quota requirement.
 
-Always run a test profile before using a new pipeline. Check <https://nf-co.re/fetchngs> for the current release, then pin it with `-r`.
+SRA downloads, uncompressed FASTQ, temporary conversion files, published copies, and containers require additional space. `df` reports filesystem free space, not necessarily your personal quota; check the course allocation's quota before starting. Ask about staged or shared copies if the class does not have room for individual full downloads.
 
-The test has done its job. Clean up before the real run:
+For a genomic library, nominal coverage is total sequenced bases divided by the assumed genome size, about 12.1 Mb here. **Do not interpret RNA-seq yield divided by genome size as uniform genomic coverage.** Archive counts can also use different conventions; use parsed FASTQ statistics to check the actual yield after conversion. There is no universal compression ratio or assembly coverage target.
+
+### 4.4 Test the Pipeline in Its Own Directory
+
+Still on the interactive compute node:
 
 ```bash
-ls -d test_out work .nextflow*
-du -sh work
-rm -rf test_out work .nextflow.log* .nextflow/
+mkdir -p "$MYWORK/week-01/session-02/smoke-test"
+cd "$MYWORK/week-01/session-02/smoke-test"
+
+nextflow run nf-core/fetchngs \
+  -r 1.13.0 \
+  -profile test,singularity \
+  -c ../lab.config \
+  --download_method sratools \
+  --outdir results
 ```
 
-`test_out` holds the published results. `work` is where Nextflow actually ran every task,
-and it is the one that matters: each task gets its own directory there containing the
-staged input files, the resolved script, the logs and the outputs. Even this tiny test
-leaves dozens of directories behind.
+The maintainer-provided test inputs check pipeline startup, containers, and data access. Require successful completion before submitting the real download. This test uses the same release, container engine, resource configuration, and download method as the real run.
 
-Three reasons to make this a habit.
+Keep the test in `smoke-test/` and the real run in `fetch/`. Each directory has its own `.nextflow/` cache, logs, and `work/` tasks. Previous run state is normal and enables `-resume`; it is not inherently a source of failures.
 
-**It is the directory that fills your quota.** Published results are a curated copy of a
-few files. `work` holds everything, including intermediates you will never look at, and on
-a real run it is routinely several times larger than the results. A term of pipeline runs
-with no cleanup will exhaust a shared allocation.
-
-**It is reproducible by definition.** Everything in `work` can be regenerated by running
-the pipeline again. That is the point of a workflow manager. Deleting it costs you compute
-time, not information, which makes it the first thing to remove when you need space.
-
-**Leftover state causes confusing failures.** `.nextflow/` holds the run history and cache.
-Starting a new run in a directory still carrying the previous run's cache is a reliable way
-to get behaviour you cannot explain.
-
-<details>
-<summary>One important exception</summary>
-
-Do **not** delete `work` while a real run is unfinished or might need resuming. `-resume`
-reuses completed tasks by looking them up in `work` and `.nextflow/cache`. Delete either
-one and the next run starts from zero.
-
-The rule: clean up after a run you are done with, never during one you might continue.
-Your fetchngs download in §4.4 should keep its `work` directory until you have confirmed
-the FASTQ files are complete in §4.6.
-
-</details>
-
-When you do want to clean up a real run selectively, Nextflow has a command for it:
+After the test succeeds, release the interactive allocation:
 
 ```bash
-nextflow log
-nextflow clean -f -before RUN_NAME
+exit
+hostname
 ```
 
-`nextflow log` lists your previous runs by name; `clean -f -before` removes the work
-directories for everything older than the run you name, leaving the most recent intact.
+### 4.5 Submit the Real Download from the Login Node
 
-### 4.4 Submit the Real Download as a Job
-
-Do not run the real download interactively. Four runs is roughly 11 GB and will take hours, which is longer than your session and longer than your patience.
+Return to the download directory. The input and metadata files you created earlier should still be there:
 
 ```bash
+cd "$MYWORK/week-01/session-02/fetch"
+ls -l ids.csv selected_runs.tsv ../lab.config
 mkdir -p logs
 
 cat > fetch_job.sh <<'EOF'
 #!/bin/bash
 #SBATCH --job-name=fetchngs
 #SBATCH --partition=batch
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=18G
 #SBATCH --time=24:00:00
@@ -384,202 +383,183 @@ cat > fetch_job.sh <<'EOF'
 
 set -euo pipefail
 
-module load nextflow
-module load singularity
+MYWORK=${1:?Pass your MYWORK directory after the script name}
+cd "${SLURM_SUBMIT_DIR:?}"
+test -s ids.csv
+test -s selected_runs.tsv
+test -r ../lab.config
 
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
-export MYWORK="$COURSE/$USER"
-export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
-mkdir -p "$NXF_SINGULARITY_CACHEDIR"
-mkdir -p $MYWORK/week-01/session-02/fetch
+module load nextflow singularity
+export NXF_HOME="$MYWORK/.nextflow"
+export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
+export SINGULARITY_CACHEDIR="$MYWORK/.singularity/oci"
+export NXF_OPTS='-Xms512m -Xmx4g'
+mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
 
-cd $MYWORK/week-01/session-02/fetch
+{
+  date -Is
+  hostname
+  module list
+  nextflow -version
+  java -version
+  singularity --version
+} > "runtime_versions_${SLURM_JOB_ID}.txt" 2>&1
+
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
   -profile singularity \
+  -c ../lab.config \
   --input ids.csv \
   --outdir results \
   --download_method sratools \
   -resume
+
+# Verify the published files on the compute node, not the login node.
+shopt -s nullglob
+fastqs=(results/fastq/*.fastq.gz)
+if (( ${#fastqs[@]} != 6 )); then
+  echo "Expected six FASTQ files; found ${#fastqs[@]}. Inspect the samplesheet." >&2
+  exit 1
+fi
+for f in "${fastqs[@]}"; do
+  gzip -t "$f"
+  printf 'GZIP OK: %s\n' "$f"
+done
+
+module load miniforge
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate "$MYWORK/envs/appbio-week1"
+seqkit version
+seqkit stats -T -j "$SLURM_CPUS_PER_TASK" "${fastqs[@]}" > fastq_stats.tsv
+echo "Download and FASTQ checks completed. Review fastq_stats.tsv and the samplesheet."
 EOF
 
+bash -n fetch_job.sh
 cat fetch_job.sh
-sbatch fetch_job.sh
-squeue -u "$USER"
+FETCH_JOB_ID=$(sbatch --parsable fetch_job.sh "$MYWORK")
+printf '%s\n' "$FETCH_JOB_ID" > fetch_job_id.txt
+squeue -j "$FETCH_JOB_ID"
 ```
 
-Three details in that script are worth understanding rather than copying.
+We use `sratools` deliberately. ENA currently lists the paired BGISEQ run with a single FASTQ URL; downloading the SRA data and splitting biological reads avoids assuming that ENA's file listing already contains two mate files. The pipeline can also resolve run IDs back to their experiment and merge runs belonging to that experiment. Inspect the generated mappings and samplesheet to confirm what was actually fetched.
 
-The heredoc delimiter is quoted, as shown on the `cat` line above. That writes the file exactly as you see it, leaving every variable to be resolved when the job runs.
+The job receives `$MYWORK` as an explicit argument and starts in the submission directory, so no second course path is hidden in the script. It uses the same cache location as the test, without depending on an undefined `$SCRATCH`. `set -euo pipefail` catches unset variables and many command or pipeline failures; explicit input and output checks are still needed.
 
-`COURSE` and `MYWORK` are therefore defined _inside_ the script. This is Question 2 again: the job does not reliably inherit what you set in your own shell, so anything it needs must be set where it runs.
+### 4.6 Check After Class
 
-`set -euo pipefail` makes the job stop at the first failure. Without it, a failed `mkdir` would not stop anything, and you would get a confusing container error several minutes later instead of a clear permissions error immediately.
-
-### 4.5 Check After Class
-
-Replace JOBID below with your own job ID.
+Reconnect to Pax and repeat the path definitions in **Before You Start**. These commands inspect small files and can run on the login node:
 
 ```bash
 cd "$MYWORK/week-01/session-02/fetch"
-squeue -u "$USER"
-seff JOBID
-tail -20 logs/fetchngs_*.out
-tail -20 logs/fetchngs_*.err
+FETCH_JOB_ID=$(cat fetch_job_id.txt)
+
+squeue -j "$FETCH_JOB_ID"
+sacct -j "$FETCH_JOB_ID" --format=JobID,JobName,State,ExitCode,Elapsed,MaxRSS
+tail -n 30 "logs/fetchngs_${FETCH_JOB_ID}.out"
+tail -n 30 "logs/fetchngs_${FETCH_JOB_ID}.err"
 ```
 
-When the job completes:
+Once the job finishes, require `COMPLETED` with exit code `0:0`, then inspect:
 
 ```bash
-ls results/
+seff "$FETCH_JOB_ID"
 ls -lh results/fastq/
-awk -F, '{ for (i=1; i<=6 && i<=NF; i++) printf "%-20s", $i; print "" }' \
-  results/samplesheet/samplesheet.csv | head
+head -n 5 results/samplesheet/samplesheet.csv
+cat fastq_stats.tsv
 ```
 
 Expected result directories:
 
 ```text
-fastq/          the reads, one or two files per run
-samplesheet/    samplesheet.csv
-metadata/       ENA metadata
-pipeline_info/  execution reports, timeline, and software versions
+fastq/          published reads
+samplesheet/    samplesheet.csv and identifier mappings
+metadata/       archive metadata used by fetchngs
+pipeline_info/  execution reports, parameters, and software versions
 ```
 
-You should have six FASTQ files from four runs: the two paired-end runs give `_1` and
-`_2`, and the two long-read runs give one file each.
+For these four experiments, expect six FASTQ files: two mates each for Illumina and BGISEQ, and one file each for PacBio and Nanopore. File names may use experiment identifiers or other pipeline-generated prefixes; use the samplesheet and mappings to connect them to your selected run IDs.
 
-### 4.6 Verify the Download
+The job already tests gzip integrity and parses the FASTQ files with SeqKit on a compute node. `num_seqs` counts records and `sum_len` counts sequence bases. The two files from each paired-end library should have equal record counts. Compare those figures with `selected_runs.tsv` and fetchngs metadata, checking whether an archive count means reads or read pairs before assuming equality.
 
-```bash
-cd "$MYWORK/week-01/session-02/fetch/results/fastq"
+`gzip -t` detects damaged compressed data; it does not establish that all expected reads arrived. Likewise, counting every fourth line is not FASTQ validation: it can return a plausible count for a truncated record. Review parser success, expected file layout, mate counts, and total yield together. For direct archive downloads, also verify the archive's checksums; an ENA checksum will not necessarily match a FASTQ regenerated and recompressed from SRA.
 
-for f in *.fastq.gz; do
-  gzip -t "$f" && echo "OK   $f" || echo "FAIL $f"
-done
-```
-
-Every file must pass. Now count the reads in each, and compare against what ENA claimed:
-
-```bash
-for f in *.fastq.gz; do
-  n=$(zcat "$f" | awk 'NR % 4 == 1' | wc -l)
-  printf "%-30s %12d reads\n" "$f" "$n"
-done
-
-grep -f ../../ids.csv ../../runs.tsv | awk -F'\t' '{printf "%-13s %-16s %12d reads (ENA)\n", $1, $2, $4}'
-```
-
-For the paired runs the two mates should have identical counts, and each should match the
-ENA figure. For the single-end runs the one file should match directly.
-
-Counting header lines rather than dividing the line count by four is deliberate. A
-truncated file gives a line count that is not a multiple of four, so dividing returns a
-plausible wrong number with no warning.
-
-**Question 3.** Look at the read counts and the file sizes together. Which platform
-produced the fewest reads, and why is that not a sign that anything went wrong?
+**Question 4.** Why can a long-read file contain fewer records but a similar number of bases to a short-read dataset?
 
 <details>
 <summary>Answer</summary>
 
-The long-read platforms, by a wide margin. PacBio produced a few hundred thousand reads
-where Illumina produced tens of millions.
-
-Read _count_ and sequence _yield_ are different things. A nanopore read averaging well
-over 10 kb carries as much sequence as a hundred Illumina reads. Comparing platforms on
-read count alone is meaningless; compare total bases, which is what you did in Question 4.
-
-This is the distinction next week's QC session is built on.
+Each long read contains more sequence. Compare both `num_seqs` and `sum_len`, not read count alone. For paired-end yield, add the bases in both mate files. Remember that RNA-seq and genomic sequencing sample different molecules, so the Illumina yield has a different biological interpretation.
 
 </details>
 
-**Checkpoint 3.** You have a fetchngs job ID, six FASTQ files, and read counts that match what ENA reported.
+**Checkpoint 3.** You have the job ID and successful job state, six gzip-tested and parsed FASTQ files, the samplesheet, and a statistics table with plausible mate counts and sequence yields.
 
-> **Do not delete these.** Week 2 runs QC on all four platforms and Week 3 assembles the PacBio run. If you need the space back later, the subsampled copies you make next week are the ones to keep.
+> Keep the FASTQ files for Week 2 and the HiFi assembly exercise in Week 3. Give later labs the actual `results/fastq/` path from this run; do not assume a different handout's example path points here.
+
+### 4.7 Resume First; Clean Up After Verification
+
+If a job fails, diagnose and fix the cause before resubmitting. Return to the same `fetch/` directory and use the same inputs, release, configuration, and `-resume` option:
+
+```bash
+cd "$MYWORK/week-01/session-02/fetch"
+FETCH_JOB_ID=$(sbatch --parsable fetch_job.sh "$MYWORK")
+printf '%s\n' "$FETCH_JOB_ID" > fetch_job_id.txt
+```
+
+Keep both `work/` and `.nextflow/cache/` while you may need to resume. They contain reusable task outputs and the records that locate them. Published results, metadata, and logs are also worth keeping; intermediate files are not automatically disposable just because a workflow produced them.
+
+When the test run is finished and no longer needed, inspect a cleanup dry run from its own directory:
+
+```bash
+cd "$MYWORK/week-01/session-02/smoke-test"
+nextflow log
+nextflow clean RUN_NAME -n -keep-logs
+```
+
+Replace `RUN_NAME` with the exact test run name. Only after reviewing the dry run, `nextflow clean RUN_NAME -f -keep-logs` removes that run's temporary task files while retaining execution records and logs. Do not apply cleanup to an active run or to a real download that has not been verified. Retain its reports for troubleshooting.
 
 ## If Your Job Fails
 
-In order:
-
-1. Read the error: `tail -50 logs/fetchngs_*.err`
-2. Read the standard output: `tail -50 logs/fetchngs_*.out`
-3. Re-run the same job with `-resume` still present.
-4. Ask for help with the exact error message.
-
-Two failures are common enough to name.
-
-**Out of disk space.** The `sratools` download method writes large temporary files while converting, often several times the size of the final FASTQ. Check the filesystem with `df -h .`, and your own usage with a `du -sh` on your work directory.
-
-**Permission denied on the container cache.** If `NXF_SINGULARITY_CACHEDIR` points somewhere you cannot write, Singularity fails while pulling images. Confirm the directory exists and is yours:
+Check the job state and exact logs before retrying:
 
 ```bash
-ls -ld "$MYWORK/.singularity_cache"
+cd "$MYWORK/week-01/session-02/fetch"
+FETCH_JOB_ID=$(cat fetch_job_id.txt)
+sacct -j "$FETCH_JOB_ID" --format=JobID,State,ExitCode,Elapsed,MaxRSS
+tail -n 50 "logs/fetchngs_${FETCH_JOB_ID}.err"
+tail -n 50 "logs/fetchngs_${FETCH_JOB_ID}.out"
+tail -n 50 .nextflow.log
 ```
 
-If it does not exist and you cannot create it, ask the instructor — your directory under the course path has to be set up for you.
+- **PENDING:** read the reason in `squeue`; the job has not started. Do not submit duplicate copies.
+- **Unsupported Nextflow version:** load a module meeting the pinned pipeline's minimum version. Do not silently change the pipeline release just to bypass the error.
+- **OUT_OF_MEMORY or a resource request exceeding the allocation:** compare `lab.config`, the SLURM request, and `seff`. Increasing task limits also requires enough memory in the outer allocation, plus room for Nextflow.
+- **TIMEOUT:** the allocation ended before completion. Review progress and resubmit with `-resume` after correcting the wall-time request within partition limits.
+- **Out of disk space:** SRA conversion can use much more space than the final compressed FASTQ. Check `df -h .`, `du -sh work results`, and the allocation quota; do not delete an active run's work directory.
+- **Container-cache permission error:** check `ls -ld "$MYWORK/.singularity_cache"`. The script creates and uses this exact directory. Fix its location or permissions before retrying.
+- **Pipeline finished but FASTQ checks failed:** inspect the samplesheet, mappings, and parser error. Preserve the cache and fix the specific problem; do not treat existing output files as proof of success.
 
-A failed download is normal. Not noticing that it failed is the problem.
+If you need help, provide the job ID, the relevant error, and the failed task's work directory from `.nextflow.log`. For a running job you intentionally need to stop, use `scancel JOBID` with that specific job ID.
 
-## Takeaways
+## What to Keep
 
-Get a compute node, then submit real work to the scheduler:
+- `count_job.sh`, its job ID, and its output/error logs.
+- `environment.yml` and `environment-linux-64.explicit.txt`.
+- `lab.config`, `fetch/ids.csv`, `runs.tsv`, and `selected_runs.tsv`.
+- `fetch_job.sh`, `fetch_job_id.txt`, runtime versions, and job logs.
+- `results/`, `fastq_stats.tsv`, and the Nextflow cache until verification is complete.
+- A short note explaining why these four runs are not a controlled comparison of platform alone.
 
-```bash
-srun --pty -p batch -n 2 --mem=8g --time=0-01:30:00 bash
-sbatch script.sh
-squeue -u "$USER"
-seff JOBID
-```
+Keep small scripts, configurations, and analysis notes in your coursework repository. Keep large reads, environments, caches, and generated results on course storage.
 
-Build an environment and record it so it can be rebuilt:
+## References
 
-```bash
-module load miniforge
-conda create -n env -c conda-forge -c bioconda tool=version
-conda env export --from-history > environment.yml
-```
-
-Query ENA, then keep the first run of each platform:
-
-```bash
-curl -sS --fail "${ENA_API}?accession=${PROJECT}&result=read_run&fields=${FIELDS}&format=tsv" -o runs.tsv
-cat > ids.csv <<'EOF'      # one accession per line
-SRR27956204
-SRR18210286
-EOF
-```
-
-Test a pipeline before trusting it, then submit the real run as a job:
-
-```bash
-export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
-mkdir -p "$NXF_SINGULARITY_CACHEDIR"
-module load nextflow singularity
-nextflow run nf-core/fetchngs -r 1.13.0 -profile test,singularity --outdir test_out
-sbatch fetch_job.sh
-```
-
-Write a script literally by quoting the heredoc delimiter:
-
-```bash
-cat > job.sh <<'EOF'
-...
-EOF
-```
-
-Verify what you downloaded:
-
-```bash
-gzip -t file.fastq.gz
-zcat file.fastq.gz | awk 'NR % 4 == 1' | wc -l
-```
-
-Six habits will save you time this semester:
-
-1. Batch jobs do not inherit your interactive shell setup.
-2. Create log directories before submitting jobs.
-3. Read the script you just generated before you submit it.
-4. Run `-profile test` before using a new workflow.
-5. Put long jobs in the scheduler, not in an interactive terminal.
-6. Keep everything under `$MYWORK`. Home directory quotas are small and sequencing data is not.
+- [Tufts HPC: running software with SLURM](https://rtguides.it.tufts.edu/hpc/access/60-brief-slurm.html)
+- [SLURM sbatch reference, including environment export and script directives](https://slurm.schedmd.com/sbatch.html)
+- [nf-core/fetchngs 1.13.0 source and runtime requirement](https://github.com/nf-core/fetchngs/blob/1.13.0/nextflow.config)
+- [nf-core/fetchngs usage and identifier handling](https://nf-co.re/fetchngs/usage)
+- [Tufts nf-core profile and its execution models](https://nf-co.re/configs/tufts/)
+- [Nextflow caching and resuming](https://docs.seqera.io/nextflow/cache-and-resume/)
+- [NCBI fasterq-dump: temporary storage and output formats](https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump)
+- [SeqKit usage and FASTQ statistics](https://bioinf.shenwei.me/seqkit/usage/)
+- [ENA Illumina experiment SRX23612877](https://www.ebi.ac.uk/ena/browser/view/SRX23612877) and [PacBio experiment SRX14356846](https://www.ebi.ac.uk/ena/browser/view/SRX14356846)
