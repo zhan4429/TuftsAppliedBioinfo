@@ -214,7 +214,7 @@ does that the others cannot.
 
 ```bash
 mkdir -p fastqc
-fastqc -t 4 -o fastqc sub/*_1.fastq.gz sub/*_2.fastq.gz
+fastqc -t 4 --outdir fastqc sub/*_1.fastq.gz sub/*_2.fastq.gz
 ls fastqc/
 ```
 
