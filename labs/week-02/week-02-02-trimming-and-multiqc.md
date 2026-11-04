@@ -12,7 +12,8 @@ means is the skill.
 ## Before You Start
 
 ```bash
-srun --pty -p interactive -n 4 --mem=16g --time=0-03:00:00 bash
+srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=4 \
+  --mem=16G --time=03:00:00 --pty bash
 hostname
 
 export COURSE=/cluster/tufts/bio_appbio

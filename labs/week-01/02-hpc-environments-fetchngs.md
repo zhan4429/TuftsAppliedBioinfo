@@ -167,12 +167,14 @@ nextflow -version
 java -version
 singularity --version
 
-export NXF_HOME="$MYWORK/.nextflow"
-export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
+export NXF_HOME="$SCRATCH/.nextflow"
+export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
 export SINGULARITY_CACHEDIR="$MYWORK/.singularity/oci"
 export NXF_OPTS='-Xms512m -Xmx4g'
 mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
 ```
+
+Pax defines `$SCRATCH` for your scratch directory. These settings put Nextflow's downloaded files and cached container images there.
 
 This lab pins **nf-core/fetchngs 1.13.0**, which requires **Nextflow 25.10.4 or later**. If the loaded module is older, ask for a compatible module before continuing. Keep the same pipeline version for the test and the real download.
 
@@ -358,8 +360,8 @@ export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
 cd "$MYWORK/week-01/session-02/fetch"
 
-export NXF_HOME="$MYWORK/.nextflow"
-export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
+export NXF_HOME="$SCRATCH/.nextflow"
+export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
 export SINGULARITY_CACHEDIR="$MYWORK/.singularity/oci"
 export NXF_OPTS='-Xms512m -Xmx4g'
 mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
@@ -496,7 +498,7 @@ tail -n 50 .nextflow.log
 - **OUT_OF_MEMORY or a resource request exceeding the allocation:** compare `lab.config`, the SLURM request, and `seff`. Increasing task limits also requires enough memory in the outer allocation, plus room for Nextflow.
 - **TIMEOUT:** the allocation ended before completion. Review progress and resubmit with `-resume` after correcting the wall-time request within partition limits.
 - **Out of disk space:** SRA conversion can use much more space than the final compressed FASTQ. Check `df -h .`, `du -sh work results`, and the allocation quota; do not delete an active run's work directory.
-- **Container-cache permission error:** check `ls -ld "$MYWORK/.singularity_cache"`. The script creates and uses this exact directory. Fix its location or permissions before retrying.
+- **Container-cache permission error:** check `echo "$SCRATCH"` and `ls -ld "$SCRATCH/.singularity_cache"`. The script creates and uses this exact directory. Fix its location or permissions before retrying.
 - **Pipeline finished but FASTQ checks failed:** inspect the samplesheet, mappings, and parser error. Preserve the cache and fix the specific problem; do not treat existing output files as proof of success.
 
 If you need help, provide the job ID, the relevant error, and the failed task's work directory from `.nextflow.log`. For a running job you intentionally need to stop, use `scancel JOBID` with that specific job ID.

@@ -14,7 +14,8 @@ platform. That is unusual and it is the point of the exercise.
 Get a compute node. This lab runs real tools and does not belong on a login node.
 
 ```bash
-srun --pty -p interactive -n 4 --mem=16g --time=0-03:00:00 bash
+srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=4 \
+  --mem=16G --time=03:00:00 --pty bash
 hostname
 ```
 

@@ -167,11 +167,12 @@ nextflow -version
 java -version
 singularity --version
 
-export NXF_HOME=&quot;$MYWORK/.nextflow&quot;
-export NXF_SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity_cache&quot;
+export NXF_HOME=&quot;$SCRATCH/.nextflow&quot;
+export NXF_SINGULARITY_CACHEDIR=&quot;$SCRATCH/.singularity_cache&quot;
 export SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity/oci&quot;
 export NXF_OPTS=&#x27;-Xms512m -Xmx4g&#x27;
 mkdir -p &quot;$NXF_HOME&quot; &quot;$NXF_SINGULARITY_CACHEDIR&quot; &quot;$SINGULARITY_CACHEDIR&quot;</code></pre>
+<p>Pax defines <code>$SCRATCH</code> for your scratch directory. These settings put Nextflow&#x27;s downloaded files and cached container images there.</p>
 <p>This lab pins <strong>nf-core/fetchngs 1.13.0</strong>, which requires <strong>Nextflow 25.10.4 or later</strong>. If the loaded module is older, ask for a compatible module before continuing. Keep the same pipeline version for the test and the real download.</p>
 <p>Nextflow schedules workflow tasks; Singularity supplies their software. A container tag can be changed by its publisher, so a tag alone does not guarantee an immutable image. Record the pipeline release, runtime versions, parameters, and container identifiers; image digests provide stronger identity.</p>
 <h3 id="3-3-keep-tasks-inside-the-allocation">3.3 Keep Tasks Inside the Allocation</h3>
@@ -330,8 +331,8 @@ export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK=&quot;$COURSE/$USER&quot;
 cd &quot;$MYWORK/week-01/session-02/fetch&quot;
 
-export NXF_HOME=&quot;$MYWORK/.nextflow&quot;
-export NXF_SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity_cache&quot;
+export NXF_HOME=&quot;$SCRATCH/.nextflow&quot;
+export NXF_SINGULARITY_CACHEDIR=&quot;$SCRATCH/.singularity_cache&quot;
 export SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity/oci&quot;
 export NXF_OPTS=&#x27;-Xms512m -Xmx4g&#x27;
 mkdir -p &quot;$NXF_HOME&quot; &quot;$NXF_SINGULARITY_CACHEDIR&quot; &quot;$SINGULARITY_CACHEDIR&quot;
@@ -419,7 +420,7 @@ tail -n 50 .nextflow.log</code></pre>
 <li><strong>OUT<em>OF</em>MEMORY or a resource request exceeding the allocation:</strong> compare <code>lab.config</code>, the SLURM request, and <code>seff</code>. Increasing task limits also requires enough memory in the outer allocation, plus room for Nextflow.</li>
 <li><strong>TIMEOUT:</strong> the allocation ended before completion. Review progress and resubmit with <code>-resume</code> after correcting the wall-time request within partition limits.</li>
 <li><strong>Out of disk space:</strong> SRA conversion can use much more space than the final compressed FASTQ. Check <code>df -h .</code>, <code>du -sh work results</code>, and the allocation quota; do not delete an active run&#x27;s work directory.</li>
-<li><strong>Container-cache permission error:</strong> check <code>ls -ld &amp;quot;$MYWORK/.singularity_cache&amp;quot;</code>. The script creates and uses this exact directory. Fix its location or permissions before retrying.</li>
+<li><strong>Container-cache permission error:</strong> check <code>echo &amp;quot;$SCRATCH&amp;quot;</code> and <code>ls -ld &amp;quot;$SCRATCH/.singularity_cache&amp;quot;</code>. The script creates and uses this exact directory. Fix its location or permissions before retrying.</li>
 <li><strong>Pipeline finished but FASTQ checks failed:</strong> inspect the samplesheet, mappings, and parser error. Preserve the cache and fix the specific problem; do not treat existing output files as proof of success.</li>
 </ul>
 <p>If you need help, provide the job ID, the relevant error, and the failed task&#x27;s work directory from <code>.nextflow.log</code>. For a running job you intentionally need to stop, use <code>scancel JOBID</code> with that specific job ID.</p>
