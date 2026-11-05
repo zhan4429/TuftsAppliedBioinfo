@@ -24,13 +24,16 @@ You should land in your home directory, with a path like `/cluster/home/your_utl
 
 ## Shared Setup
 
-We can set up a few environment variables to store the course path we will use repeatedly. This is a common practice in bioinformatics pipelines.
+We can set up a few environment variables to store the course paths we will use repeatedly. This is a common practice in bioinformatics pipelines.
 
 ```bash
-export COURSE=/cluster/tufts/bio_appbio
-export WEEK1_DATA=$COURSE/shared/wk1
+export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export MYWORK="$COURSE/$USER"
+export WEEK1_DATA=/cluster/tufts/bio_appbio/shared/wk1
 ls "$WEEK1_DATA"
 ```
+
+`$MYWORK` is your own directory in the course allocation: all your work goes there. The shared course files sit in a separate location, `$WEEK1_DATA`, which you read but do not write to.
 
 Expected file:
 
@@ -38,7 +41,7 @@ Expected file:
 anno.gff3
 ```
 
-Do not run real software on the login node. The commands in this lab are tiny and safe; Lab2 will introduce how to request a compute node.
+Do not run real software on the login node. The commands in this lab are tiny and safe; Lab 2 introduces how to request a compute node.
 
 ## Part 1: Where Am I?
 
@@ -60,8 +63,8 @@ At Tufts HPC, your home directory is `/cluster/home/your_utln`.
 ### 1.2 Make a Working Directory
 
 ```bash
-mkdir -p $COURSE/week-01/session-01
-cd $COURSE/week-01/session-01
+mkdir -p "$MYWORK/week-01/session-01"
+cd "$MYWORK/week-01/session-01"
 pwd
 ```
 
@@ -76,26 +79,26 @@ cd -                  # return to the previous directory
 pwd
 ```
 
-**Question 2.** If you are in `$COURSE/week-01/session-01`, what does `../..` refer to?
+**Question 2.** If you are in `$MYWORK/week-01/session-01`, what does `../..` refer to?
 
 <details>
 <summary>Answer</summary>
 
-`..` is `$COURSE/week-01`, so `../..` is `$COURSE`.
+`..` is `$MYWORK/week-01`, so `../..` is `$MYWORK`.
 
 </details>
 
 ### 1.4 Link the Data Instead of Copying It
 
 ```bash
-cd $COURSE/week-01/session-01
+cd "$MYWORK/week-01/session-01"
 ln -sf "$WEEK1_DATA/anno.gff3" .
 ls -la
 ```
 
 The arrow in the listing shows that `anno.gff3` is a symbolic link. You can use the file without making a second copy, which matters when the file is 40 GB instead of 40 KB.
 
-**Checkpoint 1.** You should be in `$COURSE/week-01/session-01` with one symbolic link to `anno.gff3`.
+**Checkpoint 1.** You should be in `$MYWORK/week-01/session-01` with one symbolic link to `anno.gff3`.
 
 ## Part 2: Interrogating a Real Annotation File
 
@@ -240,7 +243,7 @@ give for the human genome, and why?
 <details>
 <summary>Answer</summary>
 
-Yeast comes out around 70%. Most of its genome is transcribed, because it has very few
+Yeast comes out at about 75%. Most of its genome is transcribed, because it has very few
 introns, short intergenic regions, and almost no repetitive DNA. It is a compact genome
 under selection for fast replication.
 
@@ -321,6 +324,8 @@ input, so redirecting back onto `anno.gff3` would have emptied it before `sed` r
 
 Confirm two things: the headers survived, and every sequence name gained its prefix.
 
+Now look at the first few lines of `anno_chr.gff3` again. The `##sequence-region` lines still say `I`, `II`, `III`: they start with `#`, so the address skipped them. The data lines now say `chrI`, so the file declares sequences it no longer uses, and a strict GFF3 validator would reject it. Renaming chromosomes properly means renaming them everywhere, which is one reason the better fix is a reference and an annotation that already agree.
+
 
 **Question 7.** Your `sort -u` output puts `IX` between `IV` and `Mito`, and `V` after `Mito`. Why, and does it matter here?
 
@@ -351,8 +356,8 @@ git config --list | head
 ### 3.2 Create a Repository
 
 ```bash
-mkdir -p $COURSE/$USER/hw ## ToDO
-cd $COURSE/$USER/hw
+mkdir -p "$MYWORK/hw"
+cd "$MYWORK/hw"
 git init
 git status
 ```

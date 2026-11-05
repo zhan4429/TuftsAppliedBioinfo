@@ -109,9 +109,9 @@ sbatch assemble.sh
 squeue -u $USER
 ```
 
-**Job ID: ******\_\_********
+**Job ID: ______________**
 
-Two lines in that script are worth understanding. `eval "$(conda shell.bash hook)"` makes `conda activate` work in a batch job, which does not run the setup your login shell does; it is the Week 1 lesson that a job does not inherit your session. And because the heredoc delimiter is quoted, the script is written exactly as shown, so awk receives `"\n"` and prints a real newline between each contig name and its sequence.
+Two lines in that script are worth understanding. `eval "$(conda shell.bash hook)"` makes `conda activate` work in a batch job. As Week 1 showed, a job receives your exported variables, but not shell functions or your interactive setup, and `conda activate` depends on a shell function. And because the heredoc delimiter is quoted, the script is written exactly as shown, so awk receives `"\n"` and prints a real newline between each contig name and its sequence.
 
 > Check back at Part 3.
 
@@ -148,7 +148,7 @@ seqkit stats -T $HIFI | awk -v g=$GENOME 'NR>1 {s+=$5} END {printf "coverage: %.
 **Question 2.** You have some coverage figure. For HiFi, is it enough? How does the answer differ from what you would need with nanopore or Illumina?
 
 ::: Answer
-HiFi at 20–30× comfortably assembles a small eukaryote; 15× is workable. That is remarkably low, and it is because HiFi reads are _both_ long and accurate — each read is close to trustworthy on its own.
+HiFi at 20–30× comfortably assembles a small eukaryote; 15× is workable. That is remarkably low, and it is because HiFi reads are *both* long and accurate — each read is close to trustworthy on its own.
 
 Noisy long reads need far more depth, because consensus across many reads is what removes the error. Illumina needs more still for assembly and cannot span repeats at any depth.
 
@@ -198,21 +198,21 @@ seqkit stats -a asm.p_ctg.fa
 
 Fill in:
 
-| Metric            | Your value | Expected            |
-| ----------------- | ---------- | ------------------- |
-| Number of contigs |            | tens, not thousands |
-| Total length      |            | close to `$GENOME`  |
-| Largest contig    |            | megabases           |
-| N50               |            | megabases           |
+| Metric | Your value | Expected |
+|---|---|---|
+| Number of contigs | | tens, not thousands |
+| Total length | | close to `$GENOME` |
+| Largest contig | | megabases |
+| N50 | | megabases |
 
-**Question 4.** Compare total assembly length against the expected genome size. What does it mean if yours is substantially _larger_?
+**Question 4.** Compare total assembly length against the expected genome size. What does it mean if yours is substantially *larger*?
 
 ::: Answer
 Usually unresolved heterozygosity. hifiasm is a phasing assembler — for a diploid it tries to keep haplotypes apart rather than collapsing them. If the two haplotypes are divergent enough, both end up in the primary assembly and total length inflates toward 2×.
 
 `asm.bp.hap1.p_ctg.gfa` and `hap2` are the separated haplotypes; `asm.bp.p_ctg.gfa` is the primary set. Which you want depends on your question — and for a haploid organism this should not arise at all.
 
-Substantially _smaller_ than expected means you lost sequence: too little coverage, or repeats collapsed.
+Substantially *smaller* than expected means you lost sequence: too little coverage, or repeats collapsed.
 :::
 
 ### 3.2 Look at the graph, not just the FASTA
@@ -264,11 +264,11 @@ This is the same signal as an inflated total length in §3.1, seen through a dif
 
 You have now measured two of the three dimensions from the lecture:
 
-| Question                                 | Metric       | Your answer  |
-| ---------------------------------------- | ------------ | ------------ |
-| **Contiguity** — how few pieces?         | contigs, N50 |              |
-| **Completeness** — is the content there? | compleasm S% |              |
-| **Correctness** — are the bases right?   | Merqury QV   | _(homework)_ |
+| Question | Metric | Your answer |
+|---|---|---|
+| **Contiguity** — how few pieces? | contigs, N50 | |
+| **Completeness** — is the content there? | compleasm S% | |
+| **Correctness** — are the bases right? | Merqury QV | *(homework)* |
 
 **Question 7.** Why can you not measure correctness right now, and what would you need?
 
@@ -277,7 +277,7 @@ You need reads from a second, more accurate technology — or at least reads mor
 
 Your BGISEQ reads from Week 1 (SRR17374239) are exactly that second technology. Not the Illumina run: it is RNA-seq, whose k-mers cover only transcribed sequence, so every correct intergenic base would look like an error. Homework 3 does this properly.
 
-This is also why the hybrid design keeps appearing, and why Week 10 will tell you correctness is the question you largely _cannot_ answer for a metagenome-assembled genome.
+This is also why the hybrid design keeps appearing, and why Week 10 will tell you correctness is the question you largely *cannot* answer for a metagenome-assembled genome.
 :::
 
 > **CHECKPOINT 3** — Everyone has an assembly with contiguity and completeness numbers.
@@ -319,7 +319,7 @@ Work through these in order:
    If unreachable, run this one command from a **login** node (it is tiny), or use the staged copy:
    `cp $SHARED/runs.tsv rna_runs.tsv`
 4. **Times out** — ENA is busy. Re-run; it is safe to repeat.
-   :::
+:::
 
 > **Why `-sS --fail` rather than `-s`?** `curl -s` is silent about everything, including a 404 — you
 > would get an empty file and no explanation. `-sS --fail` stays quiet on success and complains
@@ -333,7 +333,7 @@ Work through these in order:
 ::: Answer
 RNA-seq reads come from transcripts, so where they align tells you directly where exons are and — from reads spanning junctions — where introns are. That is evidence, not prediction, and it is the single largest improvement available to a eukaryotic annotation.
 
-What it cannot do: reveal genes that were not expressed in the tissue or condition sequenced. A gene silent in your sample is invisible to the evidence, and only the _ab initio_ model will find it. This is why modern pipelines combine both.
+What it cannot do: reveal genes that were not expressed in the tissue or condition sequenced. A gene silent in your sample is invisible to the evidence, and only the *ab initio* model will find it. This is why modern pipelines combine both.
 :::
 
 ### 4.2 Submit it
@@ -386,7 +386,7 @@ squeue -j "$RNA_JOB_ID"
 
 This is your Week 1 download job with three changes: the job name, the directory, and the list of runs. It reuses the `lab.config` you wrote in Week 1, so the same resource limits apply.
 
-**Job ID: ******\_\_******** (also saved in `fetch_rna_job_id.txt`)
+**Job ID: ______________** (also saved in `fetch_rna_job_id.txt`)
 
 ### 4.3 Before Thursday
 
