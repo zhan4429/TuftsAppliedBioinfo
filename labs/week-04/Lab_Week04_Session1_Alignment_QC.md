@@ -23,7 +23,12 @@ export FQ=$MYWORK/week-01/session-02/fetch/results/fastq
 export GENOME=12100000        # expected genome size in bases
 
 mkdir -p $MYWORK/week-04/session-01/logs && cd $MYWORK/week-04/session-01
+
+module load bwa-mem2 minimap2 samtools mosdepth seqkit
+module list
 ```
+
+Every tool is an environment module; `module avail <tool>` shows the versions installed.
 
 Gather the three inputs: your Week 3 assembly, the BGISEQ genomic reads from Week 1, and the 30× HiFi subsample from Lab 3A.
 
@@ -45,15 +50,6 @@ cp /cluster/tufts/bio_appbio/shared/wk3/fallback_assembly/asm.p_ctg.fa asm.fa &&
 DNB1=$(ls /cluster/tufts/bio_appbio/shared/wk2/fallback_fastq/*SRR17374239*_1.fastq.gz)
 DNB2=$(ls /cluster/tufts/bio_appbio/shared/wk2/fallback_fastq/*SRR17374239*_2.fastq.gz)
 rm -f hifi.fq.gz && seqkit head -n 30000 $(ls /cluster/tufts/bio_appbio/shared/wk3/fallback_hifi/*.fastq.gz | head -1) -o hifi.fq.gz
-```
-
-Build the environment for Week 4. It is slow to build, so if you can, run this before class:
-
-```bash
-module load miniforge
-conda create -y -p $MYWORK/envs/wk4 -c conda-forge -c bioconda \
-  bwa-mem2 minimap2 samtools mosdepth seqkit bcftools htslib gatk4
-conda activate $MYWORK/envs/wk4
 ```
 
 ---
@@ -104,9 +100,7 @@ cat > align.sh <<'EOF'
 
 export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
-module load miniforge
-eval "$(conda shell.bash hook)"
-conda activate $MYWORK/envs/wk4
+module load bwa-mem2 samtools minimap2
 set -euo pipefail
 cd $MYWORK/week-04/session-01
 T=${SLURM_CPUS_PER_TASK}

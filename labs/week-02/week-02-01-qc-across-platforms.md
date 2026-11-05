@@ -47,9 +47,8 @@ ls -lh "$READS"
 Load the software:
 
 ```bash
-module load miniforge
-conda activate appbio-week1
-conda install -y -c conda-forge -c bioconda fastqc nanoplot
+module load seqkit fastqc nanoplot
+module list
 ```
 
 ## Part 1: Subsample Before You Measure

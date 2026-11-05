@@ -40,15 +40,14 @@ ls -lh $HIFI
 
 ## Part 1 — Submit the assembly, now
 
-### 1.1 Set up the environment
+### 1.1 Load the tools
 
 ```bash
-module load miniforge
-conda create -y -p $MYWORK/envs/wk3 -c conda-forge -c bioconda hifiasm seqkit compleasm rasusa
-conda activate $MYWORK/envs/wk3
+module load hifiasm seqkit compleasm rasusa
+module list
 ```
 
-This creates one environment for all of Week 3 under `$MYWORK`, where Week 1 told you environments belong. Lab 3B adds to it.
+Every tool in this course is an environment module. `module avail <tool>` shows the versions installed; write down the ones you used.
 
 ### 1.2 Subsample first
 
@@ -90,12 +89,8 @@ cat > assemble.sh <<'EOF'
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-# a batch job starts a fresh, non-interactive shell: define paths and set up conda inside the script
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
-export MYWORK="$COURSE/$USER"
-module load miniforge
-eval "$(conda shell.bash hook)"
-conda activate $MYWORK/envs/wk3
+# load what the job needs inside the script, so it never depends on the shell that submitted it
+module load hifiasm
 set -euo pipefail
 
 hifiasm -o asm -t ${SLURM_CPUS_PER_TASK} hifi_30x.fastq.gz
@@ -111,7 +106,7 @@ squeue -u $USER
 
 **Job ID: ______________**
 
-Two lines in that script are worth understanding. `eval "$(conda shell.bash hook)"` makes `conda activate` work in a batch job. As Week 1 showed, a job receives your exported variables, but not shell functions or your interactive setup, and `conda activate` depends on a shell function. And because the heredoc delimiter is quoted, the script is written exactly as shown, so awk receives `"\n"` and prints a real newline between each contig name and its sequence.
+Two lines in that script are worth understanding. `module load hifiasm` sits inside the script even though you loaded it interactively: `sbatch` passes on the environment of the shell you submit from, so without it the job would work from one shell and fail from a fresh login. And because the heredoc delimiter is quoted, the script is written exactly as shown, so awk receives `"\n"` and prints a real newline between each contig name and its sequence.
 
 > Check back at Part 3.
 

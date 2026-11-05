@@ -34,9 +34,8 @@ ls -lh "$SUB"
 ```
 
 ```bash
-module load miniforge
-conda activate appbio-week1
-conda install -y -c conda-forge -c bioconda fastp multiqc chopper
+module load seqkit fastp chopper fastqc multiqc
+module list
 ```
 
 ## Part 1: Trim the Short Reads

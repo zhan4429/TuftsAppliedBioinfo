@@ -33,9 +33,8 @@ export RNA=$SHARED/fallback_rna
 ```
 
 ```bash
-module load miniforge
-conda activate $MYWORK/envs/wk3        # the Week 3 environment from Lab 3A
-conda install -y -c conda-forge -c bioconda hisat2 samtools agat
+module load hisat2 samtools agat
+module list
 ```
 
 ---
@@ -76,7 +75,7 @@ BRAKER3 annotates the same sequence the BAM was aligned to, so give it a copy of
 
 ```bash
 cp $ASM asm.fa
-ls -lh $SHARED/braker3.sif $SHARED/orthodb_fungi.fa     # container and protein evidence, both staged
+ls -lh $SHARED/orthodb_fungi.fa      # protein evidence, staged
 
 cat > annotate.sh <<'EOF'
 #!/bin/bash
@@ -89,18 +88,17 @@ cat > annotate.sh <<'EOF'
 #SBATCH --error=logs/%x_%j.err
 
 set -euo pipefail
-module load singularity
+module load braker3
 
 export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
 export SHARED=/cluster/tufts/bio_appbio/shared/wk3
 cd $MYWORK/week-03/session-02
 
-# AUGUSTUS saves its trained model in its config directory, which is read-only inside the container
-[ -d augustus_config ] || singularity exec $SHARED/braker3.sif cp -r /opt/Augustus/config augustus_config
+# AUGUSTUS saves its trained model in its config directory, and the module's copy is read-only
+[ -d augustus_config ] || cp -r "${AUGUSTUS_CONFIG_PATH:?the braker3 module did not set AUGUSTUS_CONFIG_PATH}" augustus_config
 
-# bind /cluster/tufts so the container sees both allocations
-singularity exec -B /cluster/tufts $SHARED/braker3.sif braker.pl \
+braker.pl \
     --genome=asm.fa \
     --bam=rna.sorted.bam \
     --prot_seq=$SHARED/orthodb_fungi.fa \

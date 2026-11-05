@@ -30,8 +30,8 @@ ln -sf $S1/sample.bam sample.bam
 ln -sf $S1/sample.bam.bai sample.bam.bai
 ls -lhL asm.fa sample.bam sample.bam.bai
 
-module load miniforge
-conda activate $MYWORK/envs/wk4
+module load samtools bcftools htslib gatk
+module list
 ```
 
 If Tuesday's alignment is missing, use the staged set. Its files belong together, so take all of them:
@@ -71,9 +71,7 @@ cat > gatk.sh <<'EOF'
 
 export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
-module load miniforge
-eval "$(conda shell.bash hook)"
-conda activate $MYWORK/envs/wk4
+module load gatk
 set -euo pipefail
 cd $MYWORK/week-04/session-02
 
@@ -99,14 +97,12 @@ cat > dv.sh <<'EOF'
 #SBATCH --error=logs/%x_%j.err
 
 set -euo pipefail
-module load singularity
+module load deepvariant
 export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
-export SHARED=/cluster/tufts/bio_appbio/shared/wk4
 cd $MYWORK/week-04/session-02
 
-singularity exec -B /cluster/tufts -B $SCRATCH $SHARED/deepvariant.sif \
-  /opt/deepvariant/bin/run_deepvariant \
+run_deepvariant \
     --model_type=WGS \
     --ref=asm.fa \
     --reads=sample.bam \
@@ -305,8 +301,8 @@ grep -v '^#' $MYWORK/week-03/session-02/braker/braker.gff3 \
   | sort -k1,1 -k4,4n -k5,5n | bgzip -c > braker.gff3.gz
 tabix -p gff braker.gff3.gz
 
-module load singularity
-singularity exec -B /cluster/tufts $SHARED/vep.sif vep \
+module load vep
+vep \
   -i errors.vcf.gz --gff braker.gff3.gz --fasta asm.fa \
   --tab --fields "Location,Allele,Feature,Consequence" \
   -o errors.vep.tsv --force_overwrite --no_stats 2> logs/vep.log

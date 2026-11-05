@@ -22,8 +22,10 @@ export DB=$SHARED/k2_standard_08gb
 
 mkdir -p $MYWORK/week-10/session-02/bracken && cd $MYWORK/week-10/session-02
 
-module load miniforge
-conda activate $SHARED/envs/wk10-shotgun     # kraken2, bracken, R and its packages, already built
+module load kraken2 bracken r
+module list
+# the R scripts below need four packages; each should print TRUE
+Rscript -e 'for (p in c("vegan", "ALDEx2", "ANCOMBC", "TreeSummarizedExperiment")) cat(p, requireNamespace(p, quietly = TRUE), "\n")'
 ls $D
 ```
 

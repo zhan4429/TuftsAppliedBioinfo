@@ -25,16 +25,14 @@ mkdir -p $MYWORK/week-10/session-01/logs && cd $MYWORK/week-10/session-01
 export TMPDIR=$SCRATCH/tmp && mkdir -p $TMPDIR
 ```
 
-QIIME 2 runs from a container, so nobody has to build its very large environment:
+Load QIIME 2:
 
 ```bash
-module load singularity
-q2x() { singularity exec -B /cluster/tufts -B $SCRATCH "$SHARED/qiime2-amplicon.sif" "$@"; }
-q2()  { q2x qiime "$@"; }
-q2 info | head -4
+module load qiime2
+qiime info | head -4
 ```
 
-`q2` runs any `qiime` command inside the container; `q2x` runs any other program in it. Every QIIME 2 output is either a `.qza` (data) or a `.qzv` (a visualization). To open a `.qzv`, download it through OnDemand (**Files**) and drag it onto [view.qiime2.org](https://view.qiime2.org): nothing is installed, and the file never leaves your computer.
+The module also provides `biom`, which you will use at the end. Every QIIME 2 output is either a `.qza` (data) or a `.qzv` (a visualization). To open a `.qzv`, download it through OnDemand (**Files**) and drag it onto [view.qiime2.org](https://view.qiime2.org): nothing is installed, and the file never leaves your computer.
 
 ```bash
 head -4 $AMP/metadata.tsv
@@ -49,7 +47,7 @@ Note the `sample_type` column: two samples are blanks and one is the mock commun
 ### 1.1 Import
 
 ```bash
-q2 tools import \
+qiime tools import \
   --type 'SampleData[PairedEndSequencesWithQuality]' \
   --input-path $AMP/manifest.tsv \
   --input-format PairedEndFastqManifestPhred33V2 \
@@ -61,7 +59,7 @@ q2 tools import \
 Primer sequence is not biology. Left in place, it distorts the error model that DADA2 learns.
 
 ```bash
-q2 cutadapt trim-paired \
+qiime cutadapt trim-paired \
   --i-demultiplexed-sequences demux.qza \
   --p-front-f GTGYCAGCMGCCGCGGTAA \
   --p-front-r GGACTACNVGGGTWTCTAAT \
@@ -74,8 +72,8 @@ These are the Earth Microbiome Project 515F and 806R primers for V4.
 ### 1.3 Look at the reads
 
 ```bash
-q2 demux summarize --i-data trimmed.qza --o-visualization trimmed.qzv
-q2 tools export --input-path trimmed.qzv --output-path trimmed_summary
+qiime demux summarize --i-data trimmed.qza --o-visualization trimmed.qzv
+qiime tools export --input-path trimmed.qzv --output-path trimmed_summary
 
 # reads per sample, fewest first
 awk -F'\t' 'NR>1 {print $2"\t"$1}' trimmed_summary/per-sample-fastq-counts.tsv | sort -n | head -6
@@ -126,15 +124,13 @@ set -euo pipefail
 : "${TRUNC_F:?set TRUNC_F before submitting}"
 : "${TRUNC_R:?set TRUNC_R before submitting}"
 
-module load singularity
+module load qiime2
 export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
-export SHARED=/cluster/tufts/bio_appbio/shared/wk10
 export TMPDIR=$SCRATCH/tmp && mkdir -p $TMPDIR
 cd $MYWORK/week-10/session-01
 
-singularity exec -B /cluster/tufts -B $SCRATCH $SHARED/qiime2-amplicon.sif \
-  qiime dada2 denoise-paired \
+qiime dada2 denoise-paired \
     --i-demultiplexed-seqs trimmed.qza \
     --p-trunc-len-f $TRUNC_F --p-trunc-len-r $TRUNC_R \
     --p-n-threads ${SLURM_CPUS_PER_TASK} \
@@ -186,7 +182,7 @@ ls -lh table.qza rep-seqs.qza stats.qza
 If the job failed, read `logs/dada2_*.err` and fix it. If time is short, use the staged results: `cp $SHARED/fallback/{table,rep-seqs,stats}.qza .`
 
 ```bash
-q2 tools export --input-path stats.qza --output-path stats
+qiime tools export --input-path stats.qza --output-path stats
 awk -F'\t' 'NR>2 {printf "%-12s %7d  merged %5.1f%%  kept %5.1f%%%s\n", $1, $2, $7, $9, ($9 < 50 ? "   <-- check" : "")}' stats/stats.tsv
 ```
 
@@ -207,12 +203,12 @@ Note what did not happen: nothing errored. A failed merge produces a perfectly g
 ## Part 4 — Name the ASVs
 
 ```bash
-q2 feature-classifier classify-sklearn \
+qiime feature-classifier classify-sklearn \
   --i-classifier $SHARED/silva-v4-classifier.qza \
   --i-reads rep-seqs.qza \
   --o-classification taxonomy.qza
 
-q2 taxa barplot --i-table table.qza --i-taxonomy taxonomy.qza \
+qiime taxa barplot --i-table table.qza --i-taxonomy taxonomy.qza \
   --m-metadata-file $AMP/metadata.tsv --o-visualization barplot.qzv
 ```
 
@@ -221,7 +217,7 @@ This uses one job on purpose: each parallel job loads its own copy of the classi
 How far down did the names go?
 
 ```bash
-q2 tools export --input-path taxonomy.qza --output-path taxonomy
+qiime tools export --input-path taxonomy.qza --output-path taxonomy
 awk -F'\t' 'NR>1 {n++; if ($2 ~ /g__[^;]+/) g++; if ($2 ~ /s__[^;]+/) sp++}
   END {printf "%d ASVs: %.0f%% named to genus, %.0f%% to species\n", n, 100*g/n, 100*sp/n}' taxonomy/taxonomy.tsv
 ```
@@ -243,10 +239,10 @@ The classifier is trained on SILVA's V4 region without species labels, so the sp
 Open `barplot.qzv` and set the level to 6 (genus). Then collapse the table to genus and export it, so you can check what you see:
 
 ```bash
-q2 taxa collapse --i-table table.qza --i-taxonomy taxonomy.qza \
+qiime taxa collapse --i-table table.qza --i-taxonomy taxonomy.qza \
   --p-level 6 --o-collapsed-table genus.qza
-q2 tools export --input-path genus.qza --output-path genus
-q2x biom convert -i genus/feature-table.biom -o genus.tsv --to-tsv
+qiime tools export --input-path genus.qza --output-path genus
+biom convert -i genus/feature-table.biom -o genus.tsv --to-tsv
 ```
 
 ### 5.1 What is in the blanks?
