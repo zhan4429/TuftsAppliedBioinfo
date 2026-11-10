@@ -129,8 +129,8 @@ cat > fetch_job.sh <<'EOF'
 #SBATCH --partition=batch
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=24G
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=48G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
@@ -141,9 +141,8 @@ export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
 cd "$MYWORK/week-01/session-02/fetch"
 
-export NXF_SINGULARITY_CACHEDIR="$COURSE/$USER/.singularity_cache"
-export SINGULARITY_CACHEDIR="$MYWORK/.singularity/oci"
-mkdir -p "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
+export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
+mkdir -p "$NXF_SINGULARITY_CACHEDIR"
 
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
