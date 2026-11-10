@@ -23,7 +23,7 @@ SUMMARY_OVERRIDES = {
         "Use Tufts HPC, inspect a GFF3 file, practice shell pipelines, and create a homework Git repository."
     ),
     "labs/week-01/02-hpc-environments-fetchngs.md": (
-        "Request compute resources, submit SLURM jobs, test containers, and start an nf-core/fetchngs download."
+        "Request a compute node, load software modules, and submit one nf-core/fetchngs download job."
     ),
     "tutorials/guide-git-github-on-pax.md": (
         "Configure Git identity, add an SSH key to GitHub, and connect Pax repositories safely."
