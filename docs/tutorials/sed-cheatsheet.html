@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="sed Cheat Sheet for Applied Bioinformatics, Tufts University.">
+    <title>sed Cheat Sheet | Applied Bioinformatics</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../assets/lab-code-copy.js" defer></script>
+  </head>
+  <body class="doc-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../index.html#labs">Schedule</a>
+          <a href="../index.html#setup">Setup</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <main class="lab-main wrap" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../index.html#setup">Back to setup and tutorials</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#the-basic-pattern">The Basic Pattern</a>
+            <a class="toc-level-2" href="#make-a-small-practice-file">Make a Small Practice File</a>
+            <a class="toc-level-2" href="#replace-text">Replace Text</a>
+            <a class="toc-level-2" href="#match-a-prefix-or-suffix">Match a Prefix or Suffix</a>
+            <a class="toc-level-2" href="#select-or-exclude-lines">Select or Exclude Lines</a>
+            <a class="toc-level-2" href="#change-chromosome-prefixes-in-gff3">Change Chromosome Prefixes in GFF3</a>
+            <a class="toc-level-2" href="#save-and-check-the-result">Save and Check the Result</a>
+            <a class="toc-level-2" href="#further-reading">Further Reading</a>
+            </nav>
+          </details>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="lab-label">Cheat sheet</p>
+            <h1>sed Cheat Sheet</h1>
+          </header>
+          <p>Use <code>sed</code> to replace text, add or remove prefixes, and select lines from text files. The examples below print the edited text or save it to a new file. See the <a href="awk-cheatsheet.html">AWK cheat sheet</a> for filtering by columns and doing arithmetic.</p>
+<h2 id="the-basic-pattern">The Basic Pattern</h2>
+<pre class="lab-code"><code class=" language-text">sed &#x27;s/old/new/&#x27; input.txt</code></pre>
+<p><code>s</code> means <strong>substitute</strong>: replace the first match of <code>old</code> with <code>new</code> on each line. The slashes separate the parts of the instruction. The single quotes keep the shell from interpreting the sed program.</p>
+<p>By default, sed prints the result to the terminal. It does not change the input file. To save the result, use <code>&gt;</code> and a different output filename.</p>
+<h2 id="make-a-small-practice-file">Make a Small Practice File</h2>
+<p>Run this in your own work directory, using a new filename if <code>samples.txt</code> already exists:</p>
+<pre class="lab-code"><code class=" language-bash">cat &gt; samples.txt &lt;&lt;&#x27;EOF&#x27;
+control_A.fastq.gz
+control_B.fastq.gz
+treated_A.fastq.gz
+EOF</code></pre>
+<p><code>cat</code> writes the lines between the two <code>EOF</code> markers into <code>samples.txt</code>.</p>
+<h2 id="replace-text">Replace Text</h2>
+<pre class="lab-code"><code class=" language-bash">sed &#x27;s/control/reference/&#x27; samples.txt</code></pre>
+<p>Output:</p>
+<pre class="lab-code"><code class=" language-text">reference_A.fastq.gz
+reference_B.fastq.gz
+treated_A.fastq.gz</code></pre>
+<p>Lines without a match are printed unchanged. Without the <code>g</code> flag, only the first match on each line is replaced. Compare:</p>
+<pre class="lab-code"><code class=" language-bash">echo &#x27;read read read&#x27; | sed &#x27;s/read/READ/&#x27;
+echo &#x27;read read read&#x27; | sed &#x27;s/read/READ/g&#x27;</code></pre>
+<p>The first command prints <code>READ read read</code>; the second prints <code>READ READ READ</code>. <code>g</code> means replace <strong>all matches on each line</strong>. The pipe (<code>|</code>) sends the text from <code>echo</code> to sed.</p>
+<h2 id="match-a-prefix-or-suffix">Match a Prefix or Suffix</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Pattern</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>^</code></td>
+<td>Start of a line.</td>
+</tr>
+<tr>
+<td><code>$</code></td>
+<td>End of a line.</td>
+</tr>
+<tr>
+<td><code>.</code></td>
+<td>Any single character.</td>
+</tr>
+<tr>
+<td><code>\.</code></td>
+<td>A literal dot.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Add a prefix to every line:</p>
+<pre class="lab-code"><code class=" language-bash">sed &#x27;s/^/raw_/&#x27; samples.txt</code></pre>
+<p>The first line becomes <code>raw_control_A.fastq.gz</code>. <code>^</code> matches the start of the line, so nothing in the middle is changed.</p>
+<p>Remove a leading prefix:</p>
+<pre class="lab-code"><code class=" language-bash">sed &#x27;s/^control_//&#x27; samples.txt</code></pre>
+<p>The first two lines become <code>A.fastq.gz</code> and <code>B.fastq.gz</code>. The replacement is empty, which removes the matched text. <code>treated_A.fastq.gz</code> stays unchanged.</p>
+<p>Remove an exact filename suffix:</p>
+<pre class="lab-code"><code class=" language-bash">sed &#x27;s/\.fastq\.gz$//&#x27; samples.txt</code></pre>
+<p>The first line becomes <code>control_A</code>. Escape the dots with <code>\.</code> so they mean actual dots; <code>$</code> restricts the match to the end of a line.</p>
+<h2 id="select-or-exclude-lines">Select or Exclude Lines</h2>
+<p>Print only the first five lines:</p>
+<pre class="lab-code"><code class=" language-bash">sed -n &#x27;1,5p&#x27; samples.txt</code></pre>
+<p><code>-n</code> suppresses automatic printing. <code>1,5</code> selects lines 1 through 5, and <code>p</code> prints them. This practice file has only three lines, so all three appear.</p>
+<p>Print only lines starting with <code>control</code>:</p>
+<pre class="lab-code"><code class=" language-bash">sed -n &#x27;/^control/p&#x27; samples.txt</code></pre>
+<p>Exclude lines starting with <code>#</code>, such as comments in an annotation file:</p>
+<pre class="lab-code"><code class=" language-bash">sed &#x27;/^#/d&#x27; anno.gff3</code></pre>
+<p><code>d</code> removes matching lines from the output. The original file is unchanged. Here <code>anno.gff3</code> means your annotation file, not the small practice file above.</p>
+<h2 id="change-chromosome-prefixes-in-gff3">Change Chromosome Prefixes in GFF3</h2>
+<p>GFF3 data rows start with a sequence name, such as <code>I</code> or <code>chrI</code>. Lines beginning with <code>#</code> are comments or directives. Run these examples in the directory containing your Lab 1 annotation files.</p>
+<p>Add <code>chr</code> only to data rows:</p>
+<pre class="lab-code"><code class=" language-bash">sed &#x27;/^#/!s/^/chr/&#x27; anno.gff3 &gt; anno_chr.gff3</code></pre>
+<p>Read the program in two parts:</p>
+<ul>
+<li><code>/^#/!</code> means apply the following edit only to lines that do <strong>not</strong> start with <code>#</code>.</li>
+<li><code>s/^/chr/</code> adds <code>chr</code> at the start of those lines.</li>
+</ul>
+<p>For example, a data row beginning with <code>IV</code> now begins with <code>chrIV</code>. The comment lines stay unchanged. Before using a renamed annotation with other tools, also check that reference sequence names and any <code>##sequence-region</code> directives are consistent.</p>
+<p>Remove the leading <code>chr</code> again:</p>
+<pre class="lab-code"><code class=" language-bash">sed &#x27;s/^chr//&#x27; anno_chr.gff3 &gt; anno_no_prefix.gff3</code></pre>
+<p><code>^chr</code> matches only a leading <code>chr</code>, so it does not remove <code>chr</code> from text in the attributes column. Comments beginning with <code>#</code> stay unchanged.</p>
+<h2 id="save-and-check-the-result">Save and Check the Result</h2>
+<pre class="lab-code"><code class=" language-bash">sed &#x27;s/^control_/reference_/&#x27; samples.txt &gt; samples_renamed.txt
+head -n 5 samples_renamed.txt
+wc -l samples_renamed.txt</code></pre>
+<p><code>head</code> previews the saved text, and <code>wc -l</code> reports its line count. A substitution changes text without adding or removing lines; a filtering command such as <code>d</code> can change the line count.</p>
+<ul>
+<li>Always use a different output filename: <code>&gt;</code> can empty the input before sed reads it if both names are the same.</li>
+<li>These examples use a new output file, so you can inspect the edit before replacing anything.</li>
+<li>A sed search pattern is a regular expression. Use anchors for prefixes and suffixes and escape literal dots.</li>
+<li>Sed edits text patterns; for selecting a GFF3 feature type specifically in column 3, use <a href="awk-cheatsheet.html">awk</a>.</li>
+</ul>
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://www.gnu.org/software/sed/manual/sed.html">GNU sed manual</a></li>
+<li><a href="https://www.gnu.org/software/sed/manual/html_node/Addresses-overview.html">GNU sed manual on selecting lines</a></li>
+<li><a href="https://www.gnu.org/software/sed/manual/html_node/Common-Commands.html">GNU sed common commands</a></li>
+<li><a href="awk-cheatsheet.html">AWK cheat sheet</a></li>
+<li><a href="../labs/week-01/01-command-line-git.html">Command Line, Text Processing, and Git lab</a></li>
+</ul>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
+    </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
+  </body>
+</html>

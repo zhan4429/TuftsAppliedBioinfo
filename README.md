@@ -86,6 +86,11 @@ Current labs:
 - [Week 1: Command Line, Text Processing, and Git](labs/week-01/01-command-line-git.md)
 - [Week 1: HPC, Environments, and Fetching Public Data](labs/week-01/02-hpc-environments-fetchngs.md)
 
+Command references:
+
+- [AWK cheat sheet](tutorials/awk-cheatsheet.md)
+- [sed cheat sheet](tutorials/sed-cheatsheet.md)
+
 ## Topic Overview
 
 The syllabus organizes the course around applied workflows and reproducible computational practice.

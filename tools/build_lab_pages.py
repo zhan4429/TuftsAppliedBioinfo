@@ -28,6 +28,12 @@ SUMMARY_OVERRIDES = {
     "tutorials/guide-git-github-on-pax.md": (
         "Configure Git identity, add an SSH key to GitHub, and connect Pax repositories safely."
     ),
+    "tutorials/awk-cheatsheet.md": (
+        "Select rows and columns, calculate totals, and build counting pipelines with worked examples."
+    ),
+    "tutorials/sed-cheatsheet.md": (
+        "Replace text, edit prefixes and suffixes, select lines, and save changes to a new file."
+    ),
 }
 
 
@@ -313,7 +319,7 @@ def discover_tutorial_pages() -> list[dict[str, str | Path]]:
         {
             "source": source,
             "output": DOCS / source.relative_to(ROOT).with_suffix(".html"),
-            "label": "Tutorial",
+            "label": "Cheat sheet" if source.stem.endswith("-cheatsheet") else "Tutorial",
             "back_label": "Back to setup and tutorials",
             "back_fragment": "setup",
             "section": "tutorials",
@@ -813,7 +819,7 @@ git pull</code></pre>
             </p>
           </div>
           <div>
-            <h3 id="tutorials">Tutorials</h3>
+            <h3 id="tutorials">Tutorials and cheat sheets</h3>
 {tutorial_markup(tutorial_pages)}
           </div>
         </div>

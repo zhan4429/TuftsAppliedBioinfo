@@ -124,6 +124,7 @@ ls -la</code></pre>
 <p>The arrow in the listing shows that <code>anno.gff3</code> is a symbolic link. You can use the file without making a second copy, which matters when the file is 40 GB instead of 40 KB.</p>
 <p><strong>Checkpoint 1.</strong> You should be in <code>$MYWORK/week-01/session-01</code> with one symbolic link to <code>anno.gff3</code>.</p>
 <h2 id="part-2-interrogating-a-real-annotation-file">Part 2: Interrogating a Real Annotation File</h2>
+<p>Keep the <a href="../../tutorials/awk-cheatsheet.html">AWK cheat sheet</a> and <a href="../../tutorials/sed-cheatsheet.html">sed cheat sheet</a> open as references. They explain the syntax with small practice files and examples you can reuse throughout the course.</p>
 <p><code>anno.gff3</code> is a genome annotation file: one feature per line, nine tab-separated columns.</p>
 <h3 id="2-1-look-before-you-leap">2.1 Look Before You Leap</h3>
 <pre class="lab-code"><code class=" language-bash">less anno.gff3

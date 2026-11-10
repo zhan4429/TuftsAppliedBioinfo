@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="AWK Cheat Sheet for Applied Bioinformatics, Tufts University.">
+    <title>AWK Cheat Sheet | Applied Bioinformatics</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../assets/lab-code-copy.js" defer></script>
+  </head>
+  <body class="doc-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../index.html#labs">Schedule</a>
+          <a href="../index.html#setup">Setup</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <main class="lab-main wrap" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../index.html#setup">Back to setup and tutorials</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#the-basic-pattern">The Basic Pattern</a>
+            <a class="toc-level-2" href="#make-a-small-practice-file">Make a Small Practice File</a>
+            <a class="toc-level-2" href="#select-columns">Select Columns</a>
+            <a class="toc-level-2" href="#select-rows">Select Rows</a>
+            <a class="toc-level-2" href="#count-rows-and-add-values">Count Rows and Add Values</a>
+            <a class="toc-level-2" href="#count-categories-with-a-pipeline">Count Categories with a Pipeline</a>
+            <a class="toc-level-2" href="#work-with-gff3-annotations">Work with GFF3 Annotations</a>
+            <a class="toc-level-3" href="#inspect-data-rows">Inspect Data Rows</a>
+            <a class="toc-level-3" href="#count-a-feature-type">Count a Feature Type</a>
+            <a class="toc-level-3" href="#rank-sequences-by-gene-count">Rank Sequences by Gene Count</a>
+            <a class="toc-level-3" href="#sum-annotated-exon-lengths">Sum Annotated Exon Lengths</a>
+            <a class="toc-level-2" href="#save-output-and-avoid-common-mistakes">Save Output and Avoid Common Mistakes</a>
+            <a class="toc-level-2" href="#further-reading">Further Reading</a>
+            </nav>
+          </details>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="lab-label">Cheat sheet</p>
+            <h1>AWK Cheat Sheet</h1>
+          </header>
+          <p>Use <code>awk</code> to select rows, extract columns, count features, and calculate totals in text files. This reference starts with a small practice file, then applies the same ideas to genome annotations. See the <a href="sed-cheatsheet.html">sed cheat sheet</a> for replacing text and editing line prefixes.</p>
+<h2 id="the-basic-pattern">The Basic Pattern</h2>
+<pre class="lab-code"><code class=" language-text">awk -F&#x27;\t&#x27; &#x27;condition { action }&#x27; file.tsv</code></pre>
+<p>Read this as: split each line into tab-separated fields, check the condition, and perform the action on matching lines. Replace <code>condition</code>, <code>action</code>, and <code>file.tsv</code> with the rule and input you need.</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Piece</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>-F&#x27;\t&#x27;</code></td>
+<td>Fields are separated by tabs. Without <code>-F</code>, awk normally splits on whitespace.</td>
+</tr>
+<tr>
+<td><code>$1</code>, <code>$2</code>, <code>$3</code></td>
+<td>The first, second, and third fields on the current line.</td>
+</tr>
+<tr>
+<td><code>$0</code></td>
+<td>The whole current line.</td>
+</tr>
+<tr>
+<td><code>NR</code></td>
+<td>The number of input lines read so far.</td>
+</tr>
+<tr>
+<td><code>NF</code></td>
+<td>The number of fields on the current line.</td>
+</tr>
+<tr>
+<td><code>&#x27;...&#x27;</code></td>
+<td>Single quotes protect the awk program from expansion by the shell.</td>
+</tr>
+</tbody>
+</table></div>
+<p>With a condition but no action, awk prints the matching line. With an action but no condition, it performs that action on every line.</p>
+<h2 id="make-a-small-practice-file">Make a Small Practice File</h2>
+<p>Run this in your own work directory. The values are separated by <strong>tabs</strong> and there is no header row. The columns are sample name, group, and read count.</p>
+<pre class="lab-code"><code class=" language-bash">cat &gt; example.tsv &lt;&lt;&#x27;EOF&#x27;
+sample_A	control	1200
+sample_B	treated	1800
+sample_C	control	900
+EOF</code></pre>
+<p><code>cat</code> writes the lines between the two <code>EOF</code> markers into <code>example.tsv</code>. <code>&gt;</code> replaces that output file if it already exists, so use a new filename for practice.</p>
+<h2 id="select-columns">Select Columns</h2>
+<p>Print just the sample names:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;{ print $1 }&#x27; example.tsv</code></pre>
+<p>Print sample names and read counts, separated by a tab:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;{ print $1 &quot;\t&quot; $3 }&#x27; example.tsv</code></pre>
+<p>The <code>&quot;\t&quot;</code> inserts a tab between the two fields. By comparison, <code>print $1, $3</code> uses a space between them by default.</p>
+<h2 id="select-rows">Select Rows</h2>
+<p>Keep the control samples:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$2 == &quot;control&quot;&#x27; example.tsv</code></pre>
+<p>This prints the complete lines for <code>sample_A</code> and <code>sample_C</code>. <code>==</code> compares values; the text value <code>&quot;control&quot;</code> goes in double quotes inside the single-quoted program.</p>
+<p>Keep samples with at least 1,500 reads:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 &gt;= 1500&#x27; example.tsv</code></pre>
+<p>Only <code>sample_B</code> passes. Combine conditions with <code>&amp;&amp;</code>, meaning <strong>and</strong>:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$2 == &quot;control&quot; &amp;&amp; $3 &gt;= 1000&#x27; example.tsv</code></pre>
+<p>Only <code>sample_A</code> passes both conditions.</p>
+<h2 id="count-rows-and-add-values">Count Rows and Add Values</h2>
+<p>Count the selected control rows:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$2 == &quot;control&quot;&#x27; example.tsv | wc -l</code></pre>
+<p>A pipe (<code>|</code>) sends awk&#x27;s output to the next command. <code>wc -l</code> counts those lines, so the answer is <strong>2</strong>.</p>
+<p>Add the read counts from all three samples:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;{ total += $3 } END { print total }&#x27; example.tsv</code></pre>
+<p><code>total += $3</code> adds the current read count to a running total. Awk treats the initial numeric value of <code>total</code> as zero. <code>END</code> runs after the last input line, so the total is printed once: <strong>3900</strong>. To sum only control samples, add <code>$2 == &quot;control&quot;</code> before the first pair of braces.</p>
+<h2 id="count-categories-with-a-pipeline">Count Categories with a Pipeline</h2>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;{ print $2 }&#x27; example.tsv |
+  sort | uniq -c | sort -rn</code></pre>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Step</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>print $2</code></td>
+<td>Extract the group names.</td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td>Put identical names next to each other.</td>
+</tr>
+<tr>
+<td><code>uniq -c</code></td>
+<td>Count each group of adjacent identical lines.</td>
+</tr>
+<tr>
+<td><code>sort -rn</code></td>
+<td>Sort the counts numerically, largest first.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The counts are <strong>2 control</strong> and <strong>1 treated</strong>. Keep the first <code>sort</code>: <code>uniq</code> groups only adjacent matches. A line ending in <code>|</code> continues onto the next line; you can also type the pipeline on one line.</p>
+<h2 id="work-with-gff3-annotations">Work with GFF3 Annotations</h2>
+<p>In a GFF3 data row, column 1 is the sequence name, column 3 is the feature type, and columns 4 and 5 are the start and end. Use tabs as the field separator because the attributes column can contain spaces. Lines starting with <code>#</code> are comments.</p>
+<p>Run the following examples in a directory containing <code>anno.gff3</code>, such as your Lab 1 folder.</p>
+<h3 id="inspect-data-rows">Inspect Data Rows</h3>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;!/^#/ { print $1 &quot;\t&quot; $3 }&#x27; anno.gff3 | head -n 5</code></pre>
+<p><code>/^#/</code> matches lines starting with <code>#</code>; <code>!</code> means <strong>not</strong>. This skips comments, extracts sequence names and feature types, and displays the first five results.</p>
+<h3 id="count-a-feature-type">Count a Feature Type</h3>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 == &quot;gene&quot;&#x27; anno.gff3 | wc -l</code></pre>
+<p>Match the feature-type field exactly. Searching for the word <code>gene</code> anywhere in a line can also match other feature types whose attributes mention a gene.</p>
+<h3 id="rank-sequences-by-gene-count">Rank Sequences by Gene Count</h3>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 == &quot;gene&quot;&#x27; anno.gff3 |
+  cut -f1 | sort | uniq -c | sort -rn | head -n 5</code></pre>
+<p><code>cut -f1</code> keeps column 1. The next three commands count and rank the sequence names; <code>head -n 5</code> keeps the five largest counts. Build the pipeline one step at a time if you want to see what each command contributes.</p>
+<h3 id="sum-annotated-exon-lengths">Sum Annotated Exon Lengths</h3>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 == &quot;exon&quot; { total += $5 - $4 + 1 } END { print total }&#x27; anno.gff3</code></pre>
+<p>Use the lab&#x27;s GFF3 length formula, <code>$5 - $4 + 1</code>, for each exon. This sums feature lengths; it does not merge overlapping exons into distinct genomic positions.</p>
+<h2 id="save-output-and-avoid-common-mistakes">Save Output and Avoid Common Mistakes</h2>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 == &quot;gene&quot;&#x27; anno.gff3 &gt; genes.gff3
+head -n 5 genes.gff3
+wc -l genes.gff3</code></pre>
+<ul>
+<li><code>&gt;</code> writes to a file and replaces any existing contents. Keep the output filename different from the input filename.</li>
+<li>Keep the awk program in straight single quotes so the shell does not expand <code>$1</code>, <code>$3</code>, and other field references.</li>
+<li>Field numbers depend on the input file. Check the columns before reusing a command.</li>
+<li>If a TSV has a header, <code>NR &gt; 1</code> skips its first line. Apply this only when a header is actually present.</li>
+</ul>
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://www.gnu.org/software/gawk/manual/html_node/Fields.html">GNU awk manual on fields</a></li>
+<li><a href="https://www.gnu.org/software/gawk/manual/html_node/Output-Separators.html">GNU awk manual on output separators</a></li>
+<li><a href="https://www.gnu.org/s/gawk/manual/gawk.html">GNU awk user&amp;#x27;s guide</a></li>
+<li><a href="sed-cheatsheet.html">sed cheat sheet</a></li>
+<li><a href="../labs/week-01/01-command-line-git.html">Command Line, Text Processing, and Git lab</a></li>
+</ul>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
+    </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
+  </body>
+</html>

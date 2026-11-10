@@ -102,6 +102,10 @@ The arrow in the listing shows that `anno.gff3` is a symbolic link. You can use 
 
 ## Part 2: Interrogating a Real Annotation File
 
+Keep the [AWK cheat sheet](../../tutorials/awk-cheatsheet.html) and
+[sed cheat sheet](../../tutorials/sed-cheatsheet.html) open as references. They explain
+the syntax with small practice files and examples you can reuse throughout the course.
+
 `anno.gff3` is a genome annotation file: one feature per line, nine tab-separated columns.
 
 ### 2.1 Look Before You Leap
