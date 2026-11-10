@@ -520,6 +520,10 @@ summary:focus-visible {
   margin: 1.5rem auto;
 }
 
+.lab-article img[src$="/yeast-human-gene-density.png"] {
+  width: 50%;
+}
+
 .lab-hero {
   margin-bottom: 2rem;
   padding-bottom: 1.25rem;
