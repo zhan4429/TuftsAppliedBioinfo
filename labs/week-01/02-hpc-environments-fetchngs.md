@@ -141,11 +141,9 @@ export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
 cd "$MYWORK/week-01/session-02/fetch"
 
-export NXF_HOME="$SCRATCH/.nextflow"
-export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
+export NXF_SINGULARITY_CACHEDIR="$COURSE/$USER/.singularity_cache"
 export SINGULARITY_CACHEDIR="$MYWORK/.singularity/oci"
-export NXF_OPTS='-Xms512m -Xmx4g'
-mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
+mkdir -p "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
 
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
@@ -162,8 +160,9 @@ Read the script from top to bottom:
 - `#SBATCH` lines request resources and name the log files. `%x` becomes the job name;
   `%j` becomes the job ID. Create `logs/` before submitting.
 - `module load` loads software inside the batch job, and `cd` selects the work directory.
-- Pax defines `$SCRATCH`; the two `NXF_` directory settings keep Nextflow's downloads and
-  cached container images in scratch. `NXF_OPTS` limits Nextflow's Java memory use.
+- `NXF_SINGULARITY_CACHEDIR` keeps downloaded container images in your own course
+  directory so Nextflow can reuse them. Nextflow otherwise uses its default home and
+  Java settings.
 - `-r` selects the pipeline version and `-profile singularity` selects containers.
 - `--input` names the accession list and `--outdir` names the results directory.
   `--download_method sratools` downloads and converts the SRA data to FASTQ. We use this
@@ -288,7 +287,7 @@ where your data are.
   duplicate copies.
 - **Failed or timed out:** read the job's `.err` and `.out` logs and `.nextflow.log` in
   the download directory. Give the instructor the job ID and exact error message.
-- **Disk or cache errors:** check the allocation quota and the scratch directory with
+- **Disk or cache errors:** check the allocation quota and your container-cache directory with
   the instructor. Conversion needs more space than the final compressed FASTQ files.
 
 After fixing the problem, resubmit `fetch_job.sh` from the same download directory with

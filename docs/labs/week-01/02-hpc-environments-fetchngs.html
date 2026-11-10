@@ -56,10 +56,8 @@
           <header class="lab-hero">
             <p class="lab-label">Week 1, Session 2</p>
             <h1>HPC, Environments, and Fetching Public Data</h1>
-            <p class="lab-time">Time: 30–40 minutes in class; download and verification finish after class.</p>
           </header>
           <p>In this lab you will request a compute node, load software modules, and submit <strong>one fetchngs batch job</strong> to download public sequencing data. You do not need to wait for the download to finish during class.</p>
-<p>Plan for about 5–10 minutes to connect and request a compute node, 5 minutes to check the software, and 20–25 minutes to prepare and submit the download. Queue waits can vary.</p>
 <h2 id="before-you-start">Before You Start</h2>
 <p>Open a terminal on Pax:</p>
 <ul>
@@ -93,7 +91,7 @@ nextflow -version
 singularity --version
 module list</code></pre>
 <p><code>module load</code> makes installed software available in your current shell. <code>module list</code> shows the modules you have loaded. Nextflow coordinates the steps of the pipeline; Singularity provides the containers containing the tools used by those steps.</p>
-<p>This lab uses <strong>nf-core/fetchngs 1.13.0</strong>, which requires <strong>Nextflow 25.10.4 or later</strong>. Ask for help if the loaded version is older. The instructor will test the pipeline before class; students do not need to run a separate test download during this session.</p>
+<p>This lab uses <strong>nf-core/fetchngs 1.13.0</strong>, which requires <strong>Nextflow 25.10.4 or later</strong>.</p>
 <h2 id="part-3-submit-the-fetchngs-download">Part 3: Submit the Fetchngs Download</h2>
 <h3 id="3-1-choose-the-data">3.1 Choose the Data</h3>
 <p>We will download these four runs from BioProject <code>PRJNA792930</code>:</p>
@@ -139,7 +137,7 @@ EOF
 
 cat ids.csv</code></pre>
 <p>Despite its <code>.csv</code> extension, this input file has <strong>one run accession per line, with no header or commas</strong>. Using explicit run IDs controls which data we download.</p>
-<p>ENA advertised about 22 GB of compressed FASTQ for these runs when checked on 2026-11-03. SRA conversion and intermediate files require additional space. The instructor will confirm that the course allocation has room before class.</p>
+<p>ENA advertised about 22 GB of compressed FASTQ for these runs when checked on 2026-11-03. SRA conversion and intermediate files require additional space.</p>
 <h3 id="3-2-write-the-job-script">3.2 Write the Job Script</h3>
 <p>Write the batch script below. The pipeline will use its default configuration, and its tasks will run inside the batch allocation. We will not run the pipeline directly in our smaller interactive allocation.</p>
 <pre class="lab-code"><code class=" language-bash">mkdir -p logs
@@ -162,11 +160,9 @@ export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=&quot;$COURSE/$USER&quot;
 cd &quot;$MYWORK/week-01/session-02/fetch&quot;
 
-export NXF_HOME=&quot;$SCRATCH/.nextflow&quot;
-export NXF_SINGULARITY_CACHEDIR=&quot;$SCRATCH/.singularity_cache&quot;
+export NXF_SINGULARITY_CACHEDIR=&quot;$COURSE/$USER/.singularity_cache&quot;
 export SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity/oci&quot;
-export NXF_OPTS=&#x27;-Xms512m -Xmx4g&#x27;
-mkdir -p &quot;$NXF_HOME&quot; &quot;$NXF_SINGULARITY_CACHEDIR&quot; &quot;$SINGULARITY_CACHEDIR&quot;
+mkdir -p &quot;$NXF_SINGULARITY_CACHEDIR&quot; &quot;$SINGULARITY_CACHEDIR&quot;
 
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
@@ -180,7 +176,7 @@ EOF</code></pre>
 <ul>
 <li><code>#SBATCH</code> lines request resources and name the log files. <code>%x</code> becomes the job name; <code>%j</code> becomes the job ID. Create <code>logs/</code> before submitting.</li>
 <li><code>module load</code> loads software inside the batch job, and <code>cd</code> selects the work directory.</li>
-<li>Pax defines <code>$SCRATCH</code>; the two <code>NXF_</code> directory settings keep Nextflow&#x27;s downloads and cached container images in scratch. <code>NXF_OPTS</code> limits Nextflow&#x27;s Java memory use.</li>
+<li><code>NXF_SINGULARITY_CACHEDIR</code> keeps downloaded container images in your own course directory so Nextflow can reuse them. Nextflow otherwise uses its default home and Java settings.</li>
 <li><code>-r</code> selects the pipeline version and <code>-profile singularity</code> selects containers.</li>
 <li><code>--input</code> names the accession list and <code>--outdir</code> names the results directory. <code>--download_method sratools</code> downloads and converts the SRA data to FASTQ. We use this method because ENA lists only one FASTQ URL for the paired BGISEQ run.</li>
 <li><code>-resume</code> allows completed pipeline steps to be reused if the job needs restarting.</li>
@@ -233,7 +229,7 @@ cat fastq_stats.tsv</code></pre>
 <ul>
 <li><strong>Pending:</strong> read the reason in <code>squeue --me</code> and wait or ask for help. Do not submit duplicate copies.</li>
 <li><strong>Failed or timed out:</strong> read the job&#x27;s <code>.err</code> and <code>.out</code> logs and <code>.nextflow.log</code> in the download directory. Give the instructor the job ID and exact error message.</li>
-<li><strong>Disk or cache errors:</strong> check the allocation quota and the scratch directory with the instructor. Conversion needs more space than the final compressed FASTQ files.</li>
+<li><strong>Disk or cache errors:</strong> check the allocation quota and your container-cache directory with the instructor. Conversion needs more space than the final compressed FASTQ files.</li>
 </ul>
 <p>After fixing the problem, resubmit <code>fetch_job.sh</code> from the same download directory with <code>sbatch fetch_job.sh</code>, and record the new job ID. Keep <code>work/</code> and <code>.nextflow/</code> so that <code>-resume</code> can reuse completed steps. Keep these directories until your results are verified; cleanup is not part of this class session.</p>
 <h2 id="what-to-keep">What to Keep</h2>
