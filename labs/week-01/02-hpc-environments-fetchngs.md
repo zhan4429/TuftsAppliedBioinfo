@@ -44,8 +44,8 @@ A hostname beginning with `login` identifies a shared login node. Use it to edit
 ### 1.2 Request One Task with Multiple CPUs
 
 ```bash
-srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=6 \
-  --mem=18G --time=01:30:00 --pty bash
+srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=2 \
+  --mem=8G --time=01:30:00 --pty bash
 
 hostname
 printf 'Job: %s; CPUs: %s\n' "$SLURM_JOB_ID" "$SLURM_CPUS_PER_TASK"
@@ -53,24 +53,13 @@ printf 'Job: %s; CPUs: %s\n' "$SLURM_JOB_ID" "$SLURM_CPUS_PER_TASK"
 
 The request may wait in the queue. Once it starts, the hostname should identify a compute node.
 
-`--ntasks=1` requests one task; `--cpus-per-task=6` gives it six CPUs. Using `-n 6` would request six tasks, which is not what we want for one shell or one multithreaded program. `--mem=18G` requests memory for the node allocation, not 18 GB per CPU. Later, we will fit Nextflow and its tasks inside this same budget.
+`--ntasks=1` requests one task; `--cpus-per-task=2` gives it two CPUs. Using `-n 2` would request two tasks, which is not what we want for one shell or one multithreaded program. `--mem=8G` requests memory for the node allocation, not 8 GB per CPU.
 
 **Checkpoint 1.** You are on a compute node and can identify your job ID and CPU allocation.
-
-Return to the login node before submitting the small batch job:
-
-```bash
-exit
-hostname
-```
-
-This `exit` releases the interactive allocation. Do not type it again once you are back on the login node.
 
 ## Part 2: Submit a Batch Job
 
 ### 2.1 Write a Script with a Clear Input Path
-
-From the login node:
 
 ```bash
 cd "$MYWORK/week-01/session-02"
@@ -88,7 +77,7 @@ cat > count_job.sh <<'EOF'
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-WEEK1_DATA=/cluster/tufts/bio_appbio/shared/wk1
+WEEK1_DATA=/cluster/tufts/c27sp1bio0196/shared/wk1
 echo "Running on: $(hostname)"
 grep -vc '^#' "$WEEK1_DATA/anno.gff3"
 EOF
@@ -262,12 +251,12 @@ awk -F'\t' 'NR > 1 { platforms[$3] = 1 }
 
 The ENA records checked on 2026-11-03 describe:
 
-| Run | Platform | Library | Use in this course |
-| --- | --- | --- | --- |
-| SRR27956204 | Illumina NovaSeq 6000 | Paired-end RNA-seq, no-stress condition | Short-read QC; not a genomic coverage control |
-| SRR18210286 | PacBio Sequel, experiment titled HiFi-Seq | Single-end genomic sequencing | Long-read QC and HiFi assembly |
-| SRR17374239 | BGISEQ-500 | Paired-end genomic sequencing | Short-read genomic QC |
-| SRR17374240 | Oxford Nanopore PromethION | Single-end genomic sequencing | Long-read QC |
+| Run         | Platform                                  | Library                                 | Use in this course                            |
+| ----------- | ----------------------------------------- | --------------------------------------- | --------------------------------------------- |
+| SRR27956204 | Illumina NovaSeq 6000                     | Paired-end RNA-seq, no-stress condition | Short-read QC; not a genomic coverage control |
+| SRR18210286 | PacBio Sequel, experiment titled HiFi-Seq | Single-end genomic sequencing           | Long-read QC and HiFi assembly                |
+| SRR17374239 | BGISEQ-500                                | Paired-end genomic sequencing           | Short-read genomic QC                         |
+| SRR17374240 | Oxford Nanopore PromethION                | Single-end genomic sequencing           | Long-read QC                                  |
 
 **Question 2.** Why does a shared BioProject not make this a controlled comparison of sequencing platforms?
 
