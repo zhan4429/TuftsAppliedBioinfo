@@ -62,14 +62,14 @@ requires Nextflow >=25.10.4. Confirm a compatible Nextflow/Java module and Singu
 on Pax before class. The instructor should run the fetchngs test before teaching,
 using a separate test directory, `-profile test,singularity`, and
 `--download_method sratools`. The test profile has its own resource settings; request
-six CPUs and 48 GB to test within the same allocation size as the real job. The students'
+six CPUs and 24 GB to test within the same allocation size as the real job. The students'
 two-CPU, 8 GB interactive allocation is only for checking software and submitting the
 batch job. It is too small for the pipeline's default conversion step. Students should
 not run the pipeline directly in that interactive shell.
-The real job requests one task, six CPUs, 48 GB, and 24 hours. It uses the pipeline's
-default configuration with the Singularity profile. The default `process_medium`
-request used by `SRATOOLS_FASTERQDUMP` is six CPUs and 36 GB, so 18 GB would be too
-small without a resource override. The 48 GB request leaves room for Nextflow's JVM.
+The real job requests one task, six CPUs, 24 GB, and 24 hours, as specified for this
+course. It uses the Singularity profile. Upstream fetchngs 1.13.0 advertises six CPUs
+and 36 GB for the `process_medium` label used by `SRATOOLS_FASTERQDUMP`; the course's
+24 GB allocation should be checked with the actual Pax setup and course inputs.
 Validate the complete four-run workload with Pax's Nextflow settings before class. This is
 the local-executor-inside-one-allocation model, not `-profile tufts` with additional
 SLURM submissions. The 24-hour limit is an initial request, not a runtime guarantee.
