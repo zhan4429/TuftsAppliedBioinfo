@@ -16,7 +16,7 @@ srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=4 \
   --mem=16G --time=03:00:00 --pty bash
 hostname
 
-export COURSE=/cluster/tufts/bio_appbio
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=$COURSE/$USER
 export SUB=$MYWORK/week-02/session-01/sub
 

@@ -27,9 +27,9 @@ You should land in your home directory, with a path like `/cluster/home/your_utl
 We can set up a few environment variables to store the course paths we will use repeatedly. This is a common practice in bioinformatics pipelines.
 
 ```bash
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
-export WEEK1_DATA=/cluster/tufts/bio_appbio/shared/wk1
+export WEEK1_DATA=$COURSE/shared/wk1
 ls "$WEEK1_DATA"
 ```
 

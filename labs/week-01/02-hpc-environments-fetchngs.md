@@ -16,8 +16,8 @@ Open a terminal on Pax:
 Use the course allocation announced in class. The shared annotation path comes from Session 1 and may be in a different allocation from your personal work:
 
 ```bash
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
-export WEEK1_DATA=/cluster/tufts/bio_appbio/shared/wk1
+export COURSE=/cluster/tufts/c27sp1bio0196
+export WEEK1_DATA=$COURSE/shared/wk1
 export MYWORK="$COURSE/$USER"
 
 mkdir -p "$MYWORK/week-01/session-02/logs"
@@ -356,7 +356,7 @@ cat > fetch_job.sh <<'EOF'
 
 module load nextflow singularity
 
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export COURSE="/cluster/tufts/c27sp1bio0196"
 export MYWORK="$COURSE/$USER"
 cd "$MYWORK/week-01/session-02/fetch"
 

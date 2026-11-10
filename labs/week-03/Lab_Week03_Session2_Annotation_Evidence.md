@@ -14,9 +14,9 @@ srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
   --mem=32G --time=03:00:00 --pty bash
 hostname
 
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
-export SHARED=/cluster/tufts/bio_appbio/shared/wk3
+export SHARED=$COURSE$/shared/wk3
 export ASM=$MYWORK/week-03/session-01/asm.p_ctg.fa
 export RNA=$MYWORK/week-03/session-01/fetch_rna/results/fastq
 

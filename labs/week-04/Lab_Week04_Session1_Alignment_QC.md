@@ -16,9 +16,9 @@ srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
   --mem=32G --time=03:00:00 --pty bash
 hostname                      # must NOT say login-p0x
 
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
-export SHARED=/cluster/tufts/bio_appbio/shared/wk4
+export SHARED=$COURSE/shared/wk4
 export FQ=$MYWORK/week-01/session-02/fetch/results/fastq
 export GENOME=12100000        # expected genome size in bases
 

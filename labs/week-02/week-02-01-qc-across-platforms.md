@@ -22,7 +22,7 @@ hostname
 Set your paths:
 
 ```bash
-export COURSE=/cluster/tufts/bio_appbio
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=$COURSE/$USER
 export READS=$MYWORK/week-01/session-02/fetch/results/fastq
 export GENOME=12100000
