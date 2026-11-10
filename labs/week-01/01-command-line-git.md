@@ -402,13 +402,58 @@ git status
 
 `git status` will become the command you type most often. It tells you what changed and what is staged for commit.
 
-A file in a Git repository is in one of three places, and two commands move it between them:
+Git lets you edit your files while keeping a history of earlier versions. To understand
+how it does this, think about three places where Git can keep track of a file's contents:
+
+1. **Working directory: the files you are editing.** This is your project folder on Pax,
+   where you create and save files with a text editor or shell commands. Saving a file
+   changes the copy in this folder. It does not automatically add that change to Git's
+   history.
+2. **Staging area: the changes you have selected for the next commit.** Run
+   `git add README.md` to stage the current saved contents of `README.md`. This lets you
+   choose which files to include in a commit. Other edits can stay in your working
+   directory until you are ready to record them.
+3. **Commit history: the snapshots you have recorded.** Run `git commit -m "Describe the change"`
+   to record everything currently staged as a new snapshot of your project. Each commit
+   has an identifier, an author, and a message explaining the change. You can inspect
+   earlier commits later to understand how your project developed.
+
+The usual workflow is:
 
 ```text
-working directory  --(git add)-->  staging area  --(git commit)-->  repository
+Edit and save files       Select what to record       Record a snapshot
+------------------       ---------------------       -----------------
+Working directory  ----> Staging area           ----> Commit history
+                    git add                     git commit
 ```
 
-Keep that picture in mind; it explains the behaviour of `git diff` later in this lab.
+**Your files do not physically move between folders.** They stay in your project folder;
+Git records their contents at different points in this workflow. The working copy, the
+staged copy, and the last committed copy can therefore contain different versions of the
+same file.
+
+For example, imagine you have edited and saved `README.md`:
+
+- Before you run `git add README.md`, the new edits are only in your working directory.
+- After `git add README.md`, those saved contents are staged for the next commit.
+- If you then fix a spelling mistake and save again, the staged copy still contains the
+  earlier text. Run `git add README.md` again to include the spelling correction.
+- When you run `git commit`, Git records the staged contents. Any edits you have not
+  staged remain in your working directory for a later commit.
+
+This also explains the inspection commands:
+
+- `git status` gives an overview: new files Git is not tracking yet, edits that are not
+  staged, and changes ready to commit.
+- `git diff` shows edits to tracked files that are **not yet staged**, by comparing your
+  working directory with the staging area.
+- `git diff --staged` shows changes **ready for the next commit**, by comparing the
+  staging area with the last commit.
+- `git log --oneline` lists the commits you have already made, once you have a history.
+
+A new, untracked file appears in `git status` but its contents do not appear in ordinary
+`git diff`. Stage it with `git add`, then use `git diff --staged` to review what you will
+commit. We will practice this with `.gitignore` and `README.md` in the next sections.
 
 ### 3.3 Add `.gitignore` First
 
@@ -537,7 +582,8 @@ Git, in the order you will use it:
 
 ```bash
 git status              # what has changed, and what is staged
-git diff                # exactly what changed, line by line
+git diff                # unstaged edits to tracked files
+git diff --staged       # changes selected for the next commit
 git add FILE            # stage a change
 git commit -m "..."     # record it
 git log --oneline       # what has happened so far

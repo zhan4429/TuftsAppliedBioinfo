@@ -254,9 +254,33 @@ cd &quot;$MYWORK/hw&quot;
 git init
 git status</code></pre>
 <p><code>git status</code> will become the command you type most often. It tells you what changed and what is staged for commit.</p>
-<p>A file in a Git repository is in one of three places, and two commands move it between them:</p>
-<pre class="lab-code"><code class=" language-text">working directory  --(git add)--&gt;  staging area  --(git commit)--&gt;  repository</code></pre>
-<p>Keep that picture in mind; it explains the behaviour of <code>git diff</code> later in this lab.</p>
+<p>Git lets you edit your files while keeping a history of earlier versions. To understand how it does this, think about three places where Git can keep track of a file&#x27;s contents:</p>
+<ol>
+<li><strong>Working directory: the files you are editing.</strong> This is your project folder on Pax, where you create and save files with a text editor or shell commands. Saving a file changes the copy in this folder. It does not automatically add that change to Git&#x27;s history.</li>
+<li><strong>Staging area: the changes you have selected for the next commit.</strong> Run <code>git add README.md</code> to stage the current saved contents of <code>README.md</code>. This lets you choose which files to include in a commit. Other edits can stay in your working directory until you are ready to record them.</li>
+<li><strong>Commit history: the snapshots you have recorded.</strong> Run <code>git commit -m &quot;Describe the change&quot;</code> to record everything currently staged as a new snapshot of your project. Each commit has an identifier, an author, and a message explaining the change. You can inspect earlier commits later to understand how your project developed.</li>
+</ol>
+<p>The usual workflow is:</p>
+<pre class="lab-code"><code class=" language-text">Edit and save files       Select what to record       Record a snapshot
+------------------       ---------------------       -----------------
+Working directory  ----&gt; Staging area           ----&gt; Commit history
+                    git add                     git commit</code></pre>
+<p><strong>Your files do not physically move between folders.</strong> They stay in your project folder; Git records their contents at different points in this workflow. The working copy, the staged copy, and the last committed copy can therefore contain different versions of the same file.</p>
+<p>For example, imagine you have edited and saved <code>README.md</code>:</p>
+<ul>
+<li>Before you run <code>git add README.md</code>, the new edits are only in your working directory.</li>
+<li>After <code>git add README.md</code>, those saved contents are staged for the next commit.</li>
+<li>If you then fix a spelling mistake and save again, the staged copy still contains the earlier text. Run <code>git add README.md</code> again to include the spelling correction.</li>
+<li>When you run <code>git commit</code>, Git records the staged contents. Any edits you have not staged remain in your working directory for a later commit.</li>
+</ul>
+<p>This also explains the inspection commands:</p>
+<ul>
+<li><code>git status</code> gives an overview: new files Git is not tracking yet, edits that are not staged, and changes ready to commit.</li>
+<li><code>git diff</code> shows edits to tracked files that are <strong>not yet staged</strong>, by comparing your working directory with the staging area.</li>
+<li><code>git diff --staged</code> shows changes <strong>ready for the next commit</strong>, by comparing the staging area with the last commit.</li>
+<li><code>git log --oneline</code> lists the commits you have already made, once you have a history.</li>
+</ul>
+<p>A new, untracked file appears in <code>git status</code> but its contents do not appear in ordinary <code>git diff</code>. Stage it with <code>git add</code>, then use <code>git diff --staged</code> to review what you will commit. We will practice this with <code>.gitignore</code> and <code>README.md</code> in the next sections.</p>
 <h3 id="3-3-add-gitignore-first">3.3 Add <code>.gitignore</code> First</h3>
 <pre class="lab-code"><code class=" language-bash">cat &gt; .gitignore &lt;&lt;&#x27;EOF&#x27;
 # Sequencing data: never commit these
@@ -332,7 +356,8 @@ git status</code></pre>
 <pre class="lab-code"><code class=" language-bash">sed &#x27;/^#/!s/^/chr/&#x27; anno.gff3 &gt; anno_chr.gff3</code></pre>
 <p>Git, in the order you will use it:</p>
 <pre class="lab-code"><code class=" language-bash">git status              # what has changed, and what is staged
-git diff                # exactly what changed, line by line
+git diff                # unstaged edits to tracked files
+git diff --staged       # changes selected for the next commit
 git add FILE            # stage a change
 git commit -m &quot;...&quot;     # record it
 git log --oneline       # what has happened so far</code></pre>
