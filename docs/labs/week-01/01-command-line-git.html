@@ -306,11 +306,56 @@ EOF
 cat .gitignore</code></pre>
 <p>Add <code>.gitignore</code> before the first commit. Once a file is committed, it is in the repository history and in every future clone. GitHub warns above 50 MB and rejects files above 100 MB; one FASTQ file can be larger than your whole repository should be.</p>
 <h3 id="3-4-make-your-first-commits">3.4 Make Your First Commits</h3>
+<p>First, create a <strong>README</strong>: an introduction to your project for someone opening the repository for the first time. GitHub displays <code>README.md</code> on the repository&#x27;s main page. It should explain what the project is for, what the main files contain, and how to get started. For a bioinformatics analysis, also describe where the input data come from, which software is needed, and how to run the analysis.</p>
+<p>Keeping a README is good practice because your collaborators, instructor, and future self should be able to understand your work without guessing what each file does. Start with a short description now and update it as your project develops. Commit the README alongside your code so its instructions have a version history too.</p>
+<p>The <code>.md</code> extension means <strong>Markdown</strong>, a way to format a plain-text document using a few simple characters. You can edit the file in a text editor; GitHub displays the formatted version. Here are a few examples:</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>What you type in the Markdown file</th>
+<th>What it means</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code># Project title</code></td>
+<td>A main heading. Put a space after <code>#</code>.</td>
+</tr>
+<tr>
+<td><code>## Data</code></td>
+<td>A section heading below the main heading.</td>
+</tr>
+<tr>
+<td><code>**important**</code></td>
+<td>Bold text: <strong>important</strong>. Put two asterisks on each side of the text.</td>
+</tr>
+<tr>
+<td><code>*note*</code></td>
+<td>Italic text: <em>note</em>. Put one asterisk on each side.</td>
+</tr>
+<tr>
+<td><code>- First item</code></td>
+<td>A bullet-list item. Put each item on its own line.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Headings and list items start on their own lines. Leave a blank line between paragraphs and before a list. Single backticks display commands and filenames as code, as you see with <code>git status</code> and <code>README.md</code> throughout this lab.</p>
+<p>Create a small README using some of these formatting choices:</p>
 <pre class="lab-code"><code class=" language-bash">cat &gt; README.md &lt;&lt;&#x27;EOF&#x27;
 # Applied Bioinformatics Homework
 
 Coursework repository for Applied Bioinformatics.
+
+## Contents
+
+- hw1/: Week 1 notes and coursework.
+
+## Computing
+
+Analyses run on the Tufts HPC cluster, Pax.
+
+**Keep large sequencing data and generated results out of this repository.**
 EOF
+
+cat README.md
 
 git add .gitignore README.md
 git status

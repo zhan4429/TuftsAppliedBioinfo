@@ -486,12 +486,53 @@ Add `.gitignore` before the first commit. Once a file is committed, it is in the
 
 ### 3.4 Make Your First Commits
 
+First, create a **README**: an introduction to your project for someone opening the
+repository for the first time. GitHub displays `README.md` on the repository's main
+page. It should explain what the project is for, what the main files contain, and how
+to get started. For a bioinformatics analysis, also describe where the input data come
+from, which software is needed, and how to run the analysis.
+
+Keeping a README is good practice because your collaborators, instructor, and future
+self should be able to understand your work without guessing what each file does. Start
+with a short description now and update it as your project develops. Commit the README
+alongside your code so its instructions have a version history too.
+
+The `.md` extension means **Markdown**, a way to format a plain-text document using a
+few simple characters. You can edit the file in a text editor; GitHub displays the
+formatted version. Here are a few examples:
+
+| What you type in the Markdown file | What it means |
+| --- | --- |
+| `# Project title` | A main heading. Put a space after `#`. |
+| `## Data` | A section heading below the main heading. |
+| `**important**` | Bold text: **important**. Put two asterisks on each side of the text. |
+| `*note*` | Italic text: *note*. Put one asterisk on each side. |
+| `- First item` | A bullet-list item. Put each item on its own line. |
+
+Headings and list items start on their own lines. Leave a blank line between paragraphs
+and before a list. Single backticks display commands and filenames as code, as you see
+with `git status` and `README.md` throughout this lab.
+
+Create a small README using some of these formatting choices:
+
 ```bash
 cat > README.md <<'EOF'
 # Applied Bioinformatics Homework
 
 Coursework repository for Applied Bioinformatics.
+
+## Contents
+
+- hw1/: Week 1 notes and coursework.
+
+## Computing
+
+Analyses run on the Tufts HPC cluster, Pax.
+
+**Keep large sequencing data and generated results out of this repository.**
 EOF
+
+cat README.md
 
 git add .gitignore README.md
 git status
