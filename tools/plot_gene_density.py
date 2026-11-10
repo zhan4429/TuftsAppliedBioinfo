@@ -33,8 +33,8 @@ def main():
     for x, label in [(0.06, "SPECIES"), (0.33, "APPROX. GENES"), (0.55, "GENOME SIZE"), (0.78, "GENES / Mb")]:
         fig.text(x, 0.845, label, fontsize=10, color=MUTED, weight="bold")
     for y, species, count, size, density, color in [
-        (0.795, "Yeast (S. cerevisiae)", "6,000", "12.1 Mb", "496", YEAST),
-        (0.735, "Human", "20,000", "3,200 Mb", "6.25", HUMAN),
+        (0.795, "Yeast (S. cerevisiae)", "6,000", "12.1 Mb", "~500", YEAST),
+        (0.735, "Human", "20,000", "3,200 Mb", "~6", HUMAN),
     ]:
         for x, value in [(0.06, species), (0.33, count), (0.55, size), (0.78, density)]:
             fig.text(x, y, value, fontsize=13, color=color, weight="bold" if x == 0.78 else "normal")
@@ -51,7 +51,7 @@ def main():
     for side in ["top", "right", "left"]:
         ax.spines[side].set_visible(False)
     ax.spines["bottom"].set_color(RULE)
-    for y, density, label in [(1, DENSITY[0], "~496"), (0, DENSITY[1], "~6")]:
+    for y, density, label in [(1, DENSITY[0], "~500"), (0, DENSITY[1], "~6")]:
         ax.text(density + 8, y, label, va="center", color=INK, fontsize=12, weight="bold")
 
     fig.text(0.06, 0.405, "Yeast has about 80 times as many protein-coding genes per Mb.", fontsize=13, color=INK, weight="bold")

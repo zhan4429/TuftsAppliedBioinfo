@@ -225,7 +225,7 @@ never produces an error message.
 
 </details>
 
-### How much of this genome is transcribed?
+### What fraction of the genome is annotated as exons?
 
 A total number of bases is hard to interpret on its own. Divide it by the genome size and
 it becomes a proportion you can reason about. The yeast genome is about 12.1 Mb:
@@ -356,7 +356,9 @@ It does not matter for counting unique names, which is all you asked for. It wou
 
 ## Part 3: Git
 
-> **Git and GitHub:** Git is the version-control software you run on your computer or on Pax to record changes and keep a history of your project. GitHub is a website that hosts Git repositories online so you can share your work, collaborate, and submit coursework. You can use Git without GitHub or an internet connection. Commands such as `git add` and `git commit` save changes in your local repository; they do not upload anything to GitHub. After connecting your repository to GitHub, `git push` uploads your commits, and `git pull` brings remote changes into your local repository. Setting your Git name and email identifies your commits; accessing a GitHub repository may also require separate authentication.
+> **Git and GitHub:** Git is the version-control software you run on your computer or on Pax to record changes and keep a history of your project. GitHub is a website that hosts Git repositories online so you can share your work, collaborate, and submit coursework. You can use Git without GitHub or an internet connection.
+
+> `git add` selects saved file contents for the next commit, and `git commit` records the staged contents in your local history. Neither command uploads anything to GitHub. After connecting your repository to GitHub, `git push` uploads your commits, and `git pull` brings remote changes into your local repository. Setting your Git name and email identifies your commits. To connect Pax to GitHub and set up authentication, follow [Set Up Git and GitHub on Pax](https://zhan4429.github.io/TuftsAppliedBioinfo/tutorials/guide-git-github-on-pax.html).
 
 Your homework will use Git repositories. Set one up now.
 
@@ -366,7 +368,7 @@ Your homework will use Git repositories. Set one up now.
 git config --global user.name "Your Name"
 git config --global user.email "your.name@tufts.edu"
 git config --global init.defaultBranch main
-git config --list | head
+git config --global --list
 ```
 
 Replace `Your Name` with your own name and `your.name@tufts.edu` with your email address.
@@ -387,9 +389,9 @@ if you need to change a setting.
 - `git config --global init.defaultBranch main` makes `main` the initial branch name
   when you create a new repository with `git init`. A branch is a named line of work in
   a repository. This setting does not rename branches in existing repositories.
-- `git config --list | head` displays Git settings and sends the output through the
-  pipe (`|`) to `head`, which shows the first ten lines. It is a quick inspection, but
-  your name, email, and branch setting may appear farther down the list.
+- `git config --global --list` displays all global Git settings for your account,
+  including the three you just set. Check that your name, email, and default branch
+  have the expected values.
 
 ### 3.2 Create a Repository
 
@@ -523,7 +525,7 @@ Coursework repository for Applied Bioinformatics.
 
 ## Contents
 
-- hw1/: Week 1 notes and coursework.
+- `hw1/`: Week 1 notes and coursework.
 
 ## Computing
 

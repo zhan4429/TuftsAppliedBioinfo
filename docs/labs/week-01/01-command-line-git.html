@@ -48,7 +48,7 @@
             <a class="toc-level-3" href="#2-3-the-counting-idiom">2.3 The Counting Idiom</a>
             <a class="toc-level-3" href="#2-4-awk-filter-on-a-column">2.4 awk: Filter on a Column</a>
             <a class="toc-level-3" href="#2-5-awk-do-arithmetic-across-lines">2.5 awk: Do Arithmetic Across Lines</a>
-            <a class="toc-level-3" href="#how-much-of-this-genome-is-transcribed">How much of this genome is transcribed?</a>
+            <a class="toc-level-3" href="#what-fraction-of-the-genome-is-annotated-as-exons">What fraction of the genome is annotated as exons?</a>
             <a class="toc-level-3" href="#2-6-sed-make-a-targeted-substitution">2.6 sed: Make a Targeted Substitution</a>
             <a class="toc-level-2" href="#part-3-git">Part 3: Git</a>
             <a class="toc-level-3" href="#3-1-configure-git-once-per-account">3.1 Configure Git Once Per Account</a>
@@ -181,7 +181,7 @@ awk -F&#x27;\t&#x27; &#x27;$3 == &quot;exon&quot; { s += $5 - $4 }     END { pri
 awk -F&#x27;\t&#x27; &#x27;$3 == &quot;exon&quot;&#x27; anno.gff3 | wc -l</code></pre>
 <p>Mixing coordinate conventions is one of the most common silent errors in genomics, and it never produces an error message.</p>
 </details>
-<h3 id="how-much-of-this-genome-is-transcribed">How much of this genome is transcribed?</h3>
+<h3 id="what-fraction-of-the-genome-is-annotated-as-exons">What fraction of the genome is annotated as exons?</h3>
 <p>A total number of bases is hard to interpret on its own. Divide it by the genome size and it becomes a proportion you can reason about. The yeast genome is about 12.1 Mb:</p>
 <pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3 == &quot;exon&quot; { s += $5 - $4 + 1 } END { printf &quot;%.1f%% of the genome\n&quot;, 100*s/12100000 }&#x27; anno.gff3</code></pre>
 <p><code>printf</code> works as it does in C: <code>%.1f</code> prints a number to one decimal place, and <code>%%</code> prints a literal percent sign.</p>
@@ -233,20 +233,21 @@ grep -v &#x27;^#&#x27; anno_chr.gff3 | cut -f1 | sort -u</code></pre>
 </details>
 <p><strong>Checkpoint 2.</strong> You have run <code>grep</code>, <code>cut</code>, <code>sort</code>, <code>uniq</code>, <code>awk</code>, and <code>sed</code> on a real annotation file.</p>
 <h2 id="part-3-git">Part 3: Git</h2>
-<blockquote><strong>Git and GitHub:</strong> Git is the version-control software you run on your computer or on Pax to record changes and keep a history of your project. GitHub is a website that hosts Git repositories online so you can share your work, collaborate, and submit coursework. You can use Git without GitHub or an internet connection. Commands such as <code>git add</code> and <code>git commit</code> save changes in your local repository; they do not upload anything to GitHub. After connecting your repository to GitHub, <code>git push</code> uploads your commits, and <code>git pull</code> brings remote changes into your local repository. Setting your Git name and email identifies your commits; accessing a GitHub repository may also require separate authentication.</blockquote>
+<blockquote><strong>Git and GitHub:</strong> Git is the version-control software you run on your computer or on Pax to record changes and keep a history of your project. GitHub is a website that hosts Git repositories online so you can share your work, collaborate, and submit coursework. You can use Git without GitHub or an internet connection.</blockquote>
+<blockquote><code>git add</code> selects saved file contents for the next commit, and <code>git commit</code> records the staged contents in your local history. Neither command uploads anything to GitHub. After connecting your repository to GitHub, <code>git push</code> uploads your commits, and <code>git pull</code> brings remote changes into your local repository. Setting your Git name and email identifies your commits. To connect Pax to GitHub and set up authentication, follow <a href="https://zhan4429.github.io/TuftsAppliedBioinfo/tutorials/guide-git-github-on-pax.html">Set Up Git and GitHub on Pax</a>.</blockquote>
 <p>Your homework will use Git repositories. Set one up now.</p>
 <h3 id="3-1-configure-git-once-per-account">3.1 Configure Git Once Per Account</h3>
 <pre class="lab-code"><code class=" language-bash">git config --global user.name &quot;Your Name&quot;
 git config --global user.email &quot;your.name@tufts.edu&quot;
 git config --global init.defaultBranch main
-git config --list | head</code></pre>
+git config --global --list</code></pre>
 <p>Replace <code>Your Name</code> with your own name and <code>your.name@tufts.edu</code> with your email address. The quotation marks keep a name containing spaces together as one value.</p>
 <p><code>git config</code> reads or changes Git settings. <code>--global</code> saves a setting for your user account on this computer. On Pax, that means your Pax account; configure Git separately on your laptop if you use it there. Run these setup commands once, then repeat them only if you need to change a setting.</p>
 <ul>
 <li><code>git config --global user.name &quot;Your Name&quot;</code> sets the author name recorded in your future commits. Use your real name so collaborators can recognize your work. This is your commit author name, not necessarily your GitHub username.</li>
 <li><code>git config --global user.email &quot;your.name@tufts.edu&quot;</code> sets the email address recorded in your future commits. Use an email associated with your GitHub account if you want GitHub to connect those commits to your profile. Setting a name and email does not log you in to GitHub.</li>
 <li><code>git config --global init.defaultBranch main</code> makes <code>main</code> the initial branch name when you create a new repository with <code>git init</code>. A branch is a named line of work in a repository. This setting does not rename branches in existing repositories.</li>
-<li><code>git config --list | head</code> displays Git settings and sends the output through the pipe (<code>|</code>) to <code>head</code>, which shows the first ten lines. It is a quick inspection, but your name, email, and branch setting may appear farther down the list.</li>
+<li><code>git config --global --list</code> displays all global Git settings for your account, including the three you just set. Check that your name, email, and default branch have the expected values.</li>
 </ul>
 <h3 id="3-2-create-a-repository">3.2 Create a Repository</h3>
 <pre class="lab-code"><code class=" language-bash">mkdir -p &quot;$MYWORK/hw&quot;
@@ -346,7 +347,7 @@ Coursework repository for Applied Bioinformatics.
 
 ## Contents
 
-- hw1/: Week 1 notes and coursework.
+- `hw1/`: Week 1 notes and coursework.
 
 ## Computing
 
