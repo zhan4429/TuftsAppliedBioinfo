@@ -375,17 +375,17 @@ account on this computer. On Pax, that means your Pax account; configure Git sep
 on your laptop if you use it there. Run these setup commands once, then repeat them only
 if you need to change a setting.
 
-- **`git config --global user.name "Your Name"`** sets the author name recorded in your
+- `git config --global user.name "Your Name"` sets the author name recorded in your
   future commits. Use your real name so collaborators can recognize your work. This is
   your commit author name, not necessarily your GitHub username.
-- **`git config --global user.email "your.name@tufts.edu"`** sets the email address
+- `git config --global user.email "your.name@tufts.edu"` sets the email address
   recorded in your future commits. Use an email associated with your GitHub account if
   you want GitHub to connect those commits to your profile. Setting a name and email
   does not log you in to GitHub.
-- **`git config --global init.defaultBranch main`** makes `main` the initial branch name
+- `git config --global init.defaultBranch main` makes `main` the initial branch name
   when you create a new repository with `git init`. A branch is a named line of work in
   a repository. This setting does not rename branches in existing repositories.
-- **`git config --list | head`** displays Git settings and sends the output through the
+- `git config --list | head` displays Git settings and sends the output through the
   pipe (`|`) to `head`, which shows the first ten lines. It is a quick inspection, but
   your name, email, and branch setting may appear farther down the list.
 

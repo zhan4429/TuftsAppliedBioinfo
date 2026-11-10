@@ -338,7 +338,8 @@ def inline_markdown(text: str) -> str:
         return f"\x00{len(placeholders) - 1}\x00"
 
     def code_repl(match: re.Match[str]) -> str:
-        return stash(f"<code>{html.escape(match.group(1))}</code>")
+        # The input has already been HTML-escaped; do not escape code twice.
+        return stash(f"<code>{match.group(1)}</code>")
 
     def link_repl(match: re.Match[str]) -> str:
         label = inline_markdown(match.group(1))
