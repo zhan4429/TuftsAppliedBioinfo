@@ -2,14 +2,10 @@
 
 Applied Bioinformatics - Tufts University Department of Biology
 
-Time: 30–40 minutes in class; download and verification finish after class.
-
 In this lab you will request a compute node, load software modules, and submit **one
 fetchngs batch job** to download public sequencing data. You do not need to wait for the
 download to finish during class.
 
-Plan for about 5–10 minutes to connect and request a compute node, 5 minutes to check the
-software, and 20–25 minutes to prepare and submit the download. Queue waits can vary.
 
 ## Before You Start
 
@@ -78,8 +74,7 @@ shows the modules you have loaded. Nextflow coordinates the steps of the pipelin
 Singularity provides the containers containing the tools used by those steps.
 
 This lab uses **nf-core/fetchngs 1.13.0**, which requires **Nextflow 25.10.4 or later**.
-Ask for help if the loaded version is older. The instructor will test the pipeline before
-class; students do not need to run a separate test download during this session.
+
 
 ## Part 3: Submit the Fetchngs Download
 
@@ -117,8 +112,7 @@ Despite its `.csv` extension, this input file has **one run accession per line, 
 header or commas**. Using explicit run IDs controls which data we download.
 
 ENA advertised about 22 GB of compressed FASTQ for these runs when checked on
-2026-11-03. SRA conversion and intermediate files require additional space. The instructor
-will confirm that the course allocation has room before class.
+2026-11-03. SRA conversion and intermediate files require additional space. 
 
 ### 3.2 Write the Job Script
 
