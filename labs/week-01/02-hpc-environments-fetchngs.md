@@ -120,30 +120,11 @@ ENA advertised about 22 GB of compressed FASTQ for these runs when checked on
 2026-11-03. SRA conversion and intermediate files require additional space. The instructor
 will confirm that the course allocation has room before class.
 
-### 3.2 Write the Configuration and Job Script
+### 3.2 Write the Job Script
 
-First, copy this resource configuration into `lab.config`:
-
-```bash
-cat > lab.config <<'EOF'
-process {
-    executor = 'local'
-    resourceLimits = [cpus: 6, memory: 12.GB, time: 23.h]
-}
-executor {
-    cpus = 6
-    memory = 12.GB
-    queueSize = 1
-}
-EOF
-```
-
-This tells Nextflow to run its tasks inside the batch allocation, one at a time, using
-up to six CPUs and 12 GB of memory. The batch job below requests 18 GB, leaving memory
-for Nextflow itself. We will not run this pipeline directly in our smaller interactive
-allocation.
-
-Now write the batch script:
+Write the batch script below. The pipeline will use its default configuration, and its
+tasks will run inside the batch allocation. We will not run the pipeline directly in
+our smaller interactive allocation.
 
 ```bash
 mkdir -p logs
@@ -155,7 +136,7 @@ cat > fetch_job.sh <<'EOF'
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=18G
+#SBATCH --mem=48G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
@@ -175,7 +156,6 @@ mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
   -profile singularity \
-  -c lab.config \
   --input ids.csv \
   --outdir results \
   --download_method sratools \
@@ -190,8 +170,7 @@ Read the script from top to bottom:
 - `module load` loads software inside the batch job, and `cd` selects the work directory.
 - Pax defines `$SCRATCH`; the two `NXF_` directory settings keep Nextflow's downloads and
   cached container images in scratch. `NXF_OPTS` limits Nextflow's Java memory use.
-- `-r` selects the pipeline version, `-profile singularity` selects containers, and
-  `-c lab.config` supplies the resource configuration.
+- `-r` selects the pipeline version and `-profile singularity` selects containers.
 - `--input` names the accession list and `--outdir` names the results directory.
   `--download_method sratools` downloads and converts the SRA data to FASTQ. We use this
   method because ENA lists only one FASTQ URL for the paired BGISEQ run.
@@ -231,7 +210,7 @@ You may also see your interactive shell job; that is a different allocation.
 `PD` means pending and `R` means running. A pending job has already been submitted;
 do not submit another copy just because it has not started yet.
 
-**In-class checkpoint.** You have `ids.csv`, `lab.config`, `fetch_job.sh`, and the job ID
+**In-class checkpoint.** You have `ids.csv`, `fetch_job.sh`, and the job ID
 for your fetchngs batch job. You are done with the in-class work.
 
 ### 3.4 Leave the Interactive Session
@@ -325,7 +304,7 @@ verified; cleanup is not part of this class session.
 
 ## What to Keep
 
-- `ids.csv`, `lab.config`, and `fetch_job.sh`.
+- `ids.csv` and `fetch_job.sh`.
 - Your fetchngs job ID and its `.out` and `.err` logs.
 - The downloaded results and, after verification, `fastq_stats.tsv`.
 

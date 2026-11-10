@@ -3,7 +3,7 @@
 Planning guidance, checked against ENA and fetchngs 1.13.0 on 2026-11-03.
 
 **30–40 minute class.** Students request one interactive allocation (two CPUs, 8 GB),
-load modules, prepare the four-run input and provided resource configuration, and submit
+load modules, prepare the four-run input and batch script, and submit
 one fetchngs batch job from that compute node. The counting-job exercise has been
 removed. There is no second interactive allocation or student smoke-test download
 during class. Budget 5–10 minutes for connection/allocation, 5 for modules, and 20–25
@@ -60,15 +60,22 @@ Some downloads will fail and Week 2 cannot depend on Week 1 having worked.
 **Runtime and resources.** The student handout pins fetchngs 1.13.0, whose manifest
 requires Nextflow >=25.10.4. Confirm a compatible Nextflow/Java module and Singularity
 on Pax before class. The instructor should run the fetchngs test before teaching,
-using a separate test directory, `-profile test,singularity`, the student `lab.config`,
-and `--download_method sratools`. Request six CPUs and 18 GB for that test; the students'
+using a separate test directory, `-profile test,singularity`, and
+`--download_method sratools`. The test profile has its own resource settings; request
+six CPUs and 48 GB to test within the same allocation size as the real job. The students'
 two-CPU, 8 GB interactive allocation is only for checking software and submitting the
-batch job. It is too small for the provided pipeline configuration. Students should
+batch job. It is too small for the pipeline's default conversion step. Students should
 not run the pipeline directly in that interactive shell.
-The real job requests one task, six CPUs, 18 GB, and 24 hours; `lab.config` limits
-local workflow tasks to six CPUs and 12 GB in total, leaving JVM overhead. This is
+The real job requests one task, six CPUs, 48 GB, and 24 hours. It uses the pipeline's
+default configuration with the Singularity profile. The default `process_medium`
+request used by `SRATOOLS_FASTERQDUMP` is six CPUs and 36 GB, so 18 GB would be too
+small without a resource override. The 48 GB request leaves room for Nextflow's JVM.
+Validate the complete four-run workload with Pax's Nextflow settings before class. This is
 the local-executor-inside-one-allocation model, not `-profile tufts` with additional
 SLURM submissions. The 24-hour limit is an initial request, not a runtime guarantee.
+
+Resource definitions: [fetchngs 1.13.0 defaults](https://github.com/nf-core/fetchngs/blob/1.13.0/conf/base.config)
+and [FASTQ conversion process](https://github.com/nf-core/fetchngs/blob/1.13.0/modules/nf-core/sratools/fasterqdump/main.nf).
 
 **Paths.** Confirm the work allocation
 `/cluster/tufts/c27sp1bio0196` before teaching. The counting exercise and its shared

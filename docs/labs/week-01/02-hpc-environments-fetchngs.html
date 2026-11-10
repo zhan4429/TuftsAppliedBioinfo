@@ -40,7 +40,7 @@
             <a class="toc-level-2" href="#part-2-load-the-software">Part 2: Load the Software</a>
             <a class="toc-level-2" href="#part-3-submit-the-fetchngs-download">Part 3: Submit the Fetchngs Download</a>
             <a class="toc-level-3" href="#3-1-choose-the-data">3.1 Choose the Data</a>
-            <a class="toc-level-3" href="#3-2-write-the-configuration-and-job-script">3.2 Write the Configuration and Job Script</a>
+            <a class="toc-level-3" href="#3-2-write-the-job-script">3.2 Write the Job Script</a>
             <a class="toc-level-3" href="#3-3-submit-once-and-copy-the-job-id">3.3 Submit Once and Copy the Job ID</a>
             <a class="toc-level-3" href="#3-4-leave-the-interactive-session">3.4 Leave the Interactive Session</a>
             <a class="toc-level-2" href="#after-class-check-the-download">After Class: Check the Download</a>
@@ -140,21 +140,8 @@ EOF
 cat ids.csv</code></pre>
 <p>Despite its <code>.csv</code> extension, this input file has <strong>one run accession per line, with no header or commas</strong>. Using explicit run IDs controls which data we download.</p>
 <p>ENA advertised about 22 GB of compressed FASTQ for these runs when checked on 2026-11-03. SRA conversion and intermediate files require additional space. The instructor will confirm that the course allocation has room before class.</p>
-<h3 id="3-2-write-the-configuration-and-job-script">3.2 Write the Configuration and Job Script</h3>
-<p>First, copy this resource configuration into <code>lab.config</code>:</p>
-<pre class="lab-code"><code class=" language-bash">cat &gt; lab.config &lt;&lt;&#x27;EOF&#x27;
-process {
-    executor = &#x27;local&#x27;
-    resourceLimits = [cpus: 6, memory: 12.GB, time: 23.h]
-}
-executor {
-    cpus = 6
-    memory = 12.GB
-    queueSize = 1
-}
-EOF</code></pre>
-<p>This tells Nextflow to run its tasks inside the batch allocation, one at a time, using up to six CPUs and 12 GB of memory. The batch job below requests 18 GB, leaving memory for Nextflow itself. We will not run this pipeline directly in our smaller interactive allocation.</p>
-<p>Now write the batch script:</p>
+<h3 id="3-2-write-the-job-script">3.2 Write the Job Script</h3>
+<p>Write the batch script below. The pipeline will use its default configuration, and its tasks will run inside the batch allocation. We will not run the pipeline directly in our smaller interactive allocation.</p>
 <pre class="lab-code"><code class=" language-bash">mkdir -p logs
 
 cat &gt; fetch_job.sh &lt;&lt;&#x27;EOF&#x27;
@@ -164,7 +151,7 @@ cat &gt; fetch_job.sh &lt;&lt;&#x27;EOF&#x27;
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=18G
+#SBATCH --mem=48G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
@@ -184,7 +171,6 @@ mkdir -p &quot;$NXF_HOME&quot; &quot;$NXF_SINGULARITY_CACHEDIR&quot; &quot;$SING
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
   -profile singularity \
-  -c lab.config \
   --input ids.csv \
   --outdir results \
   --download_method sratools \
@@ -195,7 +181,7 @@ EOF</code></pre>
 <li><code>#SBATCH</code> lines request resources and name the log files. <code>%x</code> becomes the job name; <code>%j</code> becomes the job ID. Create <code>logs/</code> before submitting.</li>
 <li><code>module load</code> loads software inside the batch job, and <code>cd</code> selects the work directory.</li>
 <li>Pax defines <code>$SCRATCH</code>; the two <code>NXF_</code> directory settings keep Nextflow&#x27;s downloads and cached container images in scratch. <code>NXF_OPTS</code> limits Nextflow&#x27;s Java memory use.</li>
-<li><code>-r</code> selects the pipeline version, <code>-profile singularity</code> selects containers, and <code>-c lab.config</code> supplies the resource configuration.</li>
+<li><code>-r</code> selects the pipeline version and <code>-profile singularity</code> selects containers.</li>
 <li><code>--input</code> names the accession list and <code>--outdir</code> names the results directory. <code>--download_method sratools</code> downloads and converts the SRA data to FASTQ. We use this method because ENA lists only one FASTQ URL for the paired BGISEQ run.</li>
 <li><code>-resume</code> allows completed pipeline steps to be reused if the job needs restarting.</li>
 </ul>
@@ -211,7 +197,7 @@ squeue --me</code></pre>
 <p>Your job ID will be different. <code>squeue --me</code> lists your pending and running jobs. The equivalent command is:</p>
 <pre class="lab-code"><code class=" language-bash">squeue -u &quot;$USER&quot;</code></pre>
 <p>Find the row whose <code>NAME</code> is <strong><code>fetchngs</code></strong> and copy its <code>JOBID</code> into your notes. You may also see your interactive shell job; that is a different allocation. <code>PD</code> means pending and <code>R</code> means running. A pending job has already been submitted; do not submit another copy just because it has not started yet.</p>
-<p><strong>In-class checkpoint.</strong> You have <code>ids.csv</code>, <code>lab.config</code>, <code>fetch_job.sh</code>, and the job ID for your fetchngs batch job. You are done with the in-class work.</p>
+<p><strong>In-class checkpoint.</strong> You have <code>ids.csv</code>, <code>fetch_job.sh</code>, and the job ID for your fetchngs batch job. You are done with the in-class work.</p>
 <h3 id="3-4-leave-the-interactive-session">3.4 Leave the Interactive Session</h3>
 <pre class="lab-code"><code class=" language-bash">exit</code></pre>
 <p>This releases the interactive allocation and returns you to the login node. The fetchngs batch job has its own allocation and can run after you leave the interactive shell or log out of Pax.</p>
@@ -252,7 +238,7 @@ cat fastq_stats.tsv</code></pre>
 <p>After fixing the problem, resubmit <code>fetch_job.sh</code> from the same download directory with <code>sbatch fetch_job.sh</code>, and record the new job ID. Keep <code>work/</code> and <code>.nextflow/</code> so that <code>-resume</code> can reuse completed steps. Keep these directories until your results are verified; cleanup is not part of this class session.</p>
 <h2 id="what-to-keep">What to Keep</h2>
 <ul>
-<li><code>ids.csv</code>, <code>lab.config</code>, and <code>fetch_job.sh</code>.</li>
+<li><code>ids.csv</code> and <code>fetch_job.sh</code>.</li>
 <li>Your fetchngs job ID and its <code>.out</code> and <code>.err</code> logs.</li>
 <li>The downloaded results and, after verification, <code>fastq_stats.tsv</code>.</li>
 </ul>
