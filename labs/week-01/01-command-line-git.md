@@ -356,6 +356,8 @@ It does not matter for counting unique names, which is all you asked for. It wou
 
 ## Part 3: Git
 
+> **Git and GitHub:** Git is the version-control software you run on your computer or on Pax to record changes and keep a history of your project. GitHub is a website that hosts Git repositories online so you can share your work, collaborate, and submit coursework. You can use Git without GitHub or an internet connection. Commands such as `git add` and `git commit` save changes in your local repository; they do not upload anything to GitHub. After connecting your repository to GitHub, `git push` uploads your commits, and `git pull` brings remote changes into your local repository. Setting your Git name and email identifies your commits; accessing a GitHub repository may also require separate authentication.
+
 Your homework will use Git repositories. Set one up now.
 
 ### 3.1 Configure Git Once Per Account
