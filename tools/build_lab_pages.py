@@ -11,6 +11,7 @@ from __future__ import annotations
 import html
 import os
 import re
+import shutil
 from pathlib import Path
 
 
@@ -344,8 +345,14 @@ def inline_markdown(text: str) -> str:
         href = html.escape(match.group(2), quote=True)
         return stash(f'<a href="{href}">{label}</a>')
 
+    def image_repl(match: re.Match[str]) -> str:
+        alt = html.escape(html.unescape(match.group(1)), quote=True)
+        src = html.escape(html.unescape(match.group(2)), quote=True)
+        return stash(f'<img src="{src}" alt="{alt}" loading="lazy" decoding="async">')
+
     escaped = html.escape(text)
     escaped = re.sub(r"`([^`]+)`", code_repl, escaped)
+    escaped = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", image_repl, escaped)
     escaped = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", link_repl, escaped)
     escaped = re.sub(
         r"&lt;(https?://[^&]+)&gt;",
@@ -871,6 +878,9 @@ def main() -> None:
         output = Path(page["output"])
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(page_template(page), encoding="utf-8")
+        assets = Path(page["source"]).parent / "assets"
+        if assets.is_dir():
+            shutil.copytree(assets, output.parent / "assets", dirs_exist_ok=True)
         print(f"Built {output.relative_to(ROOT)}")
 
     index_output = DOCS / "index.html"

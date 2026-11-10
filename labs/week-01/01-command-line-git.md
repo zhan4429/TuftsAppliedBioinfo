@@ -243,17 +243,31 @@ give for the human genome, and why?
 <details>
 <summary>Answer</summary>
 
-Yeast comes out at about 75%. Most of its genome is transcribed, because it has very few
-introns, short intergenic regions, and almost no repetitive DNA. It is a compact genome
-under selection for fast replication.
+For the annotation used in class, the summed exon lengths come out at about 75% of the
+yeast genome size. This illustrates its compact organization, with very few introns and
+short intergenic regions. The calculation measures annotated exon lengths, not how much
+DNA is actively transcribed in a particular cell.
 
-Human exons cover only a few percent of the genome. The difference is not that humans have
+Distinct human exonic positions cover only a few percent of the genome. The difference is not that humans have
 fewer genes but that human genes are spread
 across far more space, with large introns, extensive regulatory regions, and roughly half
 the genome made of repetitive elements.
 
 This is why a gene-density figure tells you more about genome architecture than a gene
 count does, and it is worth knowing before you interpret any coverage statistic.
+
+![Yeast has about 500 protein-coding genes per megabase, compared with about 6 in humans, despite humans having more genes overall.](assets/yeast-human-gene-density.png)
+
+**Figure 1. Yeast and human genome organization.** Gene density is the number of genes
+per megabase (Mb), calculated as gene count divided by genome size. Using the rounded
+values shown, yeast has about 80 times as many protein-coding genes per Mb as humans.
+This is a different measure from the exon-length percentage calculated above. The lower
+panel illustrates how introns and intergenic DNA separate exons; its positions and
+lengths are schematic, not a real genome region.
+
+The values are approximate genome-wide averages, not exact counts for a particular
+annotation release. Sources: [Goffeau et al., yeast genome sequence](https://pubmed.ncbi.nlm.nih.gov/8849441/)
+and [NIGMS, human genome size and protein-coding gene count](https://www.nigms.nih.gov/biobeat/2024/04/genetics-by-the-numbers).
 
 </details>
 
@@ -352,6 +366,28 @@ git config --global user.email "your.name@tufts.edu"
 git config --global init.defaultBranch main
 git config --list | head
 ```
+
+Replace `Your Name` with your own name and `your.name@tufts.edu` with your email address.
+The quotation marks keep a name containing spaces together as one value.
+
+`git config` reads or changes Git settings. `--global` saves a setting for your user
+account on this computer. On Pax, that means your Pax account; configure Git separately
+on your laptop if you use it there. Run these setup commands once, then repeat them only
+if you need to change a setting.
+
+- **`git config --global user.name "Your Name"`** sets the author name recorded in your
+  future commits. Use your real name so collaborators can recognize your work. This is
+  your commit author name, not necessarily your GitHub username.
+- **`git config --global user.email "your.name@tufts.edu"`** sets the email address
+  recorded in your future commits. Use an email associated with your GitHub account if
+  you want GitHub to connect those commits to your profile. Setting a name and email
+  does not log you in to GitHub.
+- **`git config --global init.defaultBranch main`** makes `main` the initial branch name
+  when you create a new repository with `git init`. A branch is a named line of work in
+  a repository. This setting does not rename branches in existing repositories.
+- **`git config --list | head`** displays Git settings and sends the output through the
+  pipe (`|`) to `head`, which shows the first ten lines. It is a quick inspection, but
+  your name, email, and branch setting may appear farther down the list.
 
 ### 3.2 Create a Repository
 

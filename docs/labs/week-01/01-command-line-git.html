@@ -81,13 +81,15 @@
 <pre class="lab-code"><code class=" language-bash">ssh your_utln@login-prod.pax.tufts.edu</code></pre>
 <p>You should land in your home directory, with a path like <code>/cluster/home/your_utln</code>, on a login node with a name like <code>login-p01</code>.</p>
 <h2 id="shared-setup">Shared Setup</h2>
-<p>We can set up a few environment variables to store the course path we will use repeatedly. This is a common practice in bioinformatics pipelines.</p>
-<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/bio_appbio
+<p>We can set up a few environment variables to store the course paths we will use repeatedly. This is a common practice in bioinformatics pipelines.</p>
+<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK=&quot;$COURSE/$USER&quot;
 export WEEK1_DATA=$COURSE/shared/wk1
 ls &quot;$WEEK1_DATA&quot;</code></pre>
+<p><code>$MYWORK</code> is your own directory in the course allocation: all your work goes there. The shared course files sit in a separate location, <code>$WEEK1_DATA</code>, which you read but do not write to.</p>
 <p>Expected file:</p>
 <pre class="lab-code"><code class=" language-text">anno.gff3</code></pre>
-<p>Do not run real software on the login node. The commands in this lab are tiny and safe; Lab2 will introduce how to request a compute node.</p>
+<p>Do not run real software on the login node. The commands in this lab are tiny and safe; Lab 2 introduces how to request a compute node.</p>
 <h2 id="part-1-where-am-i">Part 1: Where Am I?</h2>
 <h3 id="1-1-orient-yourself">1.1 Orient Yourself</h3>
 <pre class="lab-code"><code class=" language-bash">pwd
@@ -100,8 +102,8 @@ ls -lha</code></pre>
 <p>At Tufts HPC, your home directory is <code>/cluster/home/your_utln</code>.</p>
 </details>
 <h3 id="1-2-make-a-working-directory">1.2 Make a Working Directory</h3>
-<pre class="lab-code"><code class=" language-bash">mkdir -p $COURSE/week-01/session-01
-cd $COURSE/week-01/session-01
+<pre class="lab-code"><code class=" language-bash">mkdir -p &quot;$MYWORK/week-01/session-01&quot;
+cd &quot;$MYWORK/week-01/session-01&quot;
 pwd</code></pre>
 <h3 id="1-3-relative-and-absolute-paths">1.3 Relative and Absolute Paths</h3>
 <pre class="lab-code"><code class=" language-bash">ls &quot;$WEEK1_DATA&quot;      # absolute path through a variable
@@ -110,17 +112,17 @@ cd ..
 pwd
 cd -                  # return to the previous directory
 pwd</code></pre>
-<p><strong>Question 2.</strong> If you are in <code>$COURSE/week-01/session-01</code>, what does <code>../..</code> refer to?</p>
+<p><strong>Question 2.</strong> If you are in <code>$MYWORK/week-01/session-01</code>, what does <code>../..</code> refer to?</p>
 <details>
 <summary>Answer</summary>
-<p><code>..</code> is <code>$COURSE/week-01</code>, so <code>../..</code> is <code>$COURSE</code>.</p>
+<p><code>..</code> is <code>$MYWORK/week-01</code>, so <code>../..</code> is <code>$MYWORK</code>.</p>
 </details>
 <h3 id="1-4-link-the-data-instead-of-copying-it">1.4 Link the Data Instead of Copying It</h3>
-<pre class="lab-code"><code class=" language-bash">cd $COURSE/week-01/session-01
+<pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-01/session-01&quot;
 ln -sf &quot;$WEEK1_DATA/anno.gff3&quot; .
 ls -la</code></pre>
 <p>The arrow in the listing shows that <code>anno.gff3</code> is a symbolic link. You can use the file without making a second copy, which matters when the file is 40 GB instead of 40 KB.</p>
-<p><strong>Checkpoint 1.</strong> You should be in <code>$COURSE/week-01/session-01</code> with one symbolic link to <code>anno.gff3</code>.</p>
+<p><strong>Checkpoint 1.</strong> You should be in <code>$MYWORK/week-01/session-01</code> with one symbolic link to <code>anno.gff3</code>.</p>
 <h2 id="part-2-interrogating-a-real-annotation-file">Part 2: Interrogating a Real Annotation File</h2>
 <p><code>anno.gff3</code> is a genome annotation file: one feature per line, nine tab-separated columns.</p>
 <h3 id="2-1-look-before-you-leap">2.1 Look Before You Leap</h3>
@@ -186,9 +188,12 @@ awk -F&#x27;\t&#x27; &#x27;$3 == &quot;exon&quot;&#x27; anno.gff3 | wc -l</code>
 <p><strong>Question 5.</strong> You should get a strikingly high number. What would the same calculation give for the human genome, and why?</p>
 <details>
 <summary>Answer</summary>
-<p>Yeast comes out around 70%. Most of its genome is transcribed, because it has very few introns, short intergenic regions, and almost no repetitive DNA. It is a compact genome under selection for fast replication.</p>
-<p>Human exons cover only a few percent of the genome. The difference is not that humans have fewer genes but that human genes are spread across far more space, with large introns, extensive regulatory regions, and roughly half the genome made of repetitive elements.</p>
+<p>For the annotation used in class, the summed exon lengths come out at about 75% of the yeast genome size. This illustrates its compact organization, with very few introns and short intergenic regions. The calculation measures annotated exon lengths, not how much DNA is actively transcribed in a particular cell.</p>
+<p>Distinct human exonic positions cover only a few percent of the genome. The difference is not that humans have fewer genes but that human genes are spread across far more space, with large introns, extensive regulatory regions, and roughly half the genome made of repetitive elements.</p>
 <p>This is why a gene-density figure tells you more about genome architecture than a gene count does, and it is worth knowing before you interpret any coverage statistic.</p>
+<p><img src="assets/yeast-human-gene-density.png" alt="Yeast has about 500 protein-coding genes per megabase, compared with about 6 in humans, despite humans having more genes overall." loading="lazy" decoding="async"></p>
+<p><strong>Figure 1. Yeast and human genome organization.</strong> Gene density is the number of genes per megabase (Mb), calculated as gene count divided by genome size. Using the rounded values shown, yeast has about 80 times as many protein-coding genes per Mb as humans. This is a different measure from the exon-length percentage calculated above. The lower panel illustrates how introns and intergenic DNA separate exons; its positions and lengths are schematic, not a real genome region.</p>
+<p>The values are approximate genome-wide averages, not exact counts for a particular annotation release. Sources: <a href="https://pubmed.ncbi.nlm.nih.gov/8849441/">Goffeau et al., yeast genome sequence</a> and <a href="https://www.nigms.nih.gov/biobeat/2024/04/genetics-by-the-numbers">NIGMS, human genome size and protein-coding gene count</a>.</p>
 </details>
 <details>
 <summary>One caveat worth knowing</summary>
@@ -219,6 +224,7 @@ grep -v &#x27;^#&#x27; anno_chr.gff3 | cut -f1 | sort -u</code></pre>
 <p>Replacing <code>^</code> with text looks odd, because <code>^</code> matches a position rather than a character. That is how you prepend: find the start of the line, put something there. Using <code>$</code> instead would append to the end.</p>
 <p>Note the output goes to a <strong>new</strong> file. <code>sed</code> streams to standard output and never edits the input, so redirecting back onto <code>anno.gff3</code> would have emptied it before <code>sed</code> read a byte of it.</p>
 <p>Confirm two things: the headers survived, and every sequence name gained its prefix.</p>
+<p>Now look at the first few lines of <code>anno_chr.gff3</code> again. The <code>##sequence-region</code> lines still say <code>I</code>, <code>II</code>, <code>III</code>: they start with <code>#</code>, so the address skipped them. The data lines now say <code>chrI</code>, so the file declares sequences it no longer uses, and a strict GFF3 validator would reject it. Renaming chromosomes properly means renaming them everywhere, which is one reason the better fix is a reference and an annotation that already agree.</p>
 <p><strong>Question 7.</strong> Your <code>sort -u</code> output puts <code>IX</code> between <code>IV</code> and <code>Mito</code>, and <code>V</code> after <code>Mito</code>. Why, and does it matter here?</p>
 <details>
 <summary>Answer</summary>
@@ -233,9 +239,17 @@ grep -v &#x27;^#&#x27; anno_chr.gff3 | cut -f1 | sort -u</code></pre>
 git config --global user.email &quot;your.name@tufts.edu&quot;
 git config --global init.defaultBranch main
 git config --list | head</code></pre>
+<p>Replace <code>Your Name</code> with your own name and <code>your.name@tufts.edu</code> with your email address. The quotation marks keep a name containing spaces together as one value.</p>
+<p><code>git config</code> reads or changes Git settings. <code>--global</code> saves a setting for your user account on this computer. On Pax, that means your Pax account; configure Git separately on your laptop if you use it there. Run these setup commands once, then repeat them only if you need to change a setting.</p>
+<ul>
+<li><strong><code>git config --global user.name &amp;quot;Your Name&amp;quot;</code></strong> sets the author name recorded in your future commits. Use your real name so collaborators can recognize your work. This is your commit author name, not necessarily your GitHub username.</li>
+<li><strong><code>git config --global user.email &amp;quot;your.name@tufts.edu&amp;quot;</code></strong> sets the email address recorded in your future commits. Use an email associated with your GitHub account if you want GitHub to connect those commits to your profile. Setting a name and email does not log you in to GitHub.</li>
+<li><strong><code>git config --global init.defaultBranch main</code></strong> makes <code>main</code> the initial branch name when you create a new repository with <code>git init</code>. A branch is a named line of work in a repository. This setting does not rename branches in existing repositories.</li>
+<li><strong><code>git config --list | head</code></strong> displays Git settings and sends the output through the pipe (<code>|</code>) to <code>head</code>, which shows the first ten lines. It is a quick inspection, but your name, email, and branch setting may appear farther down the list.</li>
+</ul>
 <h3 id="3-2-create-a-repository">3.2 Create a Repository</h3>
-<pre class="lab-code"><code class=" language-bash">mkdir -p $COURSE/$USER/hw ## ToDO
-cd $COURSE/$USER/hw
+<pre class="lab-code"><code class=" language-bash">mkdir -p &quot;$MYWORK/hw&quot;
+cd &quot;$MYWORK/hw&quot;
 git init
 git status</code></pre>
 <p><code>git status</code> will become the command you type most often. It tells you what changed and what is staged for commit.</p>
