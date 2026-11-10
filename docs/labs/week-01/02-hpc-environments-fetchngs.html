@@ -46,6 +46,7 @@
             <a class="toc-level-2" href="#after-class-check-the-download">After Class: Check the Download</a>
             <a class="toc-level-3" href="#check-the-job-and-its-logs">Check the Job and Its Logs</a>
             <a class="toc-level-3" href="#verify-the-fastq-files-on-a-compute-node">Verify the FASTQ Files on a Compute Node</a>
+            <a class="toc-level-3" href="#clean-up-temporary-work-files-after-success">Clean Up Temporary Work Files After Success</a>
             <a class="toc-level-2" href="#if-your-job-fails">If Your Job Fails</a>
             <a class="toc-level-2" href="#what-to-keep">What to Keep</a>
             <a class="toc-level-2" href="#references">References</a>
@@ -148,8 +149,8 @@ cat &gt; fetch_job.sh &lt;&lt;&#x27;EOF&#x27;
 #SBATCH --partition=batch
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=24G
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=48G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
@@ -160,9 +161,8 @@ export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=&quot;$COURSE/$USER&quot;
 cd &quot;$MYWORK/week-01/session-02/fetch&quot;
 
-export NXF_SINGULARITY_CACHEDIR=&quot;$COURSE/$USER/.singularity_cache&quot;
-export SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity/oci&quot;
-mkdir -p &quot;$NXF_SINGULARITY_CACHEDIR&quot; &quot;$SINGULARITY_CACHEDIR&quot;
+export NXF_SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity_cache&quot;
+mkdir -p &quot;$NXF_SINGULARITY_CACHEDIR&quot;
 
 nextflow run nf-core/fetchngs \
   -r 1.13.0 \
@@ -225,6 +225,20 @@ cat fastq_stats.tsv</code></pre>
 <p>When you have reviewed the statistics, release the compute node:</p>
 <pre class="lab-code"><code class=" language-bash">exit</code></pre>
 <p>Keep the reads and <code>fastq_stats.tsv</code> for Week 2. The actual input path is <code>$MYWORK/week-01/session-02/fetch/results/fastq/</code>; use that path when a later handout asks where your data are.</p>
+<h3 id="clean-up-temporary-work-files-after-success">Clean Up Temporary Work Files After Success</h3>
+<p>Nextflow stores temporary files and intermediate results in <code>work/</code>. These can take much more space than the final FASTQ files. Clean them up <strong>only after the job reports <code>COMPLETED</code> with exit code <code>0:0</code>, all six FASTQ files pass the checks above, and you no longer need to restart or troubleshoot the run</strong>. No job should still be using this download directory.</p>
+<p>First, check the storage use and list your Nextflow runs:</p>
+<pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-01/session-02/fetch&quot;
+du -sh work results
+module load nextflow
+nextflow log</code></pre>
+<p>Find your successful run, marked <code>OK</code>, and copy its <strong>run name</strong> from the <code>RUN NAME</code> column. This is a Nextflow name, not your SLURM job ID. Replace <code>RUN_NAME</code> below with that name. Preview the cleanup first:</p>
+<pre class="lab-code"><code class=" language-bash">nextflow clean RUN_NAME -n -keep-logs</code></pre>
+<p><code>-n</code> lists what would be removed without deleting anything. Check that the listed files belong to the completed run&#x27;s <code>work/</code> directories. Then remove those temporary files:</p>
+<pre class="lab-code"><code class=" language-bash">nextflow clean RUN_NAME -f -keep-logs
+du -sh work results</code></pre>
+<p><code>-f</code> performs the cleanup; <code>-keep-logs</code> retains task logs and execution records. The pipeline used in this lab copies its published outputs into <code>results/</code>, so keep that directory, including the FASTQ files, samplesheet, metadata, and reports. Also keep <code>ids.csv</code>, <code>fetch_job.sh</code>, <code>fastq_stats.tsv</code>, and your SLURM logs. Small log files may remain in <code>work/</code> after cleanup.</p>
+<p>Once temporary outputs are removed, <code>-resume</code> cannot reuse them: those steps would need to run again. Keep the work files if the download failed or its results are not yet verified.</p>
 <h2 id="if-your-job-fails">If Your Job Fails</h2>
 <ul>
 <li><strong>Pending:</strong> read the reason in <code>squeue --me</code> and wait or ask for help. Do not submit duplicate copies.</li>
@@ -244,6 +258,7 @@ cat fastq_stats.tsv</code></pre>
 <li><a href="https://rtguides.it.tufts.edu/hpc/access/60-brief-slurm.html">Tufts HPC: running software with SLURM</a></li>
 <li><a href="https://nf-co.re/fetchngs/usage">nf-core/fetchngs usage</a></li>
 <li><a href="https://github.com/nf-core/fetchngs/blob/1.13.0/nextflow.config">nf-core/fetchngs 1.13.0 runtime requirement</a></li>
+<li><a href="https://docs.seqera.io/nextflow/reference/cli/clean/">Nextflow cleanup options</a></li>
 <li><a href="https://bioinf.shenwei.me/seqkit/usage/">SeqKit usage and FASTQ statistics</a></li>
 </ul>
           <nav class="lab-pager" aria-label="Lab sequence">

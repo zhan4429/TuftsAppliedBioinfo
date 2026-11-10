@@ -95,7 +95,9 @@ This lets them inspect the file count, errors, and statistics directly. Load Seq
 with `module load seqkit`. Review mate counts and base totals;
 archive `read_count` conventions and SRA-generated filenames need not match a
 naive six-file lookup by run accession. Keep `work/` and `.nextflow/cache/` until
-the real results are verified. For an instructor test that is no longer needed,
-review `nextflow clean RUN_NAME -n -keep-logs` before using the corresponding `-f`
-command. Cleanup is not part of the student class session. Deleting history is not
-a routine requirement for a new run.
+the real results are verified. The after-class section now teaches students to select
+their successful Nextflow run by name, preview `nextflow clean RUN_NAME -n -keep-logs`,
+then use the corresponding `-f` command to free intermediate-file storage. Retain the
+published copies in `results/`, the statistics, scripts, and logs. Removed task outputs
+cannot be reused by `-resume`. The same approach applies to instructor test runs that
+are no longer needed. Cleanup is not part of the in-class session.

@@ -280,6 +280,49 @@ Keep the reads and `fastq_stats.tsv` for Week 2. The actual input path is
 `$MYWORK/week-01/session-02/fetch/results/fastq/`; use that path when a later handout asks
 where your data are.
 
+### Clean Up Temporary Work Files After Success
+
+Nextflow stores temporary files and intermediate results in `work/`. These can take
+much more space than the final FASTQ files. Clean them up **only after the job reports
+`COMPLETED` with exit code `0:0`, all six FASTQ files pass the checks above, and you no
+longer need to restart or troubleshoot the run**. No job should still be using this
+download directory.
+
+First, check the storage use and list your Nextflow runs:
+
+```bash
+cd "$MYWORK/week-01/session-02/fetch"
+du -sh work results
+module load nextflow
+nextflow log
+```
+
+Find your successful run, marked `OK`, and copy its **run name** from the `RUN NAME`
+column. This is a Nextflow name, not your SLURM job ID. Replace `RUN_NAME` below with
+that name. Preview the cleanup first:
+
+```bash
+nextflow clean RUN_NAME -n -keep-logs
+```
+
+`-n` lists what would be removed without deleting anything. Check that the listed files
+belong to the completed run's `work/` directories. Then remove those temporary files:
+
+```bash
+nextflow clean RUN_NAME -f -keep-logs
+du -sh work results
+```
+
+`-f` performs the cleanup; `-keep-logs` retains task logs and execution records. The
+pipeline used in this lab copies its published outputs into `results/`, so keep that
+directory, including the FASTQ files, samplesheet, metadata, and reports. Also keep
+`ids.csv`, `fetch_job.sh`, `fastq_stats.tsv`, and your SLURM logs. Small log files may
+remain in `work/` after cleanup.
+
+Once temporary outputs are removed, `-resume` cannot reuse them: those steps would need
+to run again. Keep the work files if the download failed or its results are not yet
+verified.
+
 ## If Your Job Fails
 
 - **Pending:** read the reason in `squeue --me` and wait or ask for help. Do not submit
@@ -308,4 +351,5 @@ results on cluster storage.
 - [Tufts HPC: running software with SLURM](https://rtguides.it.tufts.edu/hpc/access/60-brief-slurm.html)
 - [nf-core/fetchngs usage](https://nf-co.re/fetchngs/usage)
 - [nf-core/fetchngs 1.13.0 runtime requirement](https://github.com/nf-core/fetchngs/blob/1.13.0/nextflow.config)
+- [Nextflow cleanup options](https://docs.seqera.io/nextflow/reference/cli/clean/)
 - [SeqKit usage and FASTQ statistics](https://bioinf.shenwei.me/seqkit/usage/)
