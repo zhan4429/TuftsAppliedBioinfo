@@ -84,12 +84,34 @@ EOF
 
 bash -n count_job.sh
 cat count_job.sh
-COUNT_JOB_ID=$(sbatch --parsable count_job.sh)
-printf 'Count job: %s\n' "$COUNT_JOB_ID"
-squeue -j "$COUNT_JOB_ID"
+sbatch count_job.sh
+squeue --me
 ```
 
-The quoted heredoc delimiter, `<<'EOF'`, writes the script literally: `$WEEK1_DATA` and `$(hostname)` are evaluated when the job runs. `bash -n` checks syntax without running commands. `sbatch --parsable` returns the job ID, not proof that the job has finished.
+`sbatch` submits your script and prints a message like this:
+
+```text
+Submitted batch job 123456
+```
+
+`123456` is an example job ID; your number will be different. Submission does not mean
+the job has started or finished.
+
+`squeue --me` lists your pending and running jobs. You can also write:
+
+```bash
+squeue -u "$USER"
+```
+
+Both commands show jobs belonging to your account. `$USER` contains your username.
+Find the row whose `NAME` is `count`, then **copy the number in the `JOBID` column**
+into your notes. In the `ST` column, `PD` means pending (waiting for resources) and
+`R` means running.
+
+This counting job may finish before you check the queue. If it is already gone, use
+the job ID printed by `sbatch` and check its final state in Section 2.3.
+
+The quoted heredoc delimiter, `<<'EOF'`, writes the script literally: `$WEEK1_DATA` and `$(hostname)` are evaluated when the job runs. `bash -n` checks syntax without running commands.
 
 SLURM reads `#SBATCH` directives before the shell runs. `$MYWORK` inside a directive would be literal text, so use relative log paths or pass expanded paths as `sbatch` command-line options. Create `logs/` before submission: SLURM opens those files before executing the script.
 
@@ -108,18 +130,23 @@ A new job shell does not reproduce every interactive setup action or shell funct
 
 ### 2.3 Confirm Completion and Read the Logs
 
+In the commands below, **replace `123456` with the job ID you copied**:
+
 ```bash
-squeue -j "$COUNT_JOB_ID"
-sacct -j "$COUNT_JOB_ID" --format=JobID,JobName,State,ExitCode,Elapsed,MaxRSS
+squeue --me
+sacct -j 123456 --format=JobID,JobName,State,ExitCode,Elapsed,MaxRSS
 ```
 
 A job disappearing from `squeue` may have completed, failed, or been cancelled. Check `sacct` for `COMPLETED` and exit code `0:0`; accounting information can take a short time to appear. Once the job finishes:
 
 ```bash
-cat "logs/count_${COUNT_JOB_ID}.out"
-cat "logs/count_${COUNT_JOB_ID}.err"
-seff "$COUNT_JOB_ID"
+cat logs/count_123456.out
+cat logs/count_123456.err
+seff 123456
 ```
+
+The log filenames contain the same job ID: `count_123456.out` is the output log for
+job `123456`. Use your own ID in both filenames.
 
 The output should contain a compute-node hostname and the number of non-comment lines in `anno.gff3`. `seff` compares measured use with requested resources. Very short jobs may have incomplete memory measurements, so do not size future jobs from this tiny example alone. For real workloads, measure representative inputs and leave a margin.
 

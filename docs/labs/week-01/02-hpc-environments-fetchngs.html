@@ -75,8 +75,8 @@
 <li>SSH: <code>ssh your_utln@login-prod.pax.tufts.edu</code></li>
 </ul>
 <p>Use the course allocation announced in class. The shared annotation path comes from Session 1 and may be in a different allocation from your personal work:</p>
-<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
-export WEEK1_DATA=/cluster/tufts/bio_appbio/shared/wk1
+<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/c27sp1bio0196
+export WEEK1_DATA=$COURSE/shared/wk1
 export MYWORK=&quot;$COURSE/$USER&quot;
 
 mkdir -p &quot;$MYWORK/week-01/session-02/logs&quot;
@@ -91,21 +91,16 @@ ls -lh &quot;$WEEK1_DATA/anno.gff3&quot;</code></pre>
 sinfo -s</code></pre>
 <p>A hostname beginning with <code>login</code> identifies a shared login node. Use it to edit files, submit jobs, and inspect small logs. Install environments, run pipelines, and scan large FASTQ files on compute nodes. <code>sinfo -s</code> lists partitions and their current availability. We use the CPU partition <code>batch</code>; node counts and time limits can change.</p>
 <h3 id="1-2-request-one-task-with-multiple-cpus">1.2 Request One Task with Multiple CPUs</h3>
-<pre class="lab-code"><code class=" language-bash">srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=6 \
-  --mem=18G --time=01:30:00 --pty bash
+<pre class="lab-code"><code class=" language-bash">srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=2 \
+  --mem=8G --time=01:30:00 --pty bash
 
 hostname
 printf &#x27;Job: %s; CPUs: %s\n&#x27; &quot;$SLURM_JOB_ID&quot; &quot;$SLURM_CPUS_PER_TASK&quot;</code></pre>
 <p>The request may wait in the queue. Once it starts, the hostname should identify a compute node.</p>
-<p><code>--ntasks=1</code> requests one task; <code>--cpus-per-task=6</code> gives it six CPUs. Using <code>-n 6</code> would request six tasks, which is not what we want for one shell or one multithreaded program. <code>--mem=18G</code> requests memory for the node allocation, not 18 GB per CPU. Later, we will fit Nextflow and its tasks inside this same budget.</p>
+<p><code>--ntasks=1</code> requests one task; <code>--cpus-per-task=2</code> gives it two CPUs. Using <code>-n 2</code> would request two tasks, which is not what we want for one shell or one multithreaded program. <code>--mem=8G</code> requests memory for the node allocation, not 8 GB per CPU.</p>
 <p><strong>Checkpoint 1.</strong> You are on a compute node and can identify your job ID and CPU allocation.</p>
-<p>Return to the login node before submitting the small batch job:</p>
-<pre class="lab-code"><code class=" language-bash">exit
-hostname</code></pre>
-<p>This <code>exit</code> releases the interactive allocation. Do not type it again once you are back on the login node.</p>
 <h2 id="part-2-submit-a-batch-job">Part 2: Submit a Batch Job</h2>
 <h3 id="2-1-write-a-script-with-a-clear-input-path">2.1 Write a Script with a Clear Input Path</h3>
-<p>From the login node:</p>
 <pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-01/session-02&quot;
 mkdir -p logs
 
@@ -121,17 +116,23 @@ cat &gt; count_job.sh &lt;&lt;&#x27;EOF&#x27;
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-WEEK1_DATA=/cluster/tufts/bio_appbio/shared/wk1
+WEEK1_DATA=/cluster/tufts/c27sp1bio0196/shared/wk1
 echo &quot;Running on: $(hostname)&quot;
 grep -vc &#x27;^#&#x27; &quot;$WEEK1_DATA/anno.gff3&quot;
 EOF
 
 bash -n count_job.sh
 cat count_job.sh
-COUNT_JOB_ID=$(sbatch --parsable count_job.sh)
-printf &#x27;Count job: %s\n&#x27; &quot;$COUNT_JOB_ID&quot;
-squeue -j &quot;$COUNT_JOB_ID&quot;</code></pre>
-<p>The quoted heredoc delimiter, <code>&amp;lt;&amp;lt;&amp;#x27;EOF&amp;#x27;</code>, writes the script literally: <code>$WEEK1_DATA</code> and <code>$(hostname)</code> are evaluated when the job runs. <code>bash -n</code> checks syntax without running commands. <code>sbatch --parsable</code> returns the job ID, not proof that the job has finished.</p>
+sbatch count_job.sh
+squeue --me</code></pre>
+<p><code>sbatch</code> submits your script and prints a message like this:</p>
+<pre class="lab-code"><code class=" language-text">Submitted batch job 123456</code></pre>
+<p><code>123456</code> is an example job ID; your number will be different. Submission does not mean the job has started or finished.</p>
+<p><code>squeue --me</code> lists your pending and running jobs. You can also write:</p>
+<pre class="lab-code"><code class=" language-bash">squeue -u &quot;$USER&quot;</code></pre>
+<p>Both commands show jobs belonging to your account. <code>$USER</code> contains your username. Find the row whose <code>NAME</code> is <code>count</code>, then <strong>copy the number in the <code>JOBID</code> column</strong> into your notes. In the <code>ST</code> column, <code>PD</code> means pending (waiting for resources) and <code>R</code> means running.</p>
+<p>This counting job may finish before you check the queue. If it is already gone, use the job ID printed by <code>sbatch</code> and check its final state in Section 2.3.</p>
+<p>The quoted heredoc delimiter, <code>&lt;&lt;&#x27;EOF&#x27;</code>, writes the script literally: <code>$WEEK1_DATA</code> and <code>$(hostname)</code> are evaluated when the job runs. <code>bash -n</code> checks syntax without running commands.</p>
 <p>SLURM reads <code>#SBATCH</code> directives before the shell runs. <code>$MYWORK</code> inside a directive would be literal text, so use relative log paths or pass expanded paths as <code>sbatch</code> command-line options. Create <code>logs/</code> before submission: SLURM opens those files before executing the script.</p>
 <h3 id="2-2-understand-what-the-job-inherits">2.2 Understand What the Job Inherits</h3>
 <p><strong>Question 1.</strong> Does a batch job inherit <code>WEEK1_DATA</code> from your current shell?</p>
@@ -141,12 +142,14 @@ squeue -j &quot;$COUNT_JOB_ID&quot;</code></pre>
 <p>A new job shell does not reproduce every interactive setup action or shell function. Load the modules needed by each job inside its script. Here, defining <code>WEEK1_DATA</code> inside the script makes the input path easy to see and edit.</p>
 </details>
 <h3 id="2-3-confirm-completion-and-read-the-logs">2.3 Confirm Completion and Read the Logs</h3>
-<pre class="lab-code"><code class=" language-bash">squeue -j &quot;$COUNT_JOB_ID&quot;
-sacct -j &quot;$COUNT_JOB_ID&quot; --format=JobID,JobName,State,ExitCode,Elapsed,MaxRSS</code></pre>
+<p>In the commands below, <strong>replace <code>123456</code> with the job ID you copied</strong>:</p>
+<pre class="lab-code"><code class=" language-bash">squeue --me
+sacct -j 123456 --format=JobID,JobName,State,ExitCode,Elapsed,MaxRSS</code></pre>
 <p>A job disappearing from <code>squeue</code> may have completed, failed, or been cancelled. Check <code>sacct</code> for <code>COMPLETED</code> and exit code <code>0:0</code>; accounting information can take a short time to appear. Once the job finishes:</p>
-<pre class="lab-code"><code class=" language-bash">cat &quot;logs/count_${COUNT_JOB_ID}.out&quot;
-cat &quot;logs/count_${COUNT_JOB_ID}.err&quot;
-seff &quot;$COUNT_JOB_ID&quot;</code></pre>
+<pre class="lab-code"><code class=" language-bash">cat logs/count_123456.out
+cat logs/count_123456.err
+seff 123456</code></pre>
+<p>The log filenames contain the same job ID: <code>count_123456.out</code> is the output log for job <code>123456</code>. Use your own ID in both filenames.</p>
 <p>The output should contain a compute-node hostname and the number of non-comment lines in <code>anno.gff3</code>. <code>seff</code> compares measured use with requested resources. Very short jobs may have incomplete memory measurements, so do not size future jobs from this tiny example alone. For real workloads, measure representative inputs and leave a margin.</p>
 <p><strong>Checkpoint 2.</strong> You have a completed job, its exact output and error logs, and a resource-use report.</p>
 <h2 id="part-3-two-ways-to-get-software">Part 3: Two Ways to Get Software</h2>
@@ -327,7 +330,7 @@ cat &gt; fetch_job.sh &lt;&lt;&#x27;EOF&#x27;
 
 module load nextflow singularity
 
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export COURSE=&quot;/cluster/tufts/c27sp1bio0196&quot;
 export MYWORK=&quot;$COURSE/$USER&quot;
 cd &quot;$MYWORK/week-01/session-02/fetch&quot;
 
@@ -420,7 +423,7 @@ tail -n 50 .nextflow.log</code></pre>
 <li><strong>OUT<em>OF</em>MEMORY or a resource request exceeding the allocation:</strong> compare <code>lab.config</code>, the SLURM request, and <code>seff</code>. Increasing task limits also requires enough memory in the outer allocation, plus room for Nextflow.</li>
 <li><strong>TIMEOUT:</strong> the allocation ended before completion. Review progress and resubmit with <code>-resume</code> after correcting the wall-time request within partition limits.</li>
 <li><strong>Out of disk space:</strong> SRA conversion can use much more space than the final compressed FASTQ. Check <code>df -h .</code>, <code>du -sh work results</code>, and the allocation quota; do not delete an active run&#x27;s work directory.</li>
-<li><strong>Container-cache permission error:</strong> check <code>echo &amp;quot;$SCRATCH&amp;quot;</code> and <code>ls -ld &amp;quot;$SCRATCH/.singularity_cache&amp;quot;</code>. The script creates and uses this exact directory. Fix its location or permissions before retrying.</li>
+<li><strong>Container-cache permission error:</strong> check <code>echo &quot;$SCRATCH&quot;</code> and <code>ls -ld &quot;$SCRATCH/.singularity_cache&quot;</code>. The script creates and uses this exact directory. Fix its location or permissions before retrying.</li>
 <li><strong>Pipeline finished but FASTQ checks failed:</strong> inspect the samplesheet, mappings, and parser error. Preserve the cache and fix the specific problem; do not treat existing output files as proof of success.</li>
 </ul>
 <p>If you need help, provide the job ID, the relevant error, and the failed task&#x27;s work directory from <code>.nextflow.log</code>. For a running job you intentionally need to stop, use <code>scancel JOBID</code> with that specific job ID.</p>
