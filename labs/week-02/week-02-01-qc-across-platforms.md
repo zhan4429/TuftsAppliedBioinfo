@@ -2,12 +2,23 @@
 
 Applied Bioinformatics - Tufts University Department of Biology
 
-Last week you fetched the same yeast genome sequenced four different ways: Illumina,
-BGISEQ, PacBio HiFi and Oxford Nanopore. In this lab you subsample all four, measure
-them, and run the right QC tool for each.
+Last week you fetched four yeast sequencing datasets from Illumina, BGISEQ, PacBio HiFi
+and Oxford Nanopore. In this lab you subsample the reads, measure them, and use QC tools
+suited to short or long reads.
 
-Because the sample is identical across all four, every difference you see is the
-platform. That is unusual and it is the point of the exercise.
+| Run | Platform | Library type |
+| --- | --- | --- |
+| SRR27956204 | Illumina NovaSeq 6000 | Paired-end RNA-seq |
+| SRR17374239 | BGISEQ-500 | Paired-end whole-genome sequencing |
+| SRR18210286 | PacBio HiFi | Single-end whole-genome sequencing |
+| SRR17374240 | Oxford Nanopore | Single-end whole-genome sequencing |
+
+**The Illumina run contains RNA-seq reads; the other three contain genomic reads.**
+These are separate datasets with different BioSample records, rather than a controlled
+experiment sequencing the same sample on four platforms. Differences in QC reports can
+reflect platform, library type, sample preparation, and read processing. Use the
+metadata when interpreting the plots; a difference between files does not establish a
+platform effect.
 
 ## Before You Start
 
@@ -25,7 +36,6 @@ Set your paths:
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=$COURSE/$USER
 export READS=$MYWORK/week-01/session-02/fetch/results/fastq
-export GENOME=12100000
 
 mkdir -p "$MYWORK/week-02/session-01"
 cd "$MYWORK/week-02/session-01"
@@ -34,7 +44,9 @@ ls -lh "$READS"
 ```
 
 You should see six files: two paired-end runs with `_1` and `_2`, and two single-file
-long-read runs.
+long-read runs. Use the samplesheet in
+`$MYWORK/week-01/session-02/fetch/results/samplesheet/samplesheet.csv` to match files to
+runs; filenames may contain experiment identifiers rather than the run accessions above.
 
 If that directory is empty, your download did not finish. Use the staged copies and sort
 yours out afterwards:
@@ -55,16 +67,18 @@ module list
 
 ### 1.1 Why This Comes First
 
-Your Illumina run has about 45 million reads. FastQC on a file that size takes longer
-than this lab slot, and it would tell you nothing that 400,000 reads will not.
+The original files contain millions of reads. A small subset makes QC practical during
+class and lets you learn the reports. It may miss rare problems or patterns found later
+in a file, so record how you selected it.
 
-Remind yourself of the scale:
+Check the storage used by the downloaded reads:
 
 ```bash
-cd "$MYWORK/week-01/session-02/fetch"
-awk -F'\t' 'NR>1 && !seen[$2]++ {printf "%-13s %-16s %6.0fx coverage\n", $1, $2, $5/12100000}' runs.tsv
-cd "$MYWORK/week-02/session-01"
+du -sh "$READS"
 ```
+
+Do not interpret the Illumina RNA-seq base count divided by genome size as uniform
+genome coverage. RNA-seq samples expressed transcripts, whose abundances differ.
 
 ### 1.2 Take a Slice of Each
 
@@ -96,13 +110,13 @@ bias does that introduce, and why is it acceptable here?
 <details>
 <summary>Answer</summary>
 
-Reads are stored roughly in the order they came off the instrument, so the first N come
-disproportionately from one region of the flow cell. If that region ran badly, your slice
-looks worse than the run really is.
+The first N reads may not represent the full file. Read order depends on how the data
+were produced and processed; an early subset could overrepresent a particular region
+or batch. Do not assume this bias is equal across the four datasets.
 
-It is acceptable here because you are comparing platforms, not certifying a dataset, and
-the bias applies equally to all four. For a real QC report you would use `seqkit sample`
-to draw randomly, which is slower because it has to read the whole file.
+We use this shortcut to learn the QC tools within the class period. For a full analysis,
+check the complete data or use a suitable random sample, keeping paired reads matched.
+`seqkit sample` supports random sampling, which requires reading through the file.
 
 The habit worth keeping: know which shortcut you took, and say so.
 
@@ -130,14 +144,14 @@ constant, and which two vary? Why?
 <details>
 <summary>Answer</summary>
 
-Illumina and BGISEQ are nearly constant, because read length is set by the number of
-sequencing cycles the operator chose. Every cluster is read the same fixed number of
-times.
+Illumina and BGISEQ reads often have a narrow length distribution because sequencing
+uses a chosen number of cycles. Trimming and other processing can shorten some reads,
+so check the actual distributions in these files.
 
-PacBio and Nanopore vary enormously, because read length is set by the length of the DNA
-molecule that went through the pore or polymerase. That is determined by your extraction,
-not by the instrument — which is why high molecular weight extraction is the part of a
-long-read project that actually decides the result.
+PacBio and Nanopore reads typically have broader length distributions. DNA fragment
+length, library preparation, size selection, instrument settings, and read processing
+all contribute. The comparison illustrates the datasets you have, not a universal
+length distribution for each platform.
 
 </details>
 
@@ -145,20 +159,20 @@ long-read project that actually decides the result.
 
 Look at the `Q20(%)` and `Q30(%)` columns.
 
-**Question 3.** Rank the four platforms by Q30. Does that ranking tell you which platform
-is best?
+**Question 3.** Rank the four datasets by their reported Q30. Does that ranking tell you
+which platform is best?
 
 <details>
 <summary>Answer</summary>
 
-Expect the short-read platforms highest, PacBio HiFi close behind, and Nanopore lowest.
+Use the values from your own output rather than an expected ranking. Reported base
+quality is one measure; read length, yield, and the biological question also matter.
+These runs differ in library type and sample preparation, so the ranking cannot isolate
+the effect of platform.
 
-It does not tell you which is best, because accuracy is only one axis. The nanopore run
-has far lower Q30 and reads that are a hundred times longer, and length is what resolves
-repeats. A platform is only "best" relative to a question.
-
-Week 3 makes this concrete: you will assemble the HiFi reads, because they are the only
-ones that are both long and accurate.
+Week 3 makes the choice concrete: you will use the PacBio HiFi genomic reads for genome
+assembly. The Illumina RNA-seq run measures expressed transcripts and serves a different
+purpose.
 
 </details>
 
@@ -204,8 +218,8 @@ depends on whether reads span repeats.
 
 </details>
 
-**Checkpoint 2.** You have a filled-in stats table and can name one thing each platform
-does that the others cannot.
+**Checkpoint 2.** You have a filled-in stats table and can describe differences between
+the datasets while considering both platform and library type.
 
 ## Part 3: FastQC, and Where It Applies
 
@@ -234,18 +248,21 @@ Overrepresented sequences anything named?
 ```
 
 **Question 5.** Compare the Illumina and BGISEQ reports. Both are short-read platforms.
-Name one panel where they differ.
+Name one panel where they differ. Why should you consider library type as well as
+platform when interpreting that difference?
 
 <details>
 <summary>Answer</summary>
 
-Any accurate observation earns this. Common differences: the per-base quality profile has
-a different shape, because the chemistry and error model differ; adapter content differs
-because the library kits use different adapter sequences; %GC may differ slightly from
-coverage bias.
+Any accurate observation supported by the reports earns credit. The Illumina run is
+RNA-seq, while the BGISEQ run is whole-genome sequencing. Expressed transcripts are
+present at different abundances, which can affect duplication and sequence composition
+in RNA-seq. Higher duplication alone does not establish a library failure.
 
-The general point is that "short read" is not one thing. FastQC's thresholds were set
-with Illumina in mind, so another short-read platform can trip flags that mean nothing.
+Quality profiles can also reflect sequencing chemistry and read processing; adapter
+content depends on library preparation. Describe what differs, then explain plausible
+causes without assigning every difference to the platform. FastQC warnings need to be
+interpreted in the context of the library type.
 
 </details>
 
@@ -350,7 +367,7 @@ trade-off between them.
 
 ## Takeaways
 
-Measure every platform the same way first:
+Measure every dataset the same way first:
 
 ```bash
 seqkit stats -a sub/*.fastq.gz
@@ -371,9 +388,17 @@ NanoPlot --fastq long.fastq.gz -o nanoplot --N50
 
 Three things to carry forward:
 
-1. Read length is fixed by the operator on short-read platforms and by your DNA extraction
-   on long-read platforms. That single difference explains most of what you measured today.
+1. Interpret QC with the metadata. The Illumina reads are RNA-seq; the BGISEQ, PacBio and
+   Nanopore reads are genomic. Platform, library preparation and read processing all matter.
 2. A tool that produces output is not a tool that applies. FastQC runs happily on nanopore
    data and tells you almost nothing true.
 3. No platform is best. Accuracy, length, throughput and turnaround trade against each
    other, and which one you need is a property of your question.
+
+## Dataset Records and QC Reference
+
+- [Illumina RNA-seq: SRR27956204](https://www.ebi.ac.uk/ena/browser/view/SRR27956204)
+- [BGISEQ genomic reads: SRR17374239](https://www.ebi.ac.uk/ena/browser/view/SRR17374239)
+- [PacBio genomic reads: SRR18210286](https://www.ebi.ac.uk/ena/browser/view/SRR18210286)
+- [Nanopore genomic reads: SRR17374240](https://www.ebi.ac.uk/ena/browser/view/SRR17374240)
+- [FastQC: duplication and RNA-seq libraries](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html)
