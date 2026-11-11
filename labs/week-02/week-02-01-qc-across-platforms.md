@@ -300,13 +300,42 @@ fail on long reads.
 
 ### 4.1 NanoPlot
 
+NanoPlot generates **plots and an HTML report**, as well as a text summary. It can
+summarize both Nanopore and PacBio HiFi FASTQ reads; its name does not limit it to
+Nanopore data.
+
 ```bash
 mkdir -p nanoplot
-NanoPlot --fastq "$LONG" -o nanoplot -t 4 --N50 --loglength 2>/dev/null
+NanoPlot --fastq "$LONG" -o nanoplot -t 4 --N50 --loglength
+ls nanoplot/
 cat nanoplot/NanoStats.txt
 ```
 
-### 4.2 Four Numbers That Matter
+The main outputs are:
+
+| Output | What to use it for |
+| --- | --- |
+| `nanoplot/NanoPlot-report.html` | Open in a browser to explore the plots and summary statistics. |
+| `nanoplot/NanoStats.txt` | Read the numerical summary in the terminal. |
+| Other plot files in `nanoplot/` | Open individual plots; filenames and available formats depend on the installed version. |
+
+**Open the report.** In OnDemand, choose **Files** and navigate to
+`$MYWORK/week-02/session-01/nanoplot/` in your course directory. Open
+`NanoPlot-report.html` in a browser. If OnDemand downloads HTML instead of displaying
+it, download the output folder and open the report locally, keeping its files together.
+
+Look for these plots:
+
+- **Read-length distribution:** shows how many reads fall in each length range. `--N50` adds an N50 marker; at least half of the sequenced bases are in reads at least this long.
+- **Read-quality distribution:** shows the spread of average quality scores across reads, when available.
+- **Read length versus average quality:** shows whether longer and shorter reads have different reported qualities. The report may show points or a density view.
+
+`--loglength` adds plots with a logarithmic length axis, making broad length ranges
+easier to compare. Some quality plots may be skipped when the scores have no variation.
+These plots summarize the scores stored in the FASTQ file; they do not independently
+measure sequencing accuracy.
+
+### 4.2 Five Numbers That Matter
 
 From `NanoStats.txt`, record:
 
@@ -340,9 +369,13 @@ Run NanoPlot on the PacBio file as well, then compare:
 ```bash
 PB=$(ls sub/*.fastq.gz | grep -v '_[12].fastq.gz' | sed -n 2p)
 mkdir -p nanoplot_pb
-NanoPlot --fastq "$PB" -o nanoplot_pb -t 4 --N50 2>/dev/null
+NanoPlot --fastq "$PB" -o nanoplot_pb -t 4 --N50 --loglength
 grep -E 'Mean read length|Median read|N50|Mean read quality' nanoplot/NanoStats.txt nanoplot_pb/NanoStats.txt
 ```
+
+Open **`nanoplot_pb/NanoPlot-report.html`** for the PacBio report, using the same
+OnDemand or download steps as above. Compare the read-length and quality plots with
+those in `nanoplot/NanoPlot-report.html`, as well as the numbers in `NanoStats.txt`.
 
 **Question 8.** Both are long-read platforms. Which has higher read quality, and which
 has longer reads? What does that trade-off mean for choosing between them?
@@ -362,8 +395,8 @@ today. Many projects use both, which is why this study has both.
 
 </details>
 
-**Checkpoint 4.** You have NanoPlot stats for both long-read platforms and can state the
-trade-off between them.
+**Checkpoint 4.** You have opened both NanoPlot HTML reports, compared their plots and
+summary statistics, and can describe the trade-off between the two datasets.
 
 ## Takeaways
 
@@ -402,3 +435,4 @@ Three things to carry forward:
 - [PacBio genomic reads: SRR18210286](https://www.ebi.ac.uk/ena/browser/view/SRR18210286)
 - [Nanopore genomic reads: SRR17374240](https://www.ebi.ac.uk/ena/browser/view/SRR17374240)
 - [FastQC: duplication and RNA-seq libraries](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html)
+- [NanoPlot documentation and output descriptions](https://github.com/wdecoster/NanoPlot)

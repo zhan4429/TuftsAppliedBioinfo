@@ -49,7 +49,7 @@
             <a class="toc-level-3" href="#3-3-try-it-where-it-does-not-belong">3.3 Try It Where It Does Not Belong</a>
             <a class="toc-level-2" href="#part-4-the-right-tool-for-long-reads">Part 4: The Right Tool for Long Reads</a>
             <a class="toc-level-3" href="#4-1-nanoplot">4.1 NanoPlot</a>
-            <a class="toc-level-3" href="#4-2-four-numbers-that-matter">4.2 Four Numbers That Matter</a>
+            <a class="toc-level-3" href="#4-2-five-numbers-that-matter">4.2 Five Numbers That Matter</a>
             <a class="toc-level-3" href="#4-3-compare-the-two-long-read-platforms">4.3 Compare the Two Long-Read Platforms</a>
             <a class="toc-level-2" href="#takeaways">Takeaways</a>
             <a class="toc-level-2" href="#dataset-records-and-qc-reference">Dataset Records and QC Reference</a>
@@ -221,10 +221,41 @@ Overrepresented sequences anything named?</code></pre>
 <p><strong>Checkpoint 3.</strong> You have FastQC reports for both short-read platforms and have seen one fail on long reads.</p>
 <h2 id="part-4-the-right-tool-for-long-reads">Part 4: The Right Tool for Long Reads</h2>
 <h3 id="4-1-nanoplot">4.1 NanoPlot</h3>
+<p>NanoPlot generates <strong>plots and an HTML report</strong>, as well as a text summary. It can summarize both Nanopore and PacBio HiFi FASTQ reads; its name does not limit it to Nanopore data.</p>
 <pre class="lab-code"><code class=" language-bash">mkdir -p nanoplot
-NanoPlot --fastq &quot;$LONG&quot; -o nanoplot -t 4 --N50 --loglength 2&gt;/dev/null
+NanoPlot --fastq &quot;$LONG&quot; -o nanoplot -t 4 --N50 --loglength
+ls nanoplot/
 cat nanoplot/NanoStats.txt</code></pre>
-<h3 id="4-2-four-numbers-that-matter">4.2 Four Numbers That Matter</h3>
+<p>The main outputs are:</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Output</th>
+<th>What to use it for</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>nanoplot/NanoPlot-report.html</code></td>
+<td>Open in a browser to explore the plots and summary statistics.</td>
+</tr>
+<tr>
+<td><code>nanoplot/NanoStats.txt</code></td>
+<td>Read the numerical summary in the terminal.</td>
+</tr>
+<tr>
+<td>Other plot files in <code>nanoplot/</code></td>
+<td>Open individual plots; filenames and available formats depend on the installed version.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Open the report.</strong> In OnDemand, choose <strong>Files</strong> and navigate to <code>$MYWORK/week-02/session-01/nanoplot/</code> in your course directory. Open <code>NanoPlot-report.html</code> in a browser. If OnDemand downloads HTML instead of displaying it, download the output folder and open the report locally, keeping its files together.</p>
+<p>Look for these plots:</p>
+<ul>
+<li><strong>Read-length distribution:</strong> shows how many reads fall in each length range. <code>--N50</code> adds an N50 marker; at least half of the sequenced bases are in reads at least this long.</li>
+<li><strong>Read-quality distribution:</strong> shows the spread of average quality scores across reads, when available.</li>
+<li><strong>Read length versus average quality:</strong> shows whether longer and shorter reads have different reported qualities. The report may show points or a density view.</li>
+</ul>
+<p><code>--loglength</code> adds plots with a logarithmic length axis, making broad length ranges easier to compare. Some quality plots may be skipped when the scores have no variation. These plots summarize the scores stored in the FASTQ file; they do not independently measure sequencing accuracy.</p>
+<h3 id="4-2-five-numbers-that-matter">4.2 Five Numbers That Matter</h3>
 <p>From <code>NanoStats.txt</code>, record:</p>
 <pre class="lab-code"><code class=" language-text">Mean read length
 Median read length
@@ -241,8 +272,9 @@ Number of reads</code></pre>
 <p>Run NanoPlot on the PacBio file as well, then compare:</p>
 <pre class="lab-code"><code class=" language-bash">PB=$(ls sub/*.fastq.gz | grep -v &#x27;_[12].fastq.gz&#x27; | sed -n 2p)
 mkdir -p nanoplot_pb
-NanoPlot --fastq &quot;$PB&quot; -o nanoplot_pb -t 4 --N50 2&gt;/dev/null
+NanoPlot --fastq &quot;$PB&quot; -o nanoplot_pb -t 4 --N50 --loglength
 grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/NanoStats.txt nanoplot_pb/NanoStats.txt</code></pre>
+<p>Open <strong><code>nanoplot_pb/NanoPlot-report.html</code></strong> for the PacBio report, using the same OnDemand or download steps as above. Compare the read-length and quality plots with those in <code>nanoplot/NanoPlot-report.html</code>, as well as the numbers in <code>NanoStats.txt</code>.</p>
 <p><strong>Question 8.</strong> Both are long-read platforms. Which has higher read quality, and which has longer reads? What does that trade-off mean for choosing between them?</p>
 <details>
 <summary>Answer</summary>
@@ -250,7 +282,7 @@ grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/
 <p>HiFi earns its accuracy by reading the same molecule repeatedly and taking a consensus, which costs length. Nanopore reads the molecule once, so length is limited only by your DNA.</p>
 <p>Choose HiFi when you need per-base accuracy — assembly you intend to annotate, variant calling. Choose nanopore when you need to span something very long, or need the answer today. Many projects use both, which is why this study has both.</p>
 </details>
-<p><strong>Checkpoint 4.</strong> You have NanoPlot stats for both long-read platforms and can state the trade-off between them.</p>
+<p><strong>Checkpoint 4.</strong> You have opened both NanoPlot HTML reports, compared their plots and summary statistics, and can describe the trade-off between the two datasets.</p>
 <h2 id="takeaways">Takeaways</h2>
 <p>Measure every dataset the same way first:</p>
 <pre class="lab-code"><code class=" language-bash">seqkit stats -a sub/*.fastq.gz</code></pre>
@@ -272,6 +304,7 @@ NanoPlot --fastq long.fastq.gz -o nanoplot --N50</code></pre>
 <li><a href="https://www.ebi.ac.uk/ena/browser/view/SRR18210286">PacBio genomic reads: SRR18210286</a></li>
 <li><a href="https://www.ebi.ac.uk/ena/browser/view/SRR17374240">Nanopore genomic reads: SRR17374240</a></li>
 <li><a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html">FastQC: duplication and RNA-seq libraries</a></li>
+<li><a href="https://github.com/wdecoster/NanoPlot">NanoPlot documentation and output descriptions</a></li>
 </ul>
           <nav class="lab-pager" aria-label="Lab sequence">
             <a class="pager-prev" href="../week-01/02-hpc-environments-fetchngs.html"><span>Previous lab: Week 1, Session 2</span>HPC, Environments, and Fetching Public Data</a>
