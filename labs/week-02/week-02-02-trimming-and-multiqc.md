@@ -40,9 +40,6 @@ module list
 fastplong --version
 ```
 
-`fastplong --version` should report 0.4.1, the version Week 3's assembly pipeline uses. A
-different version can give different read counts from the same command.
-
 Repeat the six filename assignments from
 [Session 1: Identify the Input Files](week-02-01-qc-across-platforms.html#identify-the-input-files),
 using the files in your current `$READS` directory. You will use `ILLUMINA_R1`,
