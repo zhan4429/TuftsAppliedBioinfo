@@ -111,6 +111,7 @@ ls -lh &quot;$READS&quot;</code></pre>
 <p>Load the software:</p>
 <pre class="lab-code"><code class=" language-bash">module load seqkit fastqc nanoplot
 module list</code></pre>
+<p><code>module load</code> makes these programs available in your shell. SeqKit provides sequence statistics, FastQC creates read-QC reports, and NanoPlot plots long-read data. The NanoPlot command is written <code>NanoPlot</code> with capital letters, even though its module is named <code>nanoplot</code>.</p>
 <h3 id="identify-the-input-files">Identify the Input Files</h3>
 <p>Use the fetchngs samplesheet to identify the two Illumina mate files, the two BGISEQ mate files, and the single PacBio and Nanopore files. Replace each filename below with the actual filename in your <code>$READS</code> directory. Keep the variable names on the left.</p>
 <pre class="lab-code"><code class=" language-bash">ILLUMINA_R1=&quot;$READS/REPLACE_WITH_ILLUMINA_R1.fastq.gz&quot;
@@ -124,7 +125,29 @@ ls -lh &quot;$ILLUMINA_R1&quot; &quot;$ILLUMINA_R2&quot; &quot;$BGISEQ_R1&quot; 
 <p>All six paths should point to existing files before you continue. <code>$LONG</code> names the Nanopore file and <code>$PB</code> names the PacBio file. These variables refer directly to the downloaded reads; this lab does not create a separate subset.</p>
 <h2 id="part-1-measure-all-four-side-by-side">Part 1: Measure All Four Side by Side</h2>
 <h3 id="1-1-one-command-every-platform">1.1 One Command, Every Platform</h3>
+<p>Start with a numerical summary of every FASTQ file. SeqKit reads compressed <code>.fastq.gz</code> files directly, so you do not need to decompress them first.</p>
 <pre class="lab-code"><code class=" language-bash">seqkit stats -a &quot;$READS&quot;/*.fastq.gz</code></pre>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Part</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>seqkit stats</code></td>
+<td>Calculate sequence counts, lengths, and other statistics, with one output row per file.</td>
+</tr>
+<tr>
+<td><code>-a</code></td>
+<td>Show all available statistics, including length quartiles, N50, and FASTQ quality summaries.</td>
+</tr>
+<tr>
+<td><code>&quot;$READS&quot;/*.fastq.gz</code></td>
+<td>Use every filename ending in <code>.fastq.gz</code> in the input directory. The shell expands <code>*</code> to the matching filenames.</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>num_seqs</code> is the read count, <code>sum_len</code> is the total number of bases, and <code>avg_len</code> is the average read length. The command prints a table in the terminal and leaves the FASTQ files unchanged.</p>
 <p>Fill this in from the output. One row per file.</p>
 <pre class="lab-code"><code class=" language-text">file                 num_seqs    sum_len    avg_len    N50     Q20(%)   Q30(%)</code></pre>
 <p><strong>Question 1.</strong> Compare <code>avg_len</code> across the four platforms. Which two are nearly constant, and which two vary? Why?</p>
@@ -143,6 +166,7 @@ ls -lh &quot;$ILLUMINA_R1&quot; &quot;$ILLUMINA_R2&quot; &quot;$BGISEQ_R1&quot; 
 </details>
 <h3 id="1-3-read-length-as-a-distribution">1.3 Read Length as a Distribution</h3>
 <p>An average hides the shape. Look at the real distribution for one long-read file:</p>
+<p><code>seqkit fx2tab</code> converts sequence records into a tab-separated table. Here we request only read names and lengths, then summarize those lengths with the rest of the pipeline.</p>
 <pre class="lab-code"><code class=" language-bash">echo &quot;$LONG&quot;
 
 seqkit fx2tab -nl &quot;$LONG&quot; | awk &#x27;{print $NF}&#x27; | sort -n | \
@@ -152,8 +176,38 @@ seqkit fx2tab -nl &quot;$LONG&quot; | awk &#x27;{print $NF}&#x27; | sort -n | \
     printf &quot;median %8d\n&quot;, a[int(NR*0.50)]
     printf &quot;Q3     %8d\n&quot;, a[int(NR*0.75)]
     printf &quot;max    %8d\n&quot;, a[NR] }&#x27;</code></pre>
-<p>Now the same for a short-read file:</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Part</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>seqkit fx2tab</code></td>
+<td>Write one table row for each read.</td>
+</tr>
+<tr>
+<td><code>-n</code></td>
+<td>Keep read names without printing their sequences or quality strings.</td>
+</tr>
+<tr>
+<td><code>-l</code></td>
+<td>Add each read&#x27;s length in bases.</td>
+</tr>
+<tr>
+<td><code>-nl</code></td>
+<td>A shorter way to write <code>-n -l</code>; both options apply.</td>
+</tr>
+<tr>
+<td><code>&quot;$LONG&quot;</code></td>
+<td>Read the Nanopore FASTQ file selected in the setup.</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>echo</code> displays the chosen filename. Each pipe (<code>|</code>) passes output to the next command. The first <code>awk</code> extracts the final field, the read length; <code>sort -n</code> sorts the lengths numerically. The last <code>awk</code> reports the minimum, quartiles, median, and maximum. The backslash (<code>\</code>) continues the command on the next line.</p>
+<p>Use the same SeqKit options for one Illumina mate file. This time, count how often each read length occurs:</p>
 <pre class="lab-code"><code class=" language-bash">seqkit fx2tab -nl &quot;$ILLUMINA_R1&quot; | awk &#x27;{print $NF}&#x27; | sort -n | uniq -c | head</code></pre>
+<p><code>&quot;$ILLUMINA_R1&quot;</code> selects the first Illumina mate file. <code>-nl</code> again requests names and lengths. After extracting and sorting the lengths, <code>uniq -c</code> counts equal adjacent values, and <code>head</code> shows the first ten length groups. The two output columns are the number of reads and their length in bases.</p>
 <p><strong>Question 3.</strong> The short-read file gives one length repeated hundreds of thousands of times. Why does that make the mean a useful summary there and a misleading one for long reads?</p>
 <details>
 <summary>Answer</summary>
@@ -164,10 +218,44 @@ seqkit fx2tab -nl &quot;$LONG&quot; | awk &#x27;{print $NF}&#x27; | sort -n | \
 <p><strong>Checkpoint 1.</strong> You have a filled-in stats table and can describe differences between the datasets while considering both platform and library type.</p>
 <h2 id="part-2-fastqc-and-where-it-applies">Part 2: FastQC, and Where It Applies</h2>
 <h3 id="2-1-run-it-on-the-short-reads-only">2.1 Run It on the Short Reads Only</h3>
+<p>FastQC checks each input file for patterns such as declining base quality, adapter content, and unusual sequence composition. It creates a separate report for each mate file and does not trim or change the reads.</p>
 <pre class="lab-code"><code class=" language-bash">mkdir -p fastqc
 fastqc -t 4 --outdir fastqc \
   &quot;$ILLUMINA_R1&quot; &quot;$ILLUMINA_R2&quot; &quot;$BGISEQ_R1&quot; &quot;$BGISEQ_R2&quot;
 ls fastqc/</code></pre>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Part</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>mkdir -p fastqc</code></td>
+<td>Create the output directory if needed; FastQC expects it to exist.</td>
+</tr>
+<tr>
+<td><code>fastqc</code></td>
+<td>Run the quality-control checks on the listed input files.</td>
+</tr>
+<tr>
+<td><code>-t 4</code></td>
+<td>Set the processing thread limit to four, matching the four CPUs requested above.</td>
+</tr>
+<tr>
+<td><code>--outdir fastqc</code></td>
+<td>Save the reports in the <code>fastqc/</code> directory. <code>-o fastqc</code> means the same thing.</td>
+</tr>
+<tr>
+<td>The four filename variables</td>
+<td>Analyze the two Illumina mate files and the two BGISEQ mate files. Each file gets its own report.</td>
+</tr>
+<tr>
+<td><code>ls fastqc/</code></td>
+<td>List the reports that were created.</td>
+</tr>
+</tbody>
+</table></div>
+<p>For each input, expect an HTML report for viewing and a ZIP archive containing report data. The backslash after <code>--outdir fastqc</code> continues the command onto the next line.</p>
 <p>View a report through OnDemand: <strong>Files &gt; Home Directory</strong>, navigate to your <code>week-02/session-01/fastqc/</code> directory, and click an <code>.html</code> file.</p>
 <h3 id="2-2-read-it-properly">2.2 Read It Properly</h3>
 <p>Work through these panels for one Illumina sample and write down what you see.</p>
@@ -184,7 +272,9 @@ Overrepresented sequences anything named?</code></pre>
 <p>Quality profiles can also reflect sequencing chemistry and read processing; adapter content depends on library preparation. Describe what differs, then explain plausible causes without assigning every difference to the platform. FastQC warnings need to be interpreted in the context of the library type.</p>
 </details>
 <h3 id="2-3-try-it-where-it-does-not-belong">2.3 Try It Where It Does Not Belong</h3>
+<p>Run the same FastQC checks on the Nanopore file to examine how its report behaves with long reads:</p>
 <pre class="lab-code"><code class=" language-bash">fastqc -t 4 -o fastqc &quot;$LONG&quot;</code></pre>
+<p>Here <code>-t 4</code> keeps the same thread limit, <code>-o fastqc</code> saves the report alongside the short-read reports, and <code>&quot;$LONG&quot;</code> selects the Nanopore input. This is a demonstration of tool interpretation; it does not convert or filter the reads.</p>
 <p>Open that report.</p>
 <p><strong>Question 5.</strong> Look at Basic Statistics and Per base sequence quality. Why is this report close to useless?</p>
 <details>
@@ -201,6 +291,35 @@ Overrepresented sequences anything named?</code></pre>
 NanoPlot --fastq &quot;$LONG&quot; -o nanoplot -t 4 --N50 --loglength
 ls nanoplot/
 cat nanoplot/NanoStats.txt</code></pre>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>--fastq &quot;$LONG&quot;</code></td>
+<td>Read the selected Nanopore FASTQ file, including its stored quality scores. Compressed <code>.gz</code> input is supported.</td>
+</tr>
+<tr>
+<td><code>-o nanoplot</code></td>
+<td>Write the report, statistics, and plots into <code>nanoplot/</code>.</td>
+</tr>
+<tr>
+<td><code>-t 4</code></td>
+<td>Allow up to four processing threads, matching the compute allocation.</td>
+</tr>
+<tr>
+<td><code>--N50</code></td>
+<td>Add an N50 marker to the read-length histogram.</td>
+</tr>
+<tr>
+<td><code>--loglength</code></td>
+<td>Also produce plots with read length on a logarithmic scale. This changes the visualization, not the input reads.</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>mkdir -p</code> prepares the output folder, <code>ls</code> lists its contents, and <code>cat</code> displays the text summary. These commands inspect the output without changing the reads.</p>
 <p>The main outputs are:</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -244,10 +363,11 @@ Number of reads</code></pre>
 <p>N50 is larger still, because it weights by bases rather than by reads. The gap between median and N50 is a quick read on how much of your sequence sits in long molecules, which is what matters for assembly.</p>
 </details>
 <h3 id="3-3-compare-the-two-long-read-platforms">3.3 Compare the Two Long-Read Platforms</h3>
-<p>Run NanoPlot on the PacBio file as well, then compare:</p>
+<p>Run NanoPlot on the PacBio file as well. Use a separate output directory so its report is easy to distinguish from the Nanopore report:</p>
 <pre class="lab-code"><code class=" language-bash">mkdir -p nanoplot_pb
 NanoPlot --fastq &quot;$PB&quot; -o nanoplot_pb -t 4 --N50 --loglength
 grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/NanoStats.txt nanoplot_pb/NanoStats.txt</code></pre>
+<p>This command uses the same NanoPlot options: <code>--fastq &quot;$PB&quot;</code> selects the PacBio file, <code>-o nanoplot_pb</code> chooses its output folder, <code>-t 4</code> sets the thread limit, <code>--N50</code> marks N50, and <code>--loglength</code> adds logarithmic length plots. Both runs therefore use the same plot settings. The final <code>grep -E</code> command selects matching summary lines from the two <code>NanoStats.txt</code> files; it does not run NanoPlot again.</p>
 <p>Open <strong><code>nanoplot_pb/NanoPlot-report.html</code></strong> for the PacBio report, using the same OnDemand or download steps as above. Compare the read-length and quality plots with those in <code>nanoplot/NanoPlot-report.html</code>, as well as the numbers in <code>NanoStats.txt</code>.</p>
 <p><strong>Question 7.</strong> Both are long-read platforms. Which has higher read quality, and which has longer reads? What does that trade-off mean for choosing between them?</p>
 <details>
@@ -258,11 +378,12 @@ grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/
 </details>
 <p><strong>Checkpoint 3.</strong> You have opened both NanoPlot HTML reports, compared their plots and summary statistics, and can describe the trade-off between the two datasets.</p>
 <h2 id="takeaways">Takeaways</h2>
-<p>Measure every dataset the same way first:</p>
+<p>Measure every dataset the same way first. <code>stats</code> prints one summary row per file, <code>-a</code> includes the additional metrics, and the filename pattern selects all input FASTQs:</p>
 <pre class="lab-code"><code class=" language-bash">seqkit stats -a &quot;$READS&quot;/*.fastq.gz</code></pre>
-<p>Use FastQC for short reads and NanoPlot for long ones:</p>
-<pre class="lab-code"><code class=" language-bash">fastqc -t 4 -o fastqc &quot;$ILLUMINA_R1&quot; &quot;$ILLUMINA_R2&quot; &quot;$BGISEQ_R1&quot; &quot;$BGISEQ_R2&quot;
-NanoPlot --fastq &quot;$LONG&quot; -o nanoplot -t 4 --N50</code></pre>
+<p>Use FastQC for short reads. <code>-t 4</code> sets its thread limit, <code>-o fastqc</code> selects the report folder, and the remaining arguments list the four short-read files:</p>
+<pre class="lab-code"><code class=" language-bash">fastqc -t 4 -o fastqc &quot;$ILLUMINA_R1&quot; &quot;$ILLUMINA_R2&quot; &quot;$BGISEQ_R1&quot; &quot;$BGISEQ_R2&quot;</code></pre>
+<p>Use NanoPlot for long reads. <code>--fastq</code> names the input, <code>-o</code> names the output folder, <code>-t 4</code> sets the thread limit, and <code>--N50</code> adds the N50 marker:</p>
+<pre class="lab-code"><code class=" language-bash">NanoPlot --fastq &quot;$LONG&quot; -o nanoplot -t 4 --N50</code></pre>
 <p>Three things to carry forward:</p>
 <ol>
 <li>Interpret QC with the metadata. The Illumina reads are RNA-seq; the BGISEQ, PacBio and Nanopore reads are genomic. Platform, library preparation and read processing all matter.</li>
@@ -277,6 +398,8 @@ NanoPlot --fastq &quot;$LONG&quot; -o nanoplot -t 4 --N50</code></pre>
 <li><a href="https://www.ebi.ac.uk/ena/browser/view/SRR17374240">Nanopore genomic reads: SRR17374240</a></li>
 <li><a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html">FastQC: duplication and RNA-seq libraries</a></li>
 <li><a href="https://github.com/wdecoster/NanoPlot">NanoPlot documentation and output descriptions</a></li>
+<li><a href="https://bioinf.shenwei.me/seqkit/usage/">SeqKit command and parameter reference</a></li>
+<li><a href="https://github.com/s-andrews/FastQC/blob/master/INSTALL.md">FastQC installation and command-line usage</a></li>
 </ul>
           <nav class="lab-pager" aria-label="Lab sequence">
             <a class="pager-prev" href="../week-01/02-hpc-environments-fetchngs.html"><span>Previous lab: Week 1, Session 2</span>HPC, Environments, and Fetching Public Data</a>

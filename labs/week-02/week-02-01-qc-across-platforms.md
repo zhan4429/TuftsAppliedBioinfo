@@ -63,6 +63,11 @@ module load seqkit fastqc nanoplot
 module list
 ```
 
+`module load` makes these programs available in your shell. SeqKit provides sequence
+statistics, FastQC creates read-QC reports, and NanoPlot plots long-read data. The
+NanoPlot command is written `NanoPlot` with capital letters, even though its module is
+named `nanoplot`.
+
 ### Identify the Input Files
 
 Use the fetchngs samplesheet to identify the two Illumina mate files, the two BGISEQ
@@ -88,9 +93,22 @@ downloaded reads; this lab does not create a separate subset.
 
 ### 1.1 One Command, Every Platform
 
+Start with a numerical summary of every FASTQ file. SeqKit reads compressed
+`.fastq.gz` files directly, so you do not need to decompress them first.
+
 ```bash
 seqkit stats -a "$READS"/*.fastq.gz
 ```
+
+| Part | Meaning |
+| --- | --- |
+| `seqkit stats` | Calculate sequence counts, lengths, and other statistics, with one output row per file. |
+| `-a` | Show all available statistics, including length quartiles, N50, and FASTQ quality summaries. |
+| `"$READS"/*.fastq.gz` | Use every filename ending in `.fastq.gz` in the input directory. The shell expands `*` to the matching filenames. |
+
+`num_seqs` is the read count, `sum_len` is the total number of bases, and `avg_len`
+is the average read length. The command prints a table in the terminal and leaves
+the FASTQ files unchanged.
 
 Fill this in from the output. One row per file.
 
@@ -140,6 +158,9 @@ purpose.
 
 An average hides the shape. Look at the real distribution for one long-read file:
 
+`seqkit fx2tab` converts sequence records into a tab-separated table. Here we request
+only read names and lengths, then summarize those lengths with the rest of the pipeline.
+
 ```bash
 echo "$LONG"
 
@@ -152,11 +173,30 @@ seqkit fx2tab -nl "$LONG" | awk '{print $NF}' | sort -n | \
     printf "max    %8d\n", a[NR] }'
 ```
 
-Now the same for a short-read file:
+| Part | Meaning |
+| --- | --- |
+| `seqkit fx2tab` | Write one table row for each read. |
+| `-n` | Keep read names without printing their sequences or quality strings. |
+| `-l` | Add each read's length in bases. |
+| `-nl` | A shorter way to write `-n -l`; both options apply. |
+| `"$LONG"` | Read the Nanopore FASTQ file selected in the setup. |
+
+`echo` displays the chosen filename. Each pipe (`|`) passes output to the next command.
+The first `awk` extracts the final field, the read length; `sort -n` sorts the lengths
+numerically. The last `awk` reports the minimum, quartiles, median, and maximum.
+The backslash (`\`) continues the command on the next line.
+
+Use the same SeqKit options for one Illumina mate file. This time, count how often
+each read length occurs:
 
 ```bash
 seqkit fx2tab -nl "$ILLUMINA_R1" | awk '{print $NF}' | sort -n | uniq -c | head
 ```
+
+`"$ILLUMINA_R1"` selects the first Illumina mate file. `-nl` again requests names and
+lengths. After extracting and sorting the lengths, `uniq -c` counts equal adjacent
+values, and `head` shows the first ten length groups. The two output columns are the
+number of reads and their length in bases.
 
 **Question 3.** The short-read file gives one length repeated hundreds of thousands of
 times. Why does that make the mean a useful summary there and a misleading one for long
@@ -184,12 +224,28 @@ the datasets while considering both platform and library type.
 
 ### 2.1 Run It on the Short Reads Only
 
+FastQC checks each input file for patterns such as declining base quality, adapter
+content, and unusual sequence composition. It creates a separate report for each
+mate file and does not trim or change the reads.
+
 ```bash
 mkdir -p fastqc
 fastqc -t 4 --outdir fastqc \
   "$ILLUMINA_R1" "$ILLUMINA_R2" "$BGISEQ_R1" "$BGISEQ_R2"
 ls fastqc/
 ```
+
+| Part | Meaning |
+| --- | --- |
+| `mkdir -p fastqc` | Create the output directory if needed; FastQC expects it to exist. |
+| `fastqc` | Run the quality-control checks on the listed input files. |
+| `-t 4` | Set the processing thread limit to four, matching the four CPUs requested above. |
+| `--outdir fastqc` | Save the reports in the `fastqc/` directory. `-o fastqc` means the same thing. |
+| The four filename variables | Analyze the two Illumina mate files and the two BGISEQ mate files. Each file gets its own report. |
+| `ls fastqc/` | List the reports that were created. |
+
+For each input, expect an HTML report for viewing and a ZIP archive containing report
+data. The backslash after `--outdir fastqc` continues the command onto the next line.
 
 View a report through OnDemand: **Files > Home Directory**, navigate to your
 `week-02/session-01/fastqc/` directory, and click an `.html` file.
@@ -228,9 +284,16 @@ interpreted in the context of the library type.
 
 ### 2.3 Try It Where It Does Not Belong
 
+Run the same FastQC checks on the Nanopore file to examine how its report behaves
+with long reads:
+
 ```bash
 fastqc -t 4 -o fastqc "$LONG"
 ```
+
+Here `-t 4` keeps the same thread limit, `-o fastqc` saves the report alongside the
+short-read reports, and `"$LONG"` selects the Nanopore input. This is a demonstration
+of tool interpretation; it does not convert or filter the reads.
 
 Open that report.
 
@@ -270,6 +333,17 @@ NanoPlot --fastq "$LONG" -o nanoplot -t 4 --N50 --loglength
 ls nanoplot/
 cat nanoplot/NanoStats.txt
 ```
+
+| Option | Meaning |
+| --- | --- |
+| `--fastq "$LONG"` | Read the selected Nanopore FASTQ file, including its stored quality scores. Compressed `.gz` input is supported. |
+| `-o nanoplot` | Write the report, statistics, and plots into `nanoplot/`. |
+| `-t 4` | Allow up to four processing threads, matching the compute allocation. |
+| `--N50` | Add an N50 marker to the read-length histogram. |
+| `--loglength` | Also produce plots with read length on a logarithmic scale. This changes the visualization, not the input reads. |
+
+`mkdir -p` prepares the output folder, `ls` lists its contents, and `cat` displays the
+text summary. These commands inspect the output without changing the reads.
 
 The main outputs are:
 
@@ -324,13 +398,20 @@ is what matters for assembly.
 
 ### 3.3 Compare the Two Long-Read Platforms
 
-Run NanoPlot on the PacBio file as well, then compare:
+Run NanoPlot on the PacBio file as well. Use a separate output directory so its report
+is easy to distinguish from the Nanopore report:
 
 ```bash
 mkdir -p nanoplot_pb
 NanoPlot --fastq "$PB" -o nanoplot_pb -t 4 --N50 --loglength
 grep -E 'Mean read length|Median read|N50|Mean read quality' nanoplot/NanoStats.txt nanoplot_pb/NanoStats.txt
 ```
+
+This command uses the same NanoPlot options: `--fastq "$PB"` selects the PacBio
+file, `-o nanoplot_pb` chooses its output folder, `-t 4` sets the thread limit,
+`--N50` marks N50, and `--loglength` adds logarithmic length plots. Both runs therefore
+use the same plot settings. The final `grep -E` command selects matching summary lines
+from the two `NanoStats.txt` files; it does not run NanoPlot again.
 
 Open **`nanoplot_pb/NanoPlot-report.html`** for the PacBio report, using the same
 OnDemand or download steps as above. Compare the read-length and quality plots with
@@ -359,16 +440,24 @@ summary statistics, and can describe the trade-off between the two datasets.
 
 ## Takeaways
 
-Measure every dataset the same way first:
+Measure every dataset the same way first. `stats` prints one summary row per file,
+`-a` includes the additional metrics, and the filename pattern selects all input FASTQs:
 
 ```bash
 seqkit stats -a "$READS"/*.fastq.gz
 ```
 
-Use FastQC for short reads and NanoPlot for long ones:
+Use FastQC for short reads. `-t 4` sets its thread limit, `-o fastqc` selects the
+report folder, and the remaining arguments list the four short-read files:
 
 ```bash
 fastqc -t 4 -o fastqc "$ILLUMINA_R1" "$ILLUMINA_R2" "$BGISEQ_R1" "$BGISEQ_R2"
+```
+
+Use NanoPlot for long reads. `--fastq` names the input, `-o` names the output folder,
+`-t 4` sets the thread limit, and `--N50` adds the N50 marker:
+
+```bash
 NanoPlot --fastq "$LONG" -o nanoplot -t 4 --N50
 ```
 
@@ -389,3 +478,5 @@ Three things to carry forward:
 - [Nanopore genomic reads: SRR17374240](https://www.ebi.ac.uk/ena/browser/view/SRR17374240)
 - [FastQC: duplication and RNA-seq libraries](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html)
 - [NanoPlot documentation and output descriptions](https://github.com/wdecoster/NanoPlot)
+- [SeqKit command and parameter reference](https://bioinf.shenwei.me/seqkit/usage/)
+- [FastQC installation and command-line usage](https://github.com/s-andrews/FastQC/blob/master/INSTALL.md)
