@@ -760,6 +760,38 @@ show about **45% GC for Illumina RNA-seq** and **38% for BGISEQ genomic reads**.
 samples expressed transcripts, so the same species need not give the same GC percentage
 in both libraries. A difference is a reason to investigate, not a contamination diagnosis.
 
+### 4.3 Two Useful Comparisons from the Class Report
+
+These two figures from the supplied MultiQC report show what a combined report adds:
+**adapter signals across the short-read libraries** and **quality distributions across
+the long-read libraries**. Display labels have been shortened for readability.
+
+![MultiQC adapter-content comparison: Illumina Universal adapter signals rise toward the ends of both Illumina RNA-seq mates, while the displayed BGISEQ signals remain below one percent.](assets/multiqc-comparisons/short-read-adapter-content.png)
+
+**Figure 10. Compare adapter signals across files.** Both Illumina RNA-seq mates
+show a rising **Illumina Universal** signal, reaching about **8.6–8.8%** by the last
+reported positions, around base 140. The vertical axis is a cumulative percentage
+of reads in which the tested sequence has been detected, not a percentage of bases.
+The displayed BGISEQ traces stay below 1%.
+
+This supports checking and trimming the recognized adapters in Session 2, then
+rerunning QC to see whether the signal falls. It does not mean that every Illumina
+read is poor quality. A low signal only covers the sequences actually tested;
+the BGISEQ-specific adapter caveat from Section 2.3 still applies.
+
+![MultiQC percentage bars comparing per-read quality: PacBio HiFi is concentrated above Q20, while most Nanopore reads fall between Q10 and Q15.](assets/multiqc-comparisons/long-read-quality-percentages.png)
+
+**Figure 11. Compare long-read quality using percentages.** In the interactive report,
+select **Percentages** above **NanoStat: Reads by quality** to obtain this view.
+Each bar represents 100% of one library, allowing comparison despite their different
+read counts. Almost all HiFi reads are above Q20, with about **62% above Q30**;
+about **67% of Nanopore reads fall in the Q10–15 band**.
+
+These are **per-read quality summaries**, rather than the percentage of individual
+bases above a threshold. Use the chart to describe these datasets and to assess
+filtering choices; the separate libraries do not provide a controlled test of
+platform performance.
+
 **Checkpoint 4.** You have one report containing QC results from all four datasets and
 can describe one difference between them. In
 [Session 2, Part 3](week-02-02-trimming-and-multiqc.html#part-3-aggregate-everything),

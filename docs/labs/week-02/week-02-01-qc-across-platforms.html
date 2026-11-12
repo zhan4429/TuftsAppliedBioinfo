@@ -53,6 +53,7 @@
             <a class="toc-level-2" href="#part-4-multiqc-compare-all-datasets-in-one-report">Part 4: MultiQC — Compare All Datasets in One Report</a>
             <a class="toc-level-3" href="#4-1-build-the-combined-report">4.1 Build the Combined Report</a>
             <a class="toc-level-3" href="#4-2-read-the-report-as-a-comparison">4.2 Read the Report as a Comparison</a>
+            <a class="toc-level-3" href="#4-3-two-useful-comparisons-from-the-class-report">4.3 Two Useful Comparisons from the Class Report</a>
             <a class="toc-level-2" href="#takeaways">Takeaways</a>
             <a class="toc-level-2" href="#dataset-records-and-qc-reference">Dataset Records and QC Reference</a>
             </nav>
@@ -836,6 +837,14 @@ multiqc --force --dirs --dirs-depth 1 \
 <li><strong>NanoStat summaries:</strong> compare long-read lengths, N50 and quality. MultiQC collects summary statistics; keep the original NanoPlot reports for their detailed length and quality plots.</li>
 </ul>
 <p>Use the metadata when explaining differences. For example, the supplied SeqKit results show about <strong>45% GC for Illumina RNA-seq</strong> and <strong>38% for BGISEQ genomic reads</strong>. RNA-seq samples expressed transcripts, so the same species need not give the same GC percentage in both libraries. A difference is a reason to investigate, not a contamination diagnosis.</p>
+<h3 id="4-3-two-useful-comparisons-from-the-class-report">4.3 Two Useful Comparisons from the Class Report</h3>
+<p>These two figures from the supplied MultiQC report show what a combined report adds: <strong>adapter signals across the short-read libraries</strong> and <strong>quality distributions across the long-read libraries</strong>. Display labels have been shortened for readability.</p>
+<p><img src="assets/multiqc-comparisons/short-read-adapter-content.png" alt="MultiQC adapter-content comparison: Illumina Universal adapter signals rise toward the ends of both Illumina RNA-seq mates, while the displayed BGISEQ signals remain below one percent." loading="lazy" decoding="async"></p>
+<p><strong>Figure 10. Compare adapter signals across files.</strong> Both Illumina RNA-seq mates show a rising <strong>Illumina Universal</strong> signal, reaching about <strong>8.6–8.8%</strong> by the last reported positions, around base 140. The vertical axis is a cumulative percentage of reads in which the tested sequence has been detected, not a percentage of bases. The displayed BGISEQ traces stay below 1%.</p>
+<p>This supports checking and trimming the recognized adapters in Session 2, then rerunning QC to see whether the signal falls. It does not mean that every Illumina read is poor quality. A low signal only covers the sequences actually tested; the BGISEQ-specific adapter caveat from Section 2.3 still applies.</p>
+<p><img src="assets/multiqc-comparisons/long-read-quality-percentages.png" alt="MultiQC percentage bars comparing per-read quality: PacBio HiFi is concentrated above Q20, while most Nanopore reads fall between Q10 and Q15." loading="lazy" decoding="async"></p>
+<p><strong>Figure 11. Compare long-read quality using percentages.</strong> In the interactive report, select <strong>Percentages</strong> above <strong>NanoStat: Reads by quality</strong> to obtain this view. Each bar represents 100% of one library, allowing comparison despite their different read counts. Almost all HiFi reads are above Q20, with about <strong>62% above Q30</strong>; about <strong>67% of Nanopore reads fall in the Q10–15 band</strong>.</p>
+<p>These are <strong>per-read quality summaries</strong>, rather than the percentage of individual bases above a threshold. Use the chart to describe these datasets and to assess filtering choices; the separate libraries do not provide a controlled test of platform performance.</p>
 <p><strong>Checkpoint 4.</strong> You have one report containing QC results from all four datasets and can describe one difference between them. In <a href="week-02-02-trimming-and-multiqc.html#part-3-aggregate-everything">Session 2, Part 3</a>, you will extend the comparison to reads before and after preprocessing.</p>
 <h2 id="takeaways">Takeaways</h2>
 <p>Measure every dataset the same way first. <code>stats</code> prints one summary row per file, <code>-a</code> includes the additional metrics, and the filename pattern selects all input FASTQs:</p>
