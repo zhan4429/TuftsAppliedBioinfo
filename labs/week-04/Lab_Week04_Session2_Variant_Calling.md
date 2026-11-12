@@ -1,15 +1,14 @@
-# Lab 4B — Calling Variants Against Your Own Genome
+# Week 4 Session 2: Variant Calling
 
-**Applied Bioinformatics · Week 4, Session 2**
-**Runs alongside the lecture**
+Applied Bioinformatics - Tufts University Department of Biology
 
-> The reads and the reference come from the same haploid yeast. A perfect assembly and a perfect caller would find nothing. Everything you find today is information about one of them.
+> The reads and the assembly are labeled S288C but come from separate BioSamples. Calls can reflect assembly errors, biological differences between cultures, or mapping and calling artifacts. Today you investigate the evidence for those explanations.
 
 > **Read Part 1 first and submit both callers immediately.** They run while you do the rest of the lab.
 
 ---
 
-## Before you start
+## Before You Start
 
 ```bash
 srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
@@ -44,9 +43,19 @@ ln -sf $SHARED/fallback/sample.bam.bai sample.bam.bai
 
 ---
 
-## Part 1 — Submit both callers, now
+### Dataset Identity Matters
 
-### 1.1 The files every caller expects
+The [BGISEQ BioSample](https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477750) and
+[HiFi BioSample](https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477612) both identify
+**S288C**, with collection dates 2021-01-21 and 2021-12-29 respectively. These are
+separate BioSamples; the records do not establish one shared DNA preparation or
+prove identical genomes. We use a haploid nuclear-genome model as a teaching
+assumption and interpret disagreements as candidates to investigate, rather than
+automatically correcting the assembly.
+
+## Part 1: Submit Both Callers, Now
+
+### 1.1 The Files Every Caller Expects
 
 ```bash
 samtools faidx asm.fa
@@ -69,13 +78,14 @@ cat > gatk.sh <<'EOF'
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
 module load gatk
 set -euo pipefail
 cd $MYWORK/week-04/session-02
+mkdir -p "tmp/gatk_$SLURM_JOB_ID"
 
-gatk --java-options "-Xmx12g" HaplotypeCaller \
+gatk --java-options "-Xmx12g -Djava.io.tmpdir=$PWD/tmp/gatk_$SLURM_JOB_ID" HaplotypeCaller \
   -R asm.fa -I sample.bam -O gatk.vcf.gz \
   --native-pair-hmm-threads ${SLURM_CPUS_PER_TASK}
 EOF
@@ -96,11 +106,12 @@ cat > dv.sh <<'EOF'
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-set -euo pipefail
 module load deepvariant
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+set -euo pipefail
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
 cd $MYWORK/week-04/session-02
+mkdir -p "tmp/dv_$SLURM_JOB_ID"
 
 run_deepvariant \
     --model_type=WGS \
@@ -108,11 +119,11 @@ run_deepvariant \
     --reads=sample.bam \
     --output_vcf=dv.vcf.gz \
     --num_shards=${SLURM_CPUS_PER_TASK} \
-    --intermediate_results_dir=$SCRATCH/dv_$SLURM_JOB_ID
+    --intermediate_results_dir="$PWD/tmp/dv_$SLURM_JOB_ID"
 EOF
 ```
 
-### 1.4 Submit both
+### 1.4 Submit Both
 
 ```bash
 bash -n gatk.sh && bash -n dv.sh
@@ -124,19 +135,24 @@ squeue -j "$GATK_JOB,$DV_JOB"
 
 > Check back at Part 3.
 
-**Question 1.** Both callers will run with their default assumption that the sample is diploid. S288C is haploid. Is that a mistake?
+**Question 1.** Both scripts use diploid genotype output to let us inspect mixed read evidence. Why might that be useful for an assumed haploid nuclear genome, and what does it not prove?
 
-::: Answer
-It is a deliberate choice, and worth understanding. A diploid model can report a pileup as mixed (0/1). In a haploid genome no site is truly mixed, so every 0/1 call becomes a flag: reads from different places were stacked on one position.
+<details>
+<summary>Answer</summary>
 
-A haploid model (`--sample-ploidy 1` in GATK) must force every site to 0 or 1. That is the correct biology, but it hides the mixed pileups by assigning them to one allele. Part 2 shows the difference. DeepVariant offers only a diploid germline model for this genome, which is one more reason the model is part of the result.
-:::
+A diploid model can report mixed evidence as 0/1. In a haploid nuclear genome, that is a reason to investigate mismapped repeats, contamination, mixed cells or an incorrect ploidy assumption; it is not proof of any single cause.
 
-> **CHECKPOINT 1** — Both jobs are queued and their IDs saved.
+GATK can use `--sample-ploidy 1`. DeepVariant 1.6 and later also support `--haploid_contigs` for named contigs; this exercise deliberately leaves that option unset. Those names must match this assembly, not generic human chromosome names. DeepVariant adjusts genotype probabilities for listed haploid contigs during postprocessing, so it is incorrect to describe it as supporting only diploid output.
+
+A haploid setting changes the genotype model. It does not remove contradictory reads or establish which sequence is biologically correct.
+
+</details>
+
+**Checkpoint 1.** Both jobs are queued and their IDs saved.
 
 ---
 
-## Part 2 — Read a VCF while they run
+## Part 2: Read A VCF While They Run
 
 Call 500 kb of the largest contig interactively, once with each ploidy:
 
@@ -150,7 +166,7 @@ gatk HaplotypeCaller -R asm.fa -I sample.bam -L ${LARGEST}:1-500000 \
   --sample-ploidy 1 -O peek_p1.vcf.gz 2> logs/peek_p1.log
 ```
 
-### 2.1 Header and records
+### 2.1 Header And Records
 
 ```bash
 bcftools view -h peek_p2.vcf.gz | grep -E '^##(contig|FORMAT)' | cut -c1-80 | head -8
@@ -159,14 +175,14 @@ bcftools view -H peek_p2.vcf.gz | head -3 | cut -c1-150
 
 The `##contig` lines repeat your assembly's names and lengths: like a BAM's `@SQ`, they bind this VCF to one exact reference.
 
-### 2.2 Genotypes, under each model
+### 2.2 Genotypes, Under Each Model
 
 ```bash
 echo "diploid model:";  bcftools query -f '[%GT]\n' peek_p2.vcf.gz | sort | uniq -c
 echo "haploid model:";  bcftools query -f '[%GT]\n' peek_p1.vcf.gz | sort | uniq -c
 ```
 
-### 2.3 Look at the mixed sites
+### 2.3 Look At The Mixed Sites
 
 ```bash
 bcftools query -i 'GT="het"' -f '%POS\t%REF\t%ALT\t%QUAL\t[%AD]\t%INFO/DP\t%INFO/MQ\n' peek_p2.vcf.gz | head
@@ -176,27 +192,33 @@ Columns: position, reference allele, alternative allele, QUAL, reads supporting 
 
 **Question 2.** Look at the 0/1 calls. What do their allele depths, depth and MQ have in common, and what happens to the same positions under the haploid model?
 
-::: Answer
+<details>
+<summary>Answer</summary>
+
 Typical patterns: allele depths far from a clean split (for example 30 reference reads against 8 alternative) and depth well above the contig's usual level. Those are the signature of mismapping: reads from another copy of a repeat were placed here, and their differences look like a second allele.
 
 MQ depends on the kind of repeat. Where the assembly kept several partly different copies, MQ drops below 60. Where it collapsed many copies into one, as with the rDNA, every read maps uniquely to the one copy that exists, MQ stays at 60, and the excess depth is the giveaway. (Reads with MAPQ 0 are ignored by the caller, so the fully resolved Ty copies from Tuesday produce silence, not 0/1 calls.)
 
 Under the haploid model the same sites are called 1 (alternative) when the alternative reads win, or are not reported at all when the reference reads win. The evidence of mixing disappears from the output. Same reads, different model, a different and cleaner-looking answer: the lecture's first takeaway.
-:::
 
-**Question 3.** Now look at any 1/1 call in the diploid file. Every read disagrees with the reference at that position. In this genome, what does that mean?
+</details>
 
-::: Answer
-The assembly is wrong at that base. The reads and the assembly come from the same DNA, so when every read says something else, the reads are right and the assembly carries an error, most often a one-base insertion or deletion in a homopolymer.
+**Question 3.** Inspect a 1/1 call and its allele depths. What are two possible explanations when most well-mapped BGISEQ reads support an allele different from the HiFi assembly?
 
-A 1/1 call against your own genome is not a variant. It is a correction.
-:::
+<details>
+<summary>Answer</summary>
 
-> **CHECKPOINT 2** — Everyone can read a VCF record and say what a 0/1 and a 1/1 call mean in this genome.
+One possibility is an assembly error; another is a real difference between the separately collected S288C cultures. Mapping and calling artifacts also remain possible. A 1/1 genotype is a model's conclusion, not a statement that literally every read supports the alternative allele.
+
+Check the BGISEQ and HiFi alignments, depth, strand and mapping evidence, and local repeats. Concordant support in the original HiFi reads strengthens an assembly-error explanation. Do not automatically polish a HiFi assembly to the sequence of a different BioSample.
+
+</details>
+
+**Checkpoint 2.** Everyone can read a VCF record and say what a 0/1 and a 1/1 call mean in this genome.
 
 ---
 
-## Part 3 — What the whole genome says about your assembly
+## Part 3: What The Whole Genome Says About Your Assembly
 
 ```bash
 squeue -j "$(paste -sd, caller_job_ids.txt)"
@@ -205,7 +227,7 @@ ls -lh gatk.vcf.gz dv.vcf.gz
 
 If either job is still running, use the staged calls, which were made on the staged set: `cp $SHARED/fallback/{gatk,dv}.vcf.gz* .` (and use the staged `asm.fa` too).
 
-### 3.1 Normalise, then filter
+### 3.1 Normalise, Then Filter
 
 ```bash
 for v in gatk dv; do
@@ -219,7 +241,7 @@ bcftools view -f PASS dv.norm.vcf.gz -Oz -o dv.pass.vcf.gz
 for v in gatk dv; do bcftools index -f $v.pass.vcf.gz; done
 ```
 
-### 3.2 Count by meaning
+### 3.2 Count By Meaning
 
 ```bash
 for v in gatk dv; do
@@ -230,25 +252,39 @@ for v in gatk dv; do
 done
 ```
 
-### 3.3 Turn the errors into a quality score
+### 3.3 Summarize Shared Differences
 
-Use the 1/1 calls both callers agree on:
+Collect homozygous-alternative calls both callers share, then summarize shared SNVs:
 
 ```bash
-bcftools isec -n=2 -w1 -i 'GT="AA"' -i 'GT="AA"' gatk.pass.vcf.gz dv.pass.vcf.gz -Oz -o errors.vcf.gz
-N=$(bcftools view -H errors.vcf.gz | wc -l)
-awk -v e=$N -v g=$GENOME 'BEGIN {printf "%d errors in %d bases: QV %.1f\n", e, g, -10*log(e/g)/log(10)}'
+bcftools isec -n=2 -w1 -i 'GT="AA"' -i 'GT="AA"' gatk.pass.vcf.gz dv.pass.vcf.gz -Oz -o candidate_differences.vcf.gz
+N=$(bcftools view -H -v snps candidate_differences.vcf.gz | wc -l)
+L=$(awk '{s+=$2} END {print s}' asm.fa.fai)
+awk -v n="$N" -v g="$L" 'BEGIN {if(n>0) printf "%d shared SNVs in %d assembly bases; disagreement score %.1f\n", n,g,-10*log(n/g)/log(10); else print "No shared SNVs detected; no finite score estimated"}'
 ```
 
-**Question 4.** Compare that QV with the Merqury QV from Homework 3. Why is agreement between them meaningful, and why might they still differ?
+This is a whole-assembly **SNV disagreement score**, not a validated assembly QV.
+It excludes indels, misses differences outside callable regions, and can include
+biological differences between the BioSamples. Counting an indel as one error would
+also confuse variant events with incorrect bases. The two callers use the same reads,
+so agreement between callers does not make the evidence independent.
 
-::: Answer
-They are independent instruments. Merqury compares k-mers in the assembly with k-mers in the BGISEQ reads; this compares aligned reads with the assembly, base by base. Agreement from two different methods is far stronger evidence than either number alone, the same logic as Lab 3A's two signals.
+**Question 4.** Compare this disagreement score with the Merqury QV from Homework 3.
+Why must you check sample matching, callable regions and what each method counts
+before interpreting their agreement or difference?
 
-They differ because each sees different things. Variant calling is blind in the MAPQ 0 islands from Tuesday, so errors inside repeats are missed and this QV is optimistic. Merqury counts every assembly k-mer the reads lack, including some in regions the reads cover poorly, so it can be pessimistic. If there are no shared errors at all, the QV is undefined: say that the error count is below what this many reads can detect.
-:::
+<details>
+<summary>Answer</summary>
 
-### 3.4 Where the 0/1 calls are
+Merqury evaluates assembly k-mer support; this exercise counts shared called SNVs.
+They have different detection limits and denominators. Both use the BGISEQ library,
+so they also share its coverage biases and any genuine differences from the HiFi
+culture. Agreement can be informative but is not independent confirmation of an
+assembly-error rate. Neither number proves that every unsupported base is an error.
+
+</details>
+
+### 3.4 Where The 0/1 Calls Are
 
 ```bash
 bcftools query -i 'GT="het"' -f '%CHROM\n' gatk.pass.vcf.gz | sort | uniq -c | sort -rn | head
@@ -257,17 +293,18 @@ bcftools query -i 'GT="het"' -f '%INFO/DP\n' gatk.pass.vcf.gz | sort -n | \
 awk '$1=="total" {print "genome-wide mean depth:", $4}' ../session-01/all.mosdepth.summary.txt
 ```
 
-**Question 5.** Compare depth at the 0/1 calls with the genome-wide depth, and look at which contigs hold most of them. What is the evidence that they are mismapping rather than biology?
+**Question 5.** Compare depth at the 0/1 calls with the genome-wide depth, and look at which contigs hold most of them. Do these observations support a mismapping explanation, and what alternatives remain?
 
-::: Answer
-Depth at 0/1 calls is usually well above the genome-wide mean, and the calls cluster on a few contigs, above all the one carrying the collapsed rDNA, where about 150 copies' worth of reads land on the few copies that were assembled. Extra depth means reads from several copies landed on one; clustering means the problem is local to repeats, not spread across the genome as real variation would be.
+<details>
+<summary>Answer</summary>
 
-Note what does *not* produce them: the Ty elements that made Tuesday's MAPQ 0 islands. The caller ignores MAPQ 0 reads, so those windows are silent. Silence is not the same as no errors: an assembly error inside a Ty copy cannot be called at all.
+Enrichment at unusually high depth or in repeated regions supports a mismapping or collapsed-repeat explanation. Compare allele depths and mapping quality as well as the contig distribution; the pattern must be observed, not assumed.
 
-And the decisive argument: S288C is haploid. There is no second haplotype for a real 0/1 call to come from.
-:::
+Under the haploid nuclear-genome assumption, 0/1 is unexpected, but that assumption alone does not distinguish repeat mapping from contamination, mixed cultures or different ploidy. MAPQ filters can hide some repeat-associated problems; absence of calls there does not validate the assembly.
 
-### 3.5 One sanity check from the lecture
+</details>
+
+### 3.5 One Sanity Check From The Lecture
 
 ```bash
 bcftools stats gatk.pass.vcf.gz | awk '$1=="TSTV" {print "Ti/Tv:", $5}'
@@ -275,17 +312,20 @@ bcftools stats gatk.pass.vcf.gz | awk '$1=="TSTV" {print "Ti/Tv:", $5}'
 
 **Question 6.** That is the transition/transversion ratio of these calls. Why is it not a measure of mutation here, and what would a value near 0.5 tell you?
 
-::: Answer
-These calls are not mutations: they are assembly errors and mismapping artefacts, so their Ti/Tv describes how errors arise, not how genomes evolve.
+<details>
+<summary>Answer</summary>
 
-A value near 0.5 is what random substitutions give, because there are twice as many possible transversions as transitions. It would mean the substitutions in this set behave like noise, which is exactly what you would expect from errors.
-:::
+This is the Ti/Tv of called differences between the reads and assembly. It may mix biological differences with assembly and mapping errors, so it cannot be read directly as a mutation process or an assembly-error spectrum.
 
-> **CHECKPOINT 3** — Everyone has counts, a QV estimate and an explanation for where the 0/1 calls sit.
+For equally likely single-base substitutions, there are twice as many possible transversions as transitions, giving 0.5. A value near 0.5 is compatible with such a simple noise model, but is not proof that the calls are artifacts. Examine call types, sequence context, mapping evidence and sample provenance.
+
+</details>
+
+**Checkpoint 3.** Everyone has counts, a disagreement score and an explanation for where the 0/1 calls sit.
 
 ---
 
-## Part 4 — Which errors broke a gene?
+## Part 4: Which Differences Could Affect A Gene?
 
 The Week 3 annotation was predicted on this assembly, errors included. First check that it really is the same sequence:
 
@@ -293,7 +333,7 @@ The Week 3 annotation was predicted on this assembly, errors included. First che
 cmp -s asm.fa $MYWORK/week-03/session-02/asm.fa && echo "same assembly" || echo "DIFFERENT: use the staged set"
 ```
 
-Annotate the agreed errors against your BRAKER3 gene models. VEP needs to know which transcripts code for protein, and BRAKER3 does not say, so add that attribute while preparing the file:
+Annotate the shared candidate differences against your BRAKER3 gene models. VEP needs to know which transcripts code for protein, and BRAKER3 does not say, so add that attribute while preparing the file:
 
 ```bash
 grep -v '^#' $MYWORK/week-03/session-02/braker/braker.gff3 \
@@ -303,7 +343,7 @@ tabix -p gff braker.gff3.gz
 
 module load vep
 vep \
-  -i errors.vcf.gz --gff braker.gff3.gz --fasta asm.fa \
+  -i candidate_differences.vcf.gz --gff braker.gff3.gz --fasta asm.fa \
   --tab --fields "Location,Allele,Feature,Consequence" \
   -o errors.vep.tsv --force_overwrite --no_stats 2> logs/vep.log
 
@@ -312,15 +352,18 @@ grep -v '^#' errors.vep.tsv | cut -f4 | tr ',' '\n' | sort | uniq -c | sort -rn
 
 Staged-set users: replace the BRAKER path with `$SHARED/fallback/braker.gff3`.
 
-**Question 7.** Suppose some errors are reported as `frameshift_variant`. The alternative allele is the correct sequence, so what has actually gone wrong, and in which file?
+**Question 7.** A candidate difference is labeled `frameshift_variant`. What would it mean if further evidence confirmed an assembly error, and what if it were a real difference between the two cultures?
 
-::: Answer
-The assembly carries an indel inside a gene, and BRAKER3 predicted its gene model around that error. "Frameshift" here means that correcting the assembly would shift the reading frame of the model, so the model is the thing that is wrong: probably truncated, or joined to its neighbour.
+<details>
+<summary>Answer</summary>
 
-That is Week 3's warning made concrete: functional annotation inherits structural errors, and structural annotation inherits assembly errors. One base in the assembly, a wrong protein in every file downstream. The fix belongs at the top: polish the assembly with these calls, then annotate again.
-:::
+If independent evidence confirms an assembly indel error, the gene model may have been predicted around the wrong sequence and could need rebuilding after correction. If it is a true difference between cultures, the consequence describes a difference relative to this assembly's gene model, not proof that the assembly is wrong.
 
-> **CHECKPOINT 4** — Everyone can trace one assembly error into a gene model.
+Check the transcript and protein evidence, the original HiFi reads and the local alignment before changing the assembly. A predicted frameshift is a consequence annotation, not an instruction to replace the reference allele.
+
+</details>
+
+**Checkpoint 4.** Everyone can trace one candidate difference to a gene model and state what evidence is needed to classify it.
 
 ---
 
@@ -338,6 +381,10 @@ That is Week 3's warning made concrete: functional annotation inherits structura
 
 **Three things to carry forward:**
 
-1. A variant call is a model's reading of a pileup. A diploid model on a haploid genome turns mismapped repeats into 0/1 calls; a haploid model hides them.
-2. Against your own genome, a 1/1 call is a correction and a 0/1 call is a mapping problem. Counted, they measure the assembly as well as Merqury does.
-3. Errors travel downstream. An indel in the assembly becomes a broken gene model, then a wrong protein.
+1. A genotype is a model-based interpretation of read evidence. Inspect the reads and check the ploidy assumption.
+2. Separate BioSamples can differ biologically. Shared calls and Merqury QV do not by themselves establish a true assembly-error rate.
+3. A verified assembly error can affect downstream gene models; a consequence label alone does not verify that error.
+
+## Software Reference
+
+- [DeepVariant haploid support](https://github.com/google/deepvariant/blob/r1.6/docs/deepvariant-haploid-support.md)

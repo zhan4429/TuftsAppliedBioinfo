@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Week 4 Session 1: Alignment QC for Applied Bioinformatics, Tufts University.">
+    <title>Week 4 Session 1: Alignment QC | Applied Bioinformatics</title>
+    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../assets/lab-code-copy.js" defer></script>
+  </head>
+  <body class="doc-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../../index.html#labs">Schedule</a>
+          <a href="../../index.html#setup">Setup</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <main class="lab-main wrap" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../../index.html#labs">Back to schedule</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#before-you-start">Before You Start</a>
+            <a class="toc-level-3" href="#dataset-identity-matters">Dataset Identity Matters</a>
+            <a class="toc-level-2" href="#part-1-submit-the-alignment-now">Part 1: Submit The Alignment, Now</a>
+            <a class="toc-level-3" href="#1-1-take-two-million-read-pairs">1.1 Take Two Million Read Pairs</a>
+            <a class="toc-level-3" href="#1-2-index-the-reference-once">1.2 Index The Reference Once</a>
+            <a class="toc-level-3" href="#1-3-submit-both-alignments">1.3 Submit Both Alignments</a>
+            <a class="toc-level-2" href="#part-2-read-a-sam-file-while-it-runs">Part 2: Read A SAM File While It Runs</a>
+            <a class="toc-level-3" href="#2-1-the-header">2.1 The Header</a>
+            <a class="toc-level-3" href="#2-2-one-record-field-by-field">2.2 One Record, Field By Field</a>
+            <a class="toc-level-3" href="#2-3-the-flags-counted">2.3 The Flags, Counted</a>
+            <a class="toc-level-3" href="#2-4-mapping-quality-and-clipping">2.4 Mapping Quality And Clipping</a>
+            <a class="toc-level-2" href="#part-3-qc-the-real-alignment">Part 3: QC The Real Alignment</a>
+            <a class="toc-level-3" href="#3-1-the-headline-numbers">3.1 The Headline Numbers</a>
+            <a class="toc-level-3" href="#3-2-coverage-contig-by-contig">3.2 Coverage, Contig By Contig</a>
+            <a class="toc-level-3" href="#3-3-where-short-reads-cannot-be-placed">3.3 Where Short Reads Cannot Be Placed</a>
+            <a class="toc-level-2" href="#part-4-the-same-genome-seen-by-long-reads">Part 4: The Same Genome, Seen By Long Reads</a>
+            <a class="toc-level-2" href="#takeaways">Takeaways</a>
+            </nav>
+          </details>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="lab-label">Week 4, Session 1</p>
+            <h1>Alignment QC</h1>
+          </header>
+          <blockquote>Last week you built a genome. This week it is your reference. You will align genomic reads labeled as the same yeast strain to it, inspect the alignments, and investigate differences and mapping problems.</blockquote>
+<blockquote><strong>Read Part 1 first and submit the alignment job immediately.</strong> It runs while you do the rest of the lab.</blockquote>
+<hr>
+<h2 id="before-you-start">Before You Start</h2>
+<pre class="lab-code"><code class=" language-bash">srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
+  --mem=32G --time=03:00:00 --pty bash
+hostname                      # must NOT say login-p0x
+
+export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK=&quot;$COURSE/$USER&quot;
+export SHARED=$COURSE/shared/wk4
+export FQ=$MYWORK/week-01/session-02/fetch/results/fastq
+export GENOME=12100000        # expected genome size in bases
+
+mkdir -p $MYWORK/week-04/session-01/logs &amp;&amp; cd $MYWORK/week-04/session-01
+
+module load bwa-mem2 minimap2 samtools mosdepth seqkit
+module list</code></pre>
+<p>Every tool is an environment module; <code>module avail &lt;tool&gt;</code> shows the versions installed.</p>
+<h3 id="dataset-identity-matters">Dataset Identity Matters</h3>
+<p>The <a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477750">BGISEQ BioSample</a> and <a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477612">HiFi BioSample</a> both identify <strong>S288C</strong>, with collection dates 2021-01-21 and 2021-12-29 respectively. These are separate BioSamples; the records do not establish one shared DNA preparation or prove identical genomes. We use a haploid nuclear-genome model as a teaching assumption and interpret disagreements as candidates to investigate, rather than automatically correcting the assembly.</p>
+<p>Gather the three inputs: your Week 3 assembly, the BGISEQ genomic reads from Week 1, and the 30× HiFi subsample from Lab 3A.</p>
+<pre class="lab-code"><code class=" language-bash">cp $MYWORK/week-03/session-01/asm.p_ctg.fa asm.fa
+md5sum asm.fa &gt; asm.md5
+
+DNB1=$(ls $FQ/*SRR17374239*_1.fastq.gz 2&gt;/dev/null)
+DNB2=$(ls $FQ/*SRR17374239*_2.fastq.gz 2&gt;/dev/null)
+ln -sf $MYWORK/week-03/session-01/hifi_30x.fastq.gz hifi.fq.gz
+
+ls -lhL asm.fa &quot;$DNB1&quot; &quot;$DNB2&quot; hifi.fq.gz      # -L follows the link, so a missing file shows up</code></pre>
+<p>Fallbacks for anything missing:</p>
+<pre class="lab-code"><code class=" language-bash">cp $COURSE/shared/wk3/fallback_assembly/asm.p_ctg.fa asm.fa &amp;&amp; md5sum asm.fa &gt; asm.md5
+DNB1=$(ls $COURSE/shared/wk2/fallback_fastq/*SRR17374239*_1.fastq.gz)
+DNB2=$(ls $COURSE/shared/wk2/fallback_fastq/*SRR17374239*_2.fastq.gz)
+rm -f hifi.fq.gz &amp;&amp; seqkit head -n 30000 $(ls $COURSE/shared/wk3/fallback_hifi/*.fastq.gz | head -1) -o hifi.fq.gz</code></pre>
+<hr>
+<h2 id="part-1-submit-the-alignment-now">Part 1: Submit The Alignment, Now</h2>
+<h3 id="1-1-take-two-million-read-pairs">1.1 Take Two Million Read Pairs</h3>
+<pre class="lab-code"><code class=" language-bash">seqkit head -n 2000000 &quot;$DNB1&quot; -o dnb_1.fq.gz
+seqkit head -n 2000000 &quot;$DNB2&quot; -o dnb_2.fq.gz
+seqkit stats -T dnb_1.fq.gz dnb_2.fq.gz | \
+  awk -v g=$GENOME &#x27;NR&gt;1 {s+=$5} END {printf &quot;coverage: %.0fx\n&quot;, s/g}&#x27;</code></pre>
+<p><strong>Question 1.</strong> Week 1 fetched two short-read runs from this project. Why align the BGISEQ run and not the Illumina one?</p>
+<details>
+<summary>Answer</summary>
+<p>The Illumina run is RNA-seq. Its reads come from transcripts, so their depth measures expression rather than copy number, intergenic sequence gets almost nothing, and reads spanning introns would be clipped by a DNA aligner. Every coverage-based diagnosis in this lab would be wrong.</p>
+<p>The BGISEQ run is genomic DNA: every part of the genome is sampled roughly evenly. Choosing reads for an analysis starts with what the library measured, not with which platform made it. This is the Week 1 warning, arriving as a consequence.</p>
+</details>
+<h3 id="1-2-index-the-reference-once">1.2 Index The Reference Once</h3>
+<pre class="lab-code"><code class=" language-bash">bwa-mem2 index asm.fa 2&gt; logs/bwa_index.log
+samtools faidx asm.fa
+ls asm.fa*</code></pre>
+<p>On a 12 Mb genome this takes seconds. A human genome takes about an hour and tens of gigabytes, which is why shared references come with their indexes already built.</p>
+<h3 id="1-3-submit-both-alignments">1.3 Submit Both Alignments</h3>
+<pre class="lab-code"><code class=" language-bash">cat &gt; align.sh &lt;&lt;&#x27;EOF&#x27;
+#!/bin/bash
+#SBATCH --job-name=align
+#SBATCH --partition=batch
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=16G
+#SBATCH --time=01:00:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+
+export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK=&quot;$COURSE/$USER&quot;
+module load bwa-mem2 samtools minimap2
+set -euo pipefail
+cd $MYWORK/week-04/session-01
+T=${SLURM_CPUS_PER_TASK}
+mkdir -p &quot;tmp/$SLURM_JOB_ID&quot;
+
+# short reads: align, add mate tags, sort, mark duplicates, index
+bwa-mem2 mem -t $T -R &#x27;@RG\tID:SRR17374239\tSM:SRR17374239\tLB:lib1\tPL:DNBSEQ&#x27; \
+    asm.fa dnb_1.fq.gz dnb_2.fq.gz \
+  | samtools fixmate -m -@ 2 - - \
+  | samtools sort -@ 2 -m 1G -T &quot;tmp/$SLURM_JOB_ID/sort&quot; - \
+  | samtools markdup -@ 2 - sample.bam
+samtools index sample.bam
+
+# HiFi reads from Week 3, same genome
+minimap2 -ax map-hifi -t $T -R &#x27;@RG\tID:SRR18210286\tSM:SRR18210286\tPL:PACBIO&#x27; asm.fa hifi.fq.gz \
+  | samtools sort -@ 2 -T &quot;tmp/$SLURM_JOB_ID/hifi_sort&quot; -o hifi.bam -
+samtools index hifi.bam
+EOF
+
+bash -n align.sh
+ALIGN_JOB_ID=$(sbatch --parsable align.sh)
+printf &#x27;%s\n&#x27; &quot;$ALIGN_JOB_ID&quot; &gt; align_job_id.txt
+squeue -j &quot;$ALIGN_JOB_ID&quot;</code></pre>
+<blockquote>Check back at Part 3.</blockquote>
+<p><strong>Question 2.</strong> The read groups record separate BGISEQ and HiFi sample identifiers as well as run and platform information. Why preserve these identifiers when both samples are labeled S288C?</p>
+<details>
+<summary>Answer</summary>
+<p>The strain name is not a unique physical-sample identifier. The reads came from different BioSamples, so their provenance must remain distinct. Read groups preserve sample and run information inside the BAM and are required by tools such as GATK.</p>
+<p>The <code>ID</code> identifies the read group; <code>SM</code> identifies the sample. <code>DNBSEQ</code> is the SAM platform label for BGISEQ/MGI instruments. Do not use one shared <code>SM</code> merely because two libraries have the same strain label.</p>
+</details>
+<p><strong>Checkpoint 1.</strong> Everyone&#x27;s alignment job is submitted and its ID saved.</p>
+<hr>
+<h2 id="part-2-read-a-sam-file-while-it-runs">Part 2: Read A SAM File While It Runs</h2>
+<p>You do not need the full BAM to learn to read one. Align ten thousand pairs interactively:</p>
+<pre class="lab-code"><code class=" language-bash">seqkit head -n 10000 dnb_1.fq.gz -o peek_1.fq.gz
+seqkit head -n 10000 dnb_2.fq.gz -o peek_2.fq.gz
+bwa-mem2 mem -t 8 -R &#x27;@RG\tID:SRR17374239\tSM:SRR17374239\tLB:lib1\tPL:DNBSEQ&#x27; \
+  asm.fa peek_1.fq.gz peek_2.fq.gz &gt; peek.sam 2&gt; logs/peek.log</code></pre>
+<h3 id="2-1-the-header">2.1 The Header</h3>
+<pre class="lab-code"><code class=" language-bash">samtools view -H peek.sam | cut -c1-80 | head -5
+samtools view -H peek.sam | grep -E &#x27;^@(RG|PG)&#x27; | cut -c1-80</code></pre>
+<p>The <code>@SQ</code> lines carry your contig names and lengths. A BAM made against the published S288C reference would name chromosomes <code>chrI</code>, <code>chrII</code> and so on, and the two files could never be compared directly.</p>
+<h3 id="2-2-one-record-field-by-field">2.2 One Record, Field By Field</h3>
+<pre class="lab-code"><code class=" language-bash">samtools view peek.sam | head -2 | cut -f1-9</code></pre>
+<p><strong>Question 3.</strong> Pick the first record. What are its flag, contig, position, MAPQ and CIGAR, and where is its mate?</p>
+<details>
+<summary>Answer</summary>
+<p>Most first records are a properly paired read: flag 99 or 83 (forward or reverse first-in-pair, properly paired), MAPQ 60, a CIGAR such as <code>100M</code> or <code>150M</code> (whatever the read length is), <code>=</code> in field 7 (mate on the same contig) and a mate position a few hundred bases away. <code>samtools flags</code> decodes any flag you are unsure of.</p>
+<p>Reading one record completely is the skill; everything else in this lab is that, repeated with <code>awk</code>.</p>
+</details>
+<h3 id="2-3-the-flags-counted">2.3 The Flags, Counted</h3>
+<pre class="lab-code"><code class=" language-bash">samtools view peek.sam | cut -f2 | sort | uniq -c | sort -rn | head
+samtools flags 99
+samtools flags 2145</code></pre>
+<p><strong>Question 4.</strong> Most reads carry flags 83, 99, 147 or 163. What do the rarer flags above 2048 mean here, and why does a fragmented assembly produce more of them than a complete one?</p>
+<details>
+<summary>Answer</summary>
+<p>Flags with 2048 set are supplementary alignments: part of a read aligned in one place and the rest somewhere else. In a reference genome they usually mark structural variants.</p>
+<p>Against your own assembly they also appear where a read crosses the end of one contig and continues into a sequence that sits at the start of another. Every contig break is a place the genome continues but the assembly does not, so more breaks mean more split reads.</p>
+</details>
+<h3 id="2-4-mapping-quality-and-clipping">2.4 Mapping Quality And Clipping</h3>
+<pre class="lab-code"><code class=" language-bash">samtools view peek.sam | \
+  awk &#x27;{ if ($5 == 0) z++; else if ($5 &lt; 30) l++; else h++ } END {print &quot;MAPQ 0:&quot;, z, &quot;  1-29:&quot;, l, &quot;  30+:&quot;, h}&#x27;
+samtools view peek.sam | awk &#x27;$6 ~ /S/&#x27; | wc -l</code></pre>
+<p><strong>Question 5.</strong> What can produce MAPQ 0 reads when short genomic reads are aligned to a yeast assembly? Does the S288C label prove that every ambiguous alignment is a repeat problem?</p>
+<details>
+<summary>Answer</summary>
+<p>Repeated sequences are a major source: a short read can fit several Ty elements, rDNA copies or subtelomeric repeats similarly well. A read must reach discriminating sequence to be placed confidently.</p>
+<p>Low-quality or low-complexity reads, assembly duplications and other ambiguous alignments can also lower MAPQ. A strain label does not prove ploidy, identical samples or perfect sequence quality. Use the alignment and coverage evidence to test an explanation.</p>
+</details>
+<p><strong>Checkpoint 2.</strong> Everyone can read a SAM record and say what its flag, MAPQ and CIGAR mean.</p>
+<hr>
+<h2 id="part-3-qc-the-real-alignment">Part 3: QC The Real Alignment</h2>
+<pre class="lab-code"><code class=" language-bash">squeue -j &quot;$(cat align_job_id.txt)&quot;
+ls -lh sample.bam hifi.bam</code></pre>
+<h3 id="3-1-the-headline-numbers">3.1 The Headline Numbers</h3>
+<pre class="lab-code"><code class=" language-bash">samtools flagstat -@ 4 sample.bam
+samtools stats -@ 4 sample.bam | grep ^SN | cut -f2-3 | \
+  grep -E &#x27;reads mapped:|reads properly paired:|reads duplicated:|insert size average:|error rate:&#x27;</code></pre>
+<p><strong>Question 6.</strong> What mapping rate did you observe, and what would you investigate if it were only 90%?</p>
+<details>
+<summary>Answer</summary>
+<p>A high mapping rate is expected for related S288C genomic libraries, but there is no guaranteed percentage. The samples were not verified as one DNA preparation, and the assembly may omit some sequences.</p>
+<p>Investigate adapter sequence, contamination, read quality, missing organellar or plasmid sequence, and differences between the cultures. A 90% mapping rate does not establish that 10% of the genome is missing: the denominator is reads, and genomic regions are not sampled equally. Inspect unmapped reads and their QC before assigning a cause.</p>
+</details>
+<h3 id="3-2-coverage-contig-by-contig">3.2 Coverage, Contig By Contig</h3>
+<pre class="lab-code"><code class=" language-bash">mosdepth -t 4 --by 2000 --fast-mode all sample.bam
+mosdepth -t 4 --by 2000 --fast-mode --mapq 20 q20 sample.bam
+
+# fraction of the genome at 10x or more, all reads and MAPQ 20+ only
+awk &#x27;$1==&quot;total&quot; &amp;&amp; $2==10 {print &quot;all reads:&quot;, $3}&#x27; all.mosdepth.global.dist.txt
+awk &#x27;$1==&quot;total&quot; &amp;&amp; $2==10 {print &quot;MAPQ 20+: &quot;, $3}&#x27; q20.mosdepth.global.dist.txt
+
+# mean depth per contig, all reads against MAPQ 20+
+paste all.mosdepth.summary.txt q20.mosdepth.summary.txt | grep -v _region | \
+  awk &#x27;NR&gt;1 {printf &quot;%-14s %9d %9.1f %9.1f\n&quot;, $1, $2, $4, $10}&#x27; | sort -k3,3nr | head -20</code></pre>
+<p><strong>Question 7.</strong> A few contigs sit at many times the typical depth. Name the likely candidates in a yeast genome, and say why each is over-represented.</p>
+<details>
+<summary>Answer</summary>
+<ul>
+<li><strong>The mitochondrial genome</strong> (about 86 kb in S288C): many copies per cell.</li>
+<li><strong>The 2-micron plasmid</strong> (about 6 kb), if hifiasm assembled it: dozens of copies per cell.</li>
+<li><strong>rDNA</strong>: about 150 tandem copies of a 9 kb unit, which the assembly collapses into one or a few. Every copy&#x27;s reads pile onto the few that were assembled.</li>
+</ul>
+<p>The first two are real copy number; the third is a collapsed repeat. Depth alone does not tell them apart. Contig length, GC (the mitochondrial genome is very AT-rich) and Homework 3&#x27;s GC-against-depth table do.</p>
+</details>
+<h3 id="3-3-where-short-reads-cannot-be-placed">3.3 Where Short Reads Cannot Be Placed</h3>
+<pre class="lab-code"><code class=" language-bash">zcat all.regions.bed.gz &gt; all.bed
+zcat q20.regions.bed.gz &gt; q20.bed
+paste all.bed q20.bed | awk &#x27;$4 &gt; 10 &amp;&amp; $8 &lt; 0.5*$4&#x27; &gt; mapq0_islands.bed
+wc -l mapq0_islands.bed
+head mapq0_islands.bed</code></pre>
+<p>Each line is a 2 kb window where more than half the depth comes from reads with MAPQ below 20.</p>
+<p><strong>Question 8.</strong> These windows are covered, but mostly by reads that cannot be trusted to be there. Why does a mean-depth summary hide them, and what does that mean for Thursday?</p>
+<details>
+<summary>Answer</summary>
+<p>Mean depth counts every read wherever the aligner put it, including the ones it placed at random. These windows look adequately covered and are not: no variant caller should, or by default will, trust MAPQ 0 reads.</p>
+<p>For Session 2 it means variant calls are blind in these windows, and any calls that do appear there are suspect. Report breadth at a stated depth and mapping quality, not mean depth alone.</p>
+</details>
+<p><strong>Checkpoint 3.</strong> Everyone has a flagstat, a per-contig depth table and a list of MAPQ 0 islands.</p>
+<hr>
+<h2 id="part-4-the-same-genome-seen-by-long-reads">Part 4: The Same Genome, Seen By Long Reads</h2>
+<pre class="lab-code"><code class=" language-bash">mosdepth -t 4 --by 2000 --fast-mode --mapq 20 hq20 hifi.bam
+zcat hq20.regions.bed.gz &gt; hq20.bed
+
+# in each MAPQ 0 island: short-read depth, short MAPQ 20+ depth, HiFi MAPQ 20+ depth
+paste all.bed q20.bed hq20.bed | awk &#x27;$4 &gt; 10 &amp;&amp; $8 &lt; 0.5*$4 {printf &quot;%s:%d-%d  %6.1f %6.1f %6.1f\n&quot;, $1, $2+1, $3, $4, $8, $12}&#x27; | head</code></pre>
+<p><strong>Question 9.</strong> In most of these windows, HiFi reads with MAPQ 20 or more cover what short reads could not place. Why, and what does it mean for how this assembly was built?</p>
+<details>
+<summary>Answer</summary>
+<p>A HiFi read is longer than a Ty element, so it reaches unique sequence on both sides and can only fit one copy. A 150 bp read inside the element fits every copy.</p>
+<p>That is also why the assembly resolved these copies at all: hifiasm built it from the same long reads. The repeats that defeat short-read alignment are the same ones that defeat short-read assembly. The lecture&#x27;s threshold argument, from Week 3, seen from the alignment side.</p>
+</details>
+<p><strong>Checkpoint 4.</strong> <code>sample.bam</code> and its index exist. Session 2 calls variants on it.</p>
+<hr>
+<h2 id="takeaways">Takeaways</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Task</th>
+<th>Command</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Index a reference</td>
+<td><code>bwa-mem2 index asm.fa</code> and <code>samtools faidx asm.fa</code></td>
+</tr>
+<tr>
+<td>Align, mark duplicates, index</td>
+<td>`bwa-mem2 mem -R … \</td>
+<td>samtools fixmate -m \</td>
+<td>samtools sort \</td>
+<td>samtools markdup`</td>
+</tr>
+<tr>
+<td>Long reads</td>
+<td><code>minimap2 -ax map-hifi</code></td>
+</tr>
+<tr>
+<td>Decode a flag</td>
+<td><code>samtools flags 99</code></td>
+</tr>
+<tr>
+<td>Headline QC</td>
+<td><code>samtools flagstat</code>, <code>samtools stats</code></td>
+</tr>
+<tr>
+<td>Coverage, all reads and trusted reads</td>
+<td><code>mosdepth --by 2000</code> with and without <code>--mapq 20</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Three things to carry forward:</strong></p>
+<ol>
+<li>Choose reads by what the library measured. The Illumina run in this project is RNA-seq and cannot answer questions about genome coverage.</li>
+<li>Mean depth includes reads placed at random. Report breadth at a stated depth and mapping quality.</li>
+<li>Repeats often make short reads ambiguous; longer reads can reach unique flanks. Check sample provenance and alignment evidence before assigning a cause.</li>
+</ol>
+          <nav class="lab-pager" aria-label="Lab sequence">
+            <a class="pager-prev" href="../week-03/Lab_Week03_Session2_Annotation_Evidence.html"><span>Previous lab: Week 3, Session 2</span>Annotation and Evidence</a>
+            <a class="pager-next" href="Lab_Week04_Session2_Variant_Calling.html"><span>Next lab: Week 4, Session 2</span>Variant Calling</a>
+          </nav>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
+    </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
+  </body>
+</html>

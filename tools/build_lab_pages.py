@@ -414,6 +414,7 @@ def render_markdown(markdown: str) -> tuple[str, str, str, str, list[tuple[int, 
     code_lang = ""
     table_lines: list[str] = []
     seen_h1 = False
+    callout_open = False
 
     def close_paragraph() -> None:
         nonlocal paragraph
@@ -470,6 +471,23 @@ def render_markdown(markdown: str) -> tuple[str, str, str, str, list[tuple[int, 
             close_table()
             code_lines = []
             code_lang = line[3:].strip()
+            continue
+
+        if line.lstrip().startswith(":::"):
+            close_paragraph()
+            close_lists()
+            close_table()
+            label = line.strip()[3:].strip()
+            if label:
+                if callout_open:
+                    raise ValueError("Nested ::: callouts are not supported")
+                html_parts.append(f"<details><summary>{inline_markdown(label)}</summary>")
+                callout_open = True
+            else:
+                if not callout_open:
+                    raise ValueError("Closing ::: callout has no opening label")
+                html_parts.append("</details>")
+                callout_open = False
             continue
 
         if line.startswith("|") and line.endswith("|"):
@@ -562,6 +580,8 @@ def render_markdown(markdown: str) -> tuple[str, str, str, str, list[tuple[int, 
     close_paragraph()
     close_lists()
     close_table()
+    if callout_open:
+        raise ValueError("Unclosed ::: callout")
     return title, meta, time_note, "\n".join(html_parts), toc
 
 

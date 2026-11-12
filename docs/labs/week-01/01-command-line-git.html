@@ -35,6 +35,7 @@
           <details class="toc-details" open>
             <summary>On this page</summary>
             <nav>
+            <a class="toc-level-2" href="#how-weeks-1-4-fit-together">How Weeks 1–4 Fit Together</a>
             <a class="toc-level-2" href="#before-you-start">Before You Start</a>
             <a class="toc-level-2" href="#shared-setup">Shared Setup</a>
             <a class="toc-level-2" href="#part-1-where-am-i">Part 1: Where Am I?</a>
@@ -69,6 +70,45 @@
             <h1>Command Line, Text Processing, and Git</h1>
           </header>
           <p>In this lab you will log in to the Tufts HPC cluster, orient yourself in the filesystem, inspect a real GFF3 annotation file, practice common Unix text-processing patterns, and create your first Git repository for course work.</p>
+<h2 id="how-weeks-1-4-fit-together">How Weeks 1–4 Fit Together</h2>
+<p>The first four weeks follow one yeast genome from raw reads to a tested assembly. Each lab works on files an earlier lab produced, so keep your results in <code>$MYWORK</code>: later labs look for them there. If one of your steps did not finish, the later lab gives you a staged copy to use instead.</p>
+<p><img src="assets/course-map-weeks-1-4.png" alt="Flow chart of Weeks 1 to 4. Week 1 downloads four FASTQ datasets. Week 2 checks and cleans them. Week 3 assembles the cleaned HiFi reads and annotates the assembly with RNA-seq. Week 4 aligns BGISEQ and HiFi reads to the assembly, calls candidate differences, and uses the Week 3 gene models to assess their possible effects." loading="lazy" decoding="async"></p>
+<p>Where each dataset you download in Week 1 is used:</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Dataset</th>
+<th>Week 2</th>
+<th>Week 3</th>
+<th>Week 4</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Illumina RNA-seq</td>
+<td>QC and trimming</td>
+<td>RNA evidence for annotation</td>
+<td>–</td>
+</tr>
+<tr>
+<td>BGISEQ genomic</td>
+<td>QC and trimming</td>
+<td>–</td>
+<td>Aligned to your assembly</td>
+</tr>
+<tr>
+<td>PacBio HiFi genomic</td>
+<td>QC and filtering</td>
+<td>Assembled</td>
+<td>Aligned to your assembly</td>
+</tr>
+<tr>
+<td>Oxford Nanopore genomic</td>
+<td>QC and filtering</td>
+<td>–</td>
+<td>–</td>
+</tr>
+</tbody>
+</table></div>
+<p>Week 3 reuses the Illumina RNA-seq downloaded in Week 1; no second RNA download is needed. Keep the published FASTQ files for the later labs.</p>
 <h2 id="before-you-start">Before You Start</h2>
 <p>You need a terminal on the Tufts HPC cluster, Pax.</p>
 <p>Option A: OnDemand</p>

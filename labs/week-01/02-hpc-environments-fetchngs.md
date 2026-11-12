@@ -89,7 +89,7 @@ We will download these four runs from BioProject `PRJNA792930`:
 | SRR17374239 | BGISEQ | Paired-end genomic sequencing |
 | SRR17374240 | Oxford Nanopore | Single-end genomic sequencing |
 
-These data support Week 2 QC; the PacBio HiFi run also supports Week 3 assembly.
+These data support Week 2 QC, PacBio HiFi assembly in Week 3, and RNA-seq evidence for Week 3 annotation.
 **The Illumina run is RNA-seq, while the other three are genomic sequencing.** Their QC
 reports can differ because of library type as well as platform.
 

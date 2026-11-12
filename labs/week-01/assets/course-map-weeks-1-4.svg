@@ -329,7 +329,7 @@ z
     <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(176.616 349.115937)">QC tools that suit short or long reads.</text>
    </g>
    <g id="text_24">
-    <text style="font-size: 9.6px; font-family: 'DejaVu Sans Mono'; text-anchor: start; fill: #237c72" x="176.616" y="392.832" transform="rotate(-0 176.616 392.832)">seqkit · FastQC · NanoPlot · MultiQC</text>
+    <text style="font-size: 9.6px; font-family: 'DejaVu Sans Mono'; text-anchor: start; fill: #237c72" x="176.616" y="392.832" transform="rotate(-0 176.616 392.832)">seqkit · FastQC · NanoPlot</text>
    </g>
    <g id="text_25">
     <text style="font-weight: 700; font-size: 13px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #237c72" x="525.096" y="305.712" transform="rotate(-0 525.096 305.712)">2B</text>
@@ -366,7 +366,7 @@ z
     <text style="font-weight: 700; font-size: 13px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #1b2533" x="552.024" y="489.456" transform="rotate(-0 552.024 489.456)">Annotation and evidence</text>
    </g>
    <g id="text_35">
-    <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 517.489937)">Align RNA-seq to your assembly,</text>
+    <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 517.489937)">Align Week 1 RNA-seq,</text>
     <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 532.859937)">predict genes, and judge each gene</text>
     <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 548.229938)">model against the evidence.</text>
    </g>
@@ -395,11 +395,11 @@ z
    </g>
    <g id="text_43">
     <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 701.233937)">Call variants against your own genome,</text>
-    <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 716.603937)">where they flag errors, and find which</text>
-    <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 731.973937)">errors broke a gene.</text>
+    <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 716.603937)">investigate differences, and assess</text>
+    <text style="font-size: 10.6px; font-family: 'DejaVu Sans'; fill: #2c3542" transform="translate(525.096 731.973937)">their effects on gene models.</text>
    </g>
    <g id="text_44">
-    <text style="font-size: 9.6px; font-family: 'DejaVu Sans Mono'; text-anchor: start; fill: #6b4c8a" x="525.096" y="760.32" transform="rotate(-0 525.096 760.32)">GATK · bcftools · VEP</text>
+    <text style="font-size: 9.6px; font-family: 'DejaVu Sans Mono'; text-anchor: start; fill: #6b4c8a" x="525.096" y="760.32" transform="rotate(-0 525.096 760.32)">GATK · DeepVariant · bcftools · VEP</text>
    </g>
    <g id="line2d_1">
     <path d="M 645.48 221.76 
@@ -580,7 +580,7 @@ z
 " style="fill: #ffffff; stroke: #d9dfe7; stroke-linejoin: miter"/>
     </g>
     <text style="font-size: 10px; font-family: 'DejaVu Sans'; fill: #1b2533" transform="translate(447.497031 491.259375)">assembly</text>
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; fill: #1b2533" transform="translate(444.276719 504.105469)">+ RNA-seq</text>
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; fill: #1b2533" transform="translate(444.276719 504.105469)"></text>
    </g>
    <g id="text_50">
     <g id="patch_32">

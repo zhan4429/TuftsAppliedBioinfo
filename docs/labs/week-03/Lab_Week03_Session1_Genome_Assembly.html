@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Lab 3A — Assembling a Genome for Applied Bioinformatics, Tufts University.">
-    <title>Lab 3A — Assembling a Genome | Applied Bioinformatics</title>
+    <meta name="description" content="Week 3 Session 1: Genome Assembly for Applied Bioinformatics, Tufts University.">
+    <title>Week 3 Session 1: Genome Assembly | Applied Bioinformatics</title>
     <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="../../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../../styles.css">
@@ -35,37 +35,41 @@
           <details class="toc-details" open>
             <summary>On this page</summary>
             <nav>
-            <a class="toc-level-2" href="#before-you-start">Before you start</a>
-            <a class="toc-level-2" href="#part-1-submit-the-assembly-now">Part 1 — Submit the assembly, now</a>
-            <a class="toc-level-3" href="#1-1-load-the-tools">1.1 Load the tools</a>
-            <a class="toc-level-3" href="#1-2-subsample-first">1.2 Subsample first</a>
-            <a class="toc-level-3" href="#1-3-submit-it">1.3 Submit it</a>
-            <a class="toc-level-2" href="#part-2-interrogate-the-reads-while-it-runs">Part 2 — Interrogate the reads while it runs</a>
-            <a class="toc-level-3" href="#2-1-basic-statistics">2.1 Basic statistics</a>
+            <a class="toc-level-2" href="#before-you-start">Before You Start</a>
+            <a class="toc-level-2" href="#part-1-submit-the-assembly-now">Part 1: Submit The Assembly, Now</a>
+            <a class="toc-level-3" href="#1-1-load-the-tools">1.1 Load The Tools</a>
+            <a class="toc-level-3" href="#1-2-subsample-first">1.2 Subsample First</a>
+            <a class="toc-level-3" href="#1-3-submit-it">1.3 Submit It</a>
+            <a class="toc-level-2" href="#part-2-interrogate-the-reads-while-it-runs">Part 2: Interrogate The Reads While It Runs</a>
+            <a class="toc-level-3" href="#2-1-basic-statistics">2.1 Basic Statistics</a>
             <a class="toc-level-3" href="#2-2-coverage">2.2 Coverage</a>
-            <a class="toc-level-3" href="#2-3-the-read-length-distribution">2.3 The read-length distribution</a>
-            <a class="toc-level-3" href="#2-4-check-on-the-job">2.4 Check on the job</a>
-            <a class="toc-level-2" href="#part-3-look-at-what-came-out">Part 3 — Look at what came out</a>
+            <a class="toc-level-3" href="#2-3-the-read-length-distribution">2.3 The Read-length Distribution</a>
+            <a class="toc-level-3" href="#2-4-check-on-the-job">2.4 Check On The Job</a>
+            <a class="toc-level-2" href="#part-3-look-at-what-came-out">Part 3: Look At What Came Out</a>
             <a class="toc-level-3" href="#3-1-contiguity">3.1 Contiguity</a>
-            <a class="toc-level-3" href="#3-2-look-at-the-graph-not-just-the-fasta">3.2 Look at the graph, not just the FASTA</a>
+            <a class="toc-level-3" href="#3-2-look-at-the-graph-not-just-the-fasta">3.2 Look At The Graph, Not Just The FASTA</a>
             <a class="toc-level-3" href="#3-3-completeness">3.3 Completeness</a>
-            <a class="toc-level-3" href="#3-4-the-three-questions">3.4 The three questions</a>
-            <a class="toc-level-2" href="#part-4-prepare-the-evidence-for-next-session">Part 4 — Prepare the evidence for next session</a>
-            <a class="toc-level-3" href="#4-1-check-the-rna-seq-files">4.1 Check the RNA-seq files</a>
+            <a class="toc-level-3" href="#3-4-the-three-questions">3.4 The Three Questions</a>
+            <a class="toc-level-2" href="#part-4-prepare-the-evidence-for-next-session">Part 4: Prepare The Evidence For Next Session</a>
+            <a class="toc-level-3" href="#4-1-check-the-rna-seq-files">4.1 Check The RNA-seq Files</a>
             <a class="toc-level-3" href="#4-2-before-session-2">4.2 Before Session 2</a>
+            <a class="toc-level-2" href="#part-5-after-class-the-same-assembly-as-a-pipeline">Part 5: After Class: The Same Assembly As A Pipeline</a>
+            <a class="toc-level-3" href="#5-1-write-the-samplesheet">5.1 Write The Samplesheet</a>
+            <a class="toc-level-3" href="#5-2-submit-the-pipeline">5.2 Submit The Pipeline</a>
+            <a class="toc-level-3" href="#5-3-compare-the-two-assemblies">5.3 Compare The Two Assemblies</a>
             <a class="toc-level-2" href="#takeaways">Takeaways</a>
+            <a class="toc-level-2" href="#dataset-references">Dataset References</a>
             </nav>
           </details>
         </aside>
         <article class="lab-article">
           <header class="lab-hero">
             <p class="lab-label">Week 3, Session 1</p>
-            <h1>Assembling a Genome</h1>
+            <h1>Genome Assembly</h1>
           </header>
-          <p><strong>Runs alongside the lecture</strong></p>
-<blockquote><strong>Read Part 1 first and submit the assembly immediately.</strong> It runs while you do the rest of the lab. Do not read the whole handout before starting.</blockquote>
+          <blockquote><strong>Read Part 1 first and submit the assembly immediately.</strong> It runs while you do the rest of the lab. Do not read the whole handout before starting.</blockquote>
 <hr>
-<h2 id="before-you-start">Before you start</h2>
+<h2 id="before-you-start">Before You Start</h2>
 <pre class="lab-code"><code class=" language-bash">srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
   --mem=32G --time=03:00:00 --pty bash
 hostname                      # must NOT say login-p0x
@@ -78,30 +82,37 @@ export GENOME=12100000        # expected genome size in bases
 
 mkdir -p $MYWORK/week-03/session-01 &amp;&amp; cd $MYWORK/week-03/session-01
 
-# the PacBio HiFi run you fetched in Week 1
-export HIFI=&quot;$FETCH/results/fastq/SRX14356846_SRR18210286.fastq.gz&quot;
+# the PacBio HiFi reads you cleaned with fastplong in Week 2
+export HIFI=$(ls $MYWORK/week-02/session-02/trimmed/*SRR18210286*.filt.fq.gz 2&gt;/dev/null)
 ls -lh &quot;$HIFI&quot;</code></pre>
-<p>These are the Week 1 paths: your work is under <code>$COURSE/$USER</code>, and instructor-staged Week 3 files are under <code>$COURSE/shared/wk3</code>. If the allocation announced in class differs, change <code>COURSE</code> to match.</p>
-<p>If the HiFi file is missing, check your Week 1 download or use the instructor-staged copy:</p>
+<p>These are the same paths as Weeks 1 and 2: your work under <code>$MYWORK</code>, shared course files under <code>$COURSE/shared</code>. If the allocation announced in class differs, change <code>COURSE</code> to match.</p>
+<p>nf-core/genomeassembler runs the same two steps in the same order: <code>fastplong</code> on the reads, then <code>hifiasm</code>.</p>
+<p>If <code>$HIFI</code> is empty, you did not finish Week 2 Part 2. Use the reads you downloaded in Week 1 instead. In Week 2, <code>fastplong</code> removed almost nothing from the HiFi reads, so the assembly will be essentially the same:</p>
+<pre class="lab-code"><code class=" language-bash">export HIFI=$(ls $FETCH/results/fastq/*SRR18210286*.fastq.gz 2&gt;/dev/null)
+ls -lh &quot;$HIFI&quot;</code></pre>
+<p>If that is empty too, your Week 1 download did not finish. Use the staged copy:</p>
 <pre class="lab-code"><code class=" language-bash">export HIFI=$(ls $SHARED/fallback_hifi/*.fastq.gz | head -1)
 ls -lh $HIFI</code></pre>
 <hr>
-<h2 id="part-1-submit-the-assembly-now">Part 1 — Submit the assembly, now</h2>
-<h3 id="1-1-load-the-tools">1.1 Load the tools</h3>
+<h2 id="part-1-submit-the-assembly-now">Part 1: Submit The Assembly, Now</h2>
+<h3 id="1-1-load-the-tools">1.1 Load The Tools</h3>
 <pre class="lab-code"><code class=" language-bash">module load hifiasm seqkit compleasm rasusa
 module list</code></pre>
 <p>Every tool in this course is an environment module. <code>module avail &lt;tool&gt;</code> shows the versions installed; write down the ones you used.</p>
-<h3 id="1-2-subsample-first">1.2 Subsample first</h3>
+<h3 id="1-2-subsample-first">1.2 Subsample First</h3>
 <p>Your HiFi run is roughly 379× coverage. HiFi assembly is comfortable at 20–30×, and extra depth only makes hifiasm slower and hungrier for memory.</p>
 <pre class="lab-code"><code class=" language-bash">rasusa reads --coverage 30 --genome-size $GENOME \
   $HIFI -o hifi_30x.fastq.gz
 
 seqkit stats -a $HIFI hifi_30x.fastq.gz</code></pre>
 <p><strong>Question 1a.</strong> Why subsample rather than assemble everything? What would 379× buy you?</p>
-<p>::: Answer Nothing useful. Above about 30×, HiFi assembly quality plateaus — the reads are already long and accurate, so extra copies of the same information do not resolve anything new.</p>
+<details>
+<summary>Answer</summary>
+<p>Nothing useful. Above about 30×, HiFi assembly quality plateaus — the reads are already long and accurate, so extra copies of the same information do not resolve anything new.</p>
 <p>What it costs is real: runtime and memory scale with input, so 379× turns a quick assembly into a much longer one for an identical result.</p>
-<p>Knowing when more data stops helping is a genuinely useful instinct, and it is the same reasoning as the coverage arithmetic in Week 2. :::</p>
-<h3 id="1-3-submit-it">1.3 Submit it</h3>
+<p>Knowing when more data stops helping is a genuinely useful instinct, and it is the same reasoning as the coverage arithmetic in Week 2.</p>
+</details>
+<h3 id="1-3-submit-it">1.3 Submit It</h3>
 <pre class="lab-code"><code class=" language-bash">mkdir -p logs
 
 cat &gt; assemble.sh &lt;&lt;&#x27;EOF&#x27;
@@ -126,43 +137,52 @@ EOF
 
 bash -n assemble.sh
 sbatch assemble.sh
-squeue -u $USER</code></pre>
+squeue --me</code></pre>
 <p><strong>Job ID: ______________</strong></p>
 <p>Two lines in that script are worth understanding. <code>module load hifiasm</code> sits inside the script even though you loaded it interactively: <code>sbatch</code> passes on the environment of the shell you submit from, so without it the job would work from one shell and fail from a fresh login. And because the heredoc delimiter is quoted, the script is written exactly as shown, so awk receives <code>&quot;\n&quot;</code> and prints a real newline between each contig name and its sequence.</p>
 <blockquote>Check back at Part 3.</blockquote>
 <p><strong>Question 1b.</strong> Why does the script use <code>${SLURM_CPUS_PER_TASK}</code> instead of writing <code>-t 16</code>?</p>
-<p>::: Answer So the thread count can never disagree with what SLURM allocated. If you later change <code>--cpus-per-task</code> and forget to change the hard-coded number, you either waste cores you paid for or oversubscribe the node and slow everything down.</p>
-<p>This is the same principle as <code>${task.cpus}</code> in Nextflow, which you will meet properly later. :::</p>
-<blockquote><strong>CHECKPOINT 1</strong> — Everyone&#x27;s assembly is submitted and queued. Now we wait, productively.</blockquote>
+<details>
+<summary>Answer</summary>
+<p>So the thread count can never disagree with what SLURM allocated. If you later change <code>--cpus-per-task</code> and forget to change the hard-coded number, you either waste cores you paid for or oversubscribe the node and slow everything down.</p>
+<p>This is the same principle as <code>${task.cpus}</code> in Nextflow, which you will meet properly later.</p>
+</details>
+<p><strong>Checkpoint 1.</strong> Everyone&#x27;s assembly is submitted and queued. Now we wait, productively.</p>
 <hr>
-<h2 id="part-2-interrogate-the-reads-while-it-runs">Part 2 — Interrogate the reads while it runs</h2>
+<h2 id="part-2-interrogate-the-reads-while-it-runs">Part 2: Interrogate The Reads While It Runs</h2>
 <p>You should know what you are assembling before you look at the assembly.</p>
-<h3 id="2-1-basic-statistics">2.1 Basic statistics</h3>
+<h3 id="2-1-basic-statistics">2.1 Basic Statistics</h3>
 <pre class="lab-code"><code class=" language-bash">seqkit stats -a $HIFI</code></pre>
 <p>Record: <code>num_seqs</code>, <code>sum_len</code>, <code>avg_len</code>, <code>N50</code>, <code>Q20(%)</code>, <code>Q30(%)</code>.</p>
 <h3 id="2-2-coverage">2.2 Coverage</h3>
 <pre class="lab-code"><code class=" language-bash">seqkit stats -T $HIFI | awk -v g=$GENOME &#x27;NR&gt;1 {s+=$5} END {printf &quot;coverage: %.1fx\n&quot;, s/g}&#x27;</code></pre>
 <p><strong>Question 2.</strong> You have some coverage figure. For HiFi, is it enough? How does the answer differ from what you would need with nanopore or Illumina?</p>
-<p>::: Answer HiFi at 20–30× comfortably assembles a small eukaryote; 15× is workable. That is remarkably low, and it is because HiFi reads are <em>both</em> long and accurate — each read is close to trustworthy on its own.</p>
+<details>
+<summary>Answer</summary>
+<p>HiFi at 20–30× comfortably assembles a small eukaryote; 15× is workable. That is remarkably low, and it is because HiFi reads are <em>both</em> long and accurate — each read is close to trustworthy on its own.</p>
 <p>Noisy long reads need far more depth, because consensus across many reads is what removes the error. Illumina needs more still for assembly and cannot span repeats at any depth.</p>
-<p>Depth and read length buy different things. This is the Week 2 point again. :::</p>
-<h3 id="2-3-the-read-length-distribution">2.3 The read-length distribution</h3>
+<p>Depth and read length buy different things. This is the Week 2 point again.</p>
+</details>
+<h3 id="2-3-the-read-length-distribution">2.3 The Read-length Distribution</h3>
 <pre class="lab-code"><code class=" language-bash">seqkit fx2tab -nl $HIFI | awk &#x27;{print $NF}&#x27; | sort -n | \
   awk &#x27;{a[NR]=$1; s+=$1} END {
         printf &quot;min    %d\n&quot;, a[1];
         printf &quot;median %d\n&quot;, a[int((NR+1)/2)];
         for (i=NR; i&gt;0; i--) { c+=a[i]; if (c&gt;=s/2) { printf &quot;N50    %d\n&quot;, a[i]; break } }
         printf &quot;max    %d\n&quot;, a[NR] }&#x27;</code></pre>
-<p><strong>Question 3.</strong> HiFi reads are typically 15–25 kb. Which repeats in a fungal genome will these span, and which will they not?</p>
-<p>::: Answer They will span most transposable elements, most gene-family tandem duplications, and — usually — rRNA operons, which are around 8–9 kb.</p>
-<p>They will not span long tandem arrays: the rDNA array, which runs to hundreds of kilobases or more, and centromeric and subtelomeric satellite. Those are where your assembly will break, and the breaks in your contig set are a map of them.</p>
-<p><strong>Every gap in your assembly is a repeat your reads could not span.</strong> That is the whole of assembly theory in one sentence. :::</p>
-<h3 id="2-4-check-on-the-job">2.4 Check on the job</h3>
-<pre class="lab-code"><code class=" language-bash">squeue -u $USER
+<p><strong>Question 3.</strong> The HiFi reads are mostly tens of kilobases long. Which repeat structures in <em>S. cerevisiae</em> could an individual read span, and which are much longer than a typical read?</p>
+<details>
+<summary>Answer</summary>
+<p>A read long enough to include a repeat plus unique sequence on both sides can place that repeat unambiguously. Many HiFi reads can span a roughly 6 kb Ty element or a single roughly 9 kb rDNA repeat unit.</p>
+<p>Spanning one rDNA unit is different from spanning the entire tandem rDNA array, which contains many copies. That array and some subtelomeric repeat structures can remain unresolved. Budding yeast has short point centromeres, not the long centromeric satellite arrays found in many other eukaryotes.</p>
+<p>Repeat length, similarity among copies and the available flanking sequence all matter. Repeats are a common cause of assembly breaks, but missing coverage, contamination and other assembly problems can also create breaks.</p>
+</details>
+<h3 id="2-4-check-on-the-job">2.4 Check On The Job</h3>
+<pre class="lab-code"><code class=" language-bash">squeue --me
 tail -5 logs/hifiasm_*.out</code></pre>
-<blockquote><strong>CHECKPOINT 2</strong> — Read statistics recorded. Assembly should be running or finished.</blockquote>
+<p><strong>Checkpoint 2.</strong> Read statistics recorded. Assembly should be running or finished.</p>
 <hr>
-<h2 id="part-3-look-at-what-came-out">Part 3 — Look at what came out</h2>
+<h2 id="part-3-look-at-what-came-out">Part 3: Look At What Came Out</h2>
 <h3 id="3-1-contiguity">3.1 Contiguity</h3>
 <pre class="lab-code"><code class=" language-bash">ls -lh asm*
 seqkit stats -a asm.p_ctg.fa</code></pre>
@@ -197,10 +217,13 @@ seqkit stats -a asm.p_ctg.fa</code></pre>
 </tbody>
 </table></div>
 <p><strong>Question 4.</strong> Compare total assembly length against the expected genome size. What does it mean if yours is substantially <em>larger</em>?</p>
-<p>::: Answer Usually unresolved heterozygosity. hifiasm is a phasing assembler — for a diploid it tries to keep haplotypes apart rather than collapsing them. If the two haplotypes are divergent enough, both end up in the primary assembly and total length inflates toward 2×.</p>
+<details>
+<summary>Answer</summary>
+<p>Usually unresolved heterozygosity. hifiasm is a phasing assembler — for a diploid it tries to keep haplotypes apart rather than collapsing them. If the two haplotypes are divergent enough, both end up in the primary assembly and total length inflates toward 2×.</p>
 <p><code>asm.bp.hap1.p_ctg.gfa</code> and <code>hap2</code> are the separated haplotypes; <code>asm.bp.p_ctg.gfa</code> is the primary set. Which you want depends on your question — and for a haploid organism this should not arise at all.</p>
-<p>Substantially <em>smaller</em> than expected means you lost sequence: too little coverage, or repeats collapsed. :::</p>
-<h3 id="3-2-look-at-the-graph-not-just-the-fasta">3.2 Look at the graph, not just the FASTA</h3>
+<p>Substantially <em>smaller</em> than expected means you lost sequence: too little coverage, or repeats collapsed.</p>
+</details>
+<h3 id="3-2-look-at-the-graph-not-just-the-fasta">3.2 Look At The Graph, Not Just The FASTA</h3>
 <pre class="lab-code"><code class=" language-bash">grep -c &#x27;^S&#x27; asm.bp.p_ctg.gfa      # segments
 grep -c &#x27;^L&#x27; asm.bp.p_ctg.gfa      # links between them</code></pre>
 <p>A FASTA is the path the assembler chose. The GFA is everything it considered, including the ambiguities it had to break rather than resolve.</p>
@@ -208,18 +231,24 @@ grep -c &#x27;^L&#x27; asm.bp.p_ctg.gfa      # links between them</code></pre>
 <pre class="lab-code"><code class=" language-bash">Bandage image asm.bp.p_ctg.gfa asm_graph.png --height 1200 2&gt;/dev/null \
   || echo &quot;Bandage not installed — view the GFA in Bandage on your laptop instead&quot;</code></pre>
 <p><strong>Question 5.</strong> Many links relative to segments means what?</p>
-<p>::: Answer Unresolved structure. Each link is a junction the assembler could not resolve into a single path, so it stopped and left the decision visible in the graph.</p>
-<p>A clean assembly is mostly long segments with few links. A tangle is many short segments densely connected — which is what a short-read assembly of the same genome would look like. :::</p>
+<details>
+<summary>Answer</summary>
+<p>Unresolved structure. Each link is a junction the assembler could not resolve into a single path, so it stopped and left the decision visible in the graph.</p>
+<p>A clean assembly is mostly long segments with few links. A tangle is many short segments densely connected — which is what a short-read assembly of the same genome would look like.</p>
+</details>
 <h3 id="3-3-completeness">3.3 Completeness</h3>
 <pre class="lab-code"><code class=" language-bash">compleasm run -a asm.p_ctg.fa -o compleasm -l fungi_odb10 -t 8
 cat compleasm/summary.txt</code></pre>
-<p>compleasm downloads the lineage on first use. If that fails because the compute node has no internet, add <code>-L $SHARED/mb_downloads</code> to use the staged copy.</p>
+<p>Record the compleasm version and the <strong>actual lineage ID and marker count</strong> in its summary, not just the requested command. Some releases can translate an <code>odb10</code> request to an <code>odb12</code> lineage. If you use the staged cache with <code>-L &quot;$SHARED/mb_downloads&quot;</code>, check which lineage version it contains. The installed module and cache versions need to be confirmed on Pax before comparing scores.</p>
 <p>Record <code>S</code> (single), <code>D</code> (duplicated), <code>F</code> (fragmented), <code>M</code> (missing).</p>
 <p><strong>Question 6.</strong> Your <code>D</code> is elevated — say 15% rather than under 2%. What does that suggest, and is it a problem?</p>
-<p>::: Answer Unresolved haplotypes. Each locus appears twice, so each single-copy marker is found twice and gets scored as duplicated.</p>
+<details>
+<summary>Answer</summary>
+<p>Unresolved haplotypes. Each locus appears twice, so each single-copy marker is found twice and gets scored as duplicated.</p>
 <p>Whether it is a problem depends on your goal. For a haplotype-resolved assembly it is the intended result. For a reference you plan to annotate and map against, it is a problem — you would purge duplicates or use one haplotype set.</p>
-<p>This is the same signal as an inflated total length in §3.1, seen through a different instrument. Two metrics agreeing is how you become confident in a diagnosis. :::</p>
-<h3 id="3-4-the-three-questions">3.4 The three questions</h3>
+<p>This is the same signal as an inflated total length in §3.1, seen through a different instrument. Two metrics agreeing is how you become confident in a diagnosis.</p>
+</details>
+<h3 id="3-4-the-three-questions">3.4 The Three Questions</h3>
 <p>You have now measured two of the three dimensions from the lecture:</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -246,14 +275,17 @@ cat compleasm/summary.txt</code></pre>
 </tbody>
 </table></div>
 <p><strong>Question 7.</strong> Why can you not measure correctness right now, and what would you need?</p>
-<p>::: Answer You need reads from a second, more accurate technology — or at least reads more accurate than the assembly — to build a k-mer set to compare against. That is what Merqury does: k-mers present in the assembly but absent from the reads have no evidential support and are counted as errors.</p>
-<p>Your BGISEQ reads from Week 1 (SRR17374239) are exactly that second technology. Not the Illumina run: it is RNA-seq, whose k-mers cover only transcribed sequence, so every correct intergenic base would look like an error. Homework 3 does this properly.</p>
-<p>This is also why the hybrid design keeps appearing, and why Week 10 will tell you correctness is the question you largely <em>cannot</em> answer for a metagenome-assembled genome. :::</p>
-<blockquote><strong>CHECKPOINT 3</strong> — Everyone has an assembly with contiguity and completeness numbers.</blockquote>
+<details>
+<summary>Answer</summary>
+<p>Merqury evaluates assembly k-mers against a database of accurate genomic read k-mers. An independent sequencing technology can provide a useful check on errors that the assembly reads and assembler share, provided coverage and sample matching are adequate.</p>
+<p>Use BGISEQ genomic run <strong>SRR17374239</strong>, rather than Illumina RNA-seq. RNA-seq does not uniformly cover intergenic DNA, so it cannot provide a whole-genome k-mer reference.</p>
+<p>The BGISEQ and HiFi BioSamples both say <strong>S288C</strong>, but they have different identifiers and collection dates. They are not documented as the same DNA preparation. A biological difference between the cultures can also produce unsupported assembly k-mers. Report that limitation when interpreting the Homework 3 QV; it is not a proven assembly-error rate.</p>
+</details>
+<p><strong>Checkpoint 3.</strong> Everyone has an assembly with contiguity and completeness numbers.</p>
 <hr>
-<h2 id="part-4-prepare-the-evidence-for-next-session">Part 4 — Prepare the evidence for next session</h2>
+<h2 id="part-4-prepare-the-evidence-for-next-session">Part 4: Prepare The Evidence For Next Session</h2>
 <p>Session 2 uses RNA-seq as evidence for gene annotation. You already downloaded the Illumina RNA-seq run <strong>SRR27956204</strong> in Week 1 and inspected it in Week 2; reuse those files rather than submitting another download job.</p>
-<h3 id="4-1-check-the-rna-seq-files">4.1 Check the RNA-seq files</h3>
+<h3 id="4-1-check-the-rna-seq-files">4.1 Check The RNA-seq Files</h3>
 <pre class="lab-code"><code class=" language-bash">export RNA=&quot;$FETCH/results/fastq&quot;
 export RNA_R1=&quot;$RNA/SRX23612877_SRR27956204_1.fastq.gz&quot;
 export RNA_R2=&quot;$RNA/SRX23612877_SRR27956204_2.fastq.gz&quot;
@@ -261,15 +293,98 @@ ls -lh &quot;$RNA_R1&quot; &quot;$RNA_R2&quot;</code></pre>
 <p>The <code>_1</code> and <code>_2</code> files are the two mates of the same paired-end RNA-seq run. The BGISEQ run, <strong>SRR17374239</strong>, is genomic DNA and must not be substituted for these RNA-seq reads. Both runs are in the same download folder, so select the filenames explicitly.</p>
 <p><a href="https://www.ebi.ac.uk/ena/browser/view/SRR27956204">The ENA record for SRR27956204</a> identifies it as paired-end Illumina RNA-seq from <em>Saccharomyces cerevisiae</em>. You do not need a second fetchngs job or a new configuration file.</p>
 <p><strong>Question 8.</strong> Why does RNA-seq help annotate a genome, and what can it not tell you?</p>
-<p>::: Answer RNA-seq reads provide evidence for transcribed regions. Reads that span splice junctions help locate exon boundaries and introns.</p>
-<p>A gene that was not expressed in the sampled condition may have no RNA-seq support. Absence of coverage does not establish absence of a gene, so annotation also uses sequence-based predictions and protein evidence. :::</p>
+<details>
+<summary>Answer</summary>
+<p>RNA-seq reads provide evidence for transcribed regions. Reads that span splice junctions help locate exon boundaries and introns.</p>
+<p>A gene that was not expressed in the sampled condition may have no RNA-seq support. Absence of coverage does not establish absence of a gene, so annotation also uses sequence-based predictions and protein evidence.</p>
+</details>
 <h3 id="4-2-before-session-2">4.2 Before Session 2</h3>
 <p>After the assembly job finishes, check that the assembly and both RNA-seq files exist:</p>
 <pre class="lab-code"><code class=" language-bash">ls -lh &quot;$MYWORK/week-03/session-01/asm.p_ctg.fa&quot;
 ls -lh &quot;$RNA_R1&quot; &quot;$RNA_R2&quot;</code></pre>
 <p>Keep the Week 1 <code>results/fastq</code> files. Cleaning a completed Nextflow run&#x27;s intermediate <code>work/</code> directory, as taught in Week 1, is different from deleting its published <code>results/</code> files; later labs still need these reads.</p>
 <p>If the RNA files are missing, check the Week 1 download or ask for the staged copies in <code>$SHARED/fallback_rna/</code>. The staged assembly is in <code>$SHARED/fallback_assembly/</code>.</p>
-<blockquote><strong>CHECKPOINT 4</strong> — Assembly available, both RNA-seq mate files located, and their paths recorded for Session 2.</blockquote>
+<p><strong>Checkpoint 4.</strong> Assembly available, both RNA-seq mate files located, and their paths recorded for Session 2.</p>
+<hr>
+<h2 id="part-5-after-class-the-same-assembly-as-a-pipeline">Part 5: After Class: The Same Assembly As A Pipeline</h2>
+<p>In class you ran each step yourself: subsample, assemble, convert the graph, measure. nf-core/genomeassembler packages the same kind of work as one pipeline. It runs <code>fastplong</code> on the reads, assembles them with <code>hifiasm</code>, measures the result with QUAST and BUSCO, and writes a report. Run it on the same 30× reads and compare its answer with yours.</p>
+<p>Session 2 uses the assembly you made by hand, so Thursday does not depend on this run.</p>
+<h3 id="5-1-write-the-samplesheet">5.1 Write The Samplesheet</h3>
+<pre class="lab-code"><code class=" language-bash">export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK=&quot;$COURSE/$USER&quot;
+mkdir -p $MYWORK/week-03/session-01/genomeassembler/logs
+cd $MYWORK/week-03/session-01/genomeassembler
+
+cat &gt; samplesheet.csv &lt;&lt;EOF
+sample,hifireads,hifi_fastplong_args
+yeast_hifi,$MYWORK/week-03/session-01/hifi_30x.fastq.gz,--mean_qual 10 --length_required 1000 --unqualified_percent_limit 100
+EOF
+cat samplesheet.csv</code></pre>
+<p>The pipeline reads one row per sample. <code>hifireads</code> points to the same 30× file you assembled in class. <code>hifi_fastplong_args</code> gives <code>fastplong</code> the settings you chose in Week 2; without that column, the pipeline would run <code>fastplong</code> with its defaults.</p>
+<p>This heredoc is not quoted, unlike the job scripts. Here you want <code>$MYWORK</code> replaced by your real path as the file is written, because the pipeline needs full paths. Check that <code>cat</code> shows a path starting with <code>/cluster</code>.</p>
+<h3 id="5-2-submit-the-pipeline">5.2 Submit The Pipeline</h3>
+<pre class="lab-code"><code class=" language-bash">cat &gt; run_genomeassembler.sh &lt;&lt;&#x27;EOF&#x27;
+#!/bin/bash
+#SBATCH --job-name=genomeassembler
+#SBATCH --partition=batch
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8G
+#SBATCH --time=24:00:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+
+module load nextflow singularity
+
+export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK=&quot;$COURSE/$USER&quot;
+cd &quot;$MYWORK/week-03/session-01/genomeassembler&quot;
+
+export NXF_SINGULARITY_CACHEDIR=&quot;$MYWORK/.singularity_cache&quot;
+mkdir -p &quot;$NXF_SINGULARITY_CACHEDIR&quot;
+
+nextflow run nf-core/genomeassembler \
+  -r 2.0.1 \
+  -profile tufts \
+  --input samplesheet.csv \
+  --outdir results \
+  --busco true \
+  --busco_lineage fungi_odb10 \
+  --quast true \
+  -resume
+EOF
+
+bash -n run_genomeassembler.sh
+sbatch run_genomeassembler.sh
+squeue --me</code></pre>
+<p><strong>Job ID: ______________</strong></p>
+<p>This job is small on purpose. In Week 1, <code>-profile singularity</code> ran every step inside one large job. <code>-profile tufts</code> loads the Tufts cluster settings instead, so Nextflow submits each step as its own SLURM job, with the CPUs and memory that step asks for. The job you submitted only runs Nextflow, which hands out the work and waits. Once it starts, <code>squeue --me</code> also lists the jobs it submits; their names begin with <code>nf-</code>.</p>
+<p><code>--busco_lineage fungi_odb10</code> requests an OrthoDB 10 lineage. Compare its actual lineage ID and marker count with the compleasm summary from Section 3.3. Matching command text does not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes <code>work/</code> automatically when a run succeeds, so there is no clean-up step this time. If the run fails, <code>work/</code> stays: read <code>logs/genomeassembler_*.err</code> and <code>.nextflow.log</code>, fix the problem, and resubmit the same script, and <code>-resume</code> reuses the steps that finished.</p>
+<h3 id="5-3-compare-the-two-assemblies">5.3 Compare The Two Assemblies</h3>
+<p>When the job has finished:</p>
+<pre class="lab-code"><code class=" language-bash">cd $MYWORK/week-03/session-01/genomeassembler
+tail -n 5 logs/genomeassembler_*.out
+ls results results/yeast_hifi
+
+cat results/yeast_hifi/QC/QUAST/yeast_hifi_assembly/report.txt
+cat results/yeast_hifi/QC/BUSCO/short_summary.*.txt</code></pre>
+<p>The last lines of the log should say the pipeline completed successfully. Open <code>results/report/report.html</code> through OnDemand Files for the pipeline&#x27;s summary. <code>results/pipeline_info/</code> records what ran, which software versions were used, and how long each step took.</p>
+<p><strong>Question 9.</strong> Compare QUAST&#x27;s number of contigs, total length and N50 with your §3.1 values, and BUSCO&#x27;s <code>S</code> and <code>D</code> with compleasm&#x27;s from §3.3. Should they be identical?</p>
+<details>
+<summary>Answer</summary>
+<p>Close, but not necessarily identical, and each difference has a reason you can check.</p>
+<p>The pipeline runs QUAST in its large-genome mode, which skips contigs shorter than 3,000 bp. <code>seqkit stats</code> counted every sequence, so QUAST can report fewer contigs and a slightly smaller total. The pipeline also ran <code>hifiasm</code> from its own container, which may be a different version from the cluster module: compare the version in <code>results/pipeline_info/nf_core_genomeassembler_software_versions.yml</code> with <code>hifiasm --version</code>.</p>
+<p>First compare the actual lineage release and number of marker genes in both summaries. Only if those agree are you comparing the same marker set with different software. If they differ, a score difference mixes software and database effects and cannot be attributed to the assembly or method alone.</p>
+<p>A large disagreement would be worth chasing. Two routes to the same assembly should not tell different stories.</p>
+</details>
+<p><strong>Question 10.</strong> What did the pipeline do that you did not do by hand, and what did you do that the pipeline did not?</p>
+<details>
+<summary>Answer</summary>
+<p>The pipeline ran <code>fastplong</code> on the reads again, mapped the reads back to the assembly for QUAST, ran BUSCO, wrote a report, and recorded every command and software version. Each step got a job sized for that step, and an interrupted run can resume where it stopped.</p>
+<p>You did things it did not. You chose the coverage and subsampled with <code>rasusa</code>; the pipeline assembles whatever reads it is given. You looked at the assembly graph, not just the FASTA. And you know what each number means, which is the only reason you can check the pipeline&#x27;s answer at all.</p>
+<p>A pipeline makes a method repeatable. It does not make it understood.</p>
+</details>
 <hr>
 <h2 id="takeaways">Takeaways</h2>
 <p>Assemble HiFi reads, then turn the graph into a FASTA:</p>
@@ -282,13 +397,19 @@ compleasm run -a asm.p_ctg.fa -l LINEAGE_odb10   # completeness
 <p>Coverage is always base count divided by genome size. Inspect the graph with segment and link counts, or with Bandage.</p>
 <p>Three things to carry forward:</p>
 <ol>
-<li>Every gap in your assembly is a repeat your reads could not span. Read length, not depth, decides contiguity.</li>
-<li>Assembly length above expectation and elevated BUSCO duplication are the same finding, unresolved haplotypes, seen two ways.</li>
+<li>Repeats are a common cause of assembly breaks. Read length, coverage and sequence quality all affect whether a repeat can be resolved.</li>
+<li>Excess assembly length and duplicated markers can support an unresolved-haplotype explanation, but also check true duplication, contamination and the ploidy assumption.</li>
 <li>Contiguity, completeness and correctness are three independent questions. You measured two today; the third needs a second technology.</li>
 </ol>
+<h2 id="dataset-references">Dataset References</h2>
+<ul>
+<li><a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477750">BGISEQ BioSample: S288C, collected 2021-01-21</a></li>
+<li><a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477612">HiFi BioSample: S288C, collected 2021-12-29</a></li>
+<li><a href="https://github.com/huangnengCSU/compleasm/releases">compleasm releases and lineage compatibility</a></li>
+</ul>
           <nav class="lab-pager" aria-label="Lab sequence">
             <a class="pager-prev" href="../week-02/week-02-02-trimming-and-multiqc.html"><span>Previous lab: Week 2, Session 2</span>Trimming, Filtering, and Reading QC Across Samples</a>
-            <a class="pager-next" href="Lab_Week03_Session2_Annotation_Evidence.html"><span>Next lab: Week 3, Session 2</span>Annotation, and What Counts as Evidence</a>
+            <a class="pager-next" href="Lab_Week03_Session2_Annotation_Evidence.html"><span>Next lab: Week 3, Session 2</span>Annotation and Evidence</a>
           </nav>
         </article>
       </div>

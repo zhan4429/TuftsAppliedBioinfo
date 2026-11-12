@@ -28,6 +28,9 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Check answer rendering
+        run: python3 -m unittest tools.test_build_lab_pages
+
       - name: Build lab pages
         run: python3 tools/build_lab_pages.py
 

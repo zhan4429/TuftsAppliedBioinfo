@@ -40,11 +40,13 @@
             <a class="toc-level-3" href="#1-1-run-fastp-on-one-sample">1.1 Run fastp on One Sample</a>
             <a class="toc-level-3" href="#1-2-how-much-survived">1.2 How Much Survived</a>
             <a class="toc-level-3" href="#1-3-trim-the-other-short-read-sample">1.3 Trim the Other Short-Read Sample</a>
-            <a class="toc-level-2" href="#part-2-long-reads-are-filtered-not-trimmed">Part 2: Long Reads Are Filtered, Not Trimmed</a>
+            <a class="toc-level-2" href="#part-2-long-reads-are-filtered-not-quality-trimmed">Part 2: Long Reads Are Filtered, Not Quality-Trimmed</a>
             <a class="toc-level-3" href="#2-1-why-the-difference">2.1 Why the Difference</a>
-            <a class="toc-level-3" href="#2-2-filter-with-chopper">2.2 Filter with chopper</a>
+            <a class="toc-level-3" href="#2-2-start-with-the-defaults">2.2 Start With the Defaults</a>
+            <a class="toc-level-3" href="#2-3-set-the-thresholds-yourself">2.3 Set the Thresholds Yourself</a>
+            <a class="toc-level-3" href="#2-4-what-was-removed">2.4 What Was Removed</a>
             <a class="toc-level-2" href="#part-3-aggregate-everything">Part 3: Aggregate Everything</a>
-            <a class="toc-level-3" href="#3-1-one-report-for-all-four-platforms">3.1 One Report for All Four Platforms</a>
+            <a class="toc-level-3" href="#3-1-compare-raw-and-trimmed-short-reads">3.1 Compare Raw and Trimmed Short Reads</a>
             <a class="toc-level-3" href="#3-2-start-at-the-general-statistics-table">3.2 Start at the General Statistics Table</a>
             <a class="toc-level-3" href="#3-3-what-one-report-cannot-show">3.3 What One Report Cannot Show</a>
             <a class="toc-level-2" href="#part-4-four-samples-that-are-not-fine">Part 4: Four Samples That Are Not Fine</a>
@@ -57,7 +59,7 @@
             <p class="lab-label">Week 2, Session 2</p>
             <h1>Trimming, Filtering, and Reading QC Across Samples</h1>
           </header>
-          <p>On Tuesday you measured four platforms. Today you act on what you found: trim the short reads, filter the long reads, aggregate everything into one report, and diagnose four samples that are deliberately broken.</p>
+          <p>On Tuesday you measured four platforms. Today you act on what you found: trim the short reads, clean and filter the long reads, aggregate everything into one report, and diagnose four samples that are deliberately broken.</p>
 <p>The last part is the point of the session. Running QC is easy. Deciding what a bad plot means is the skill.</p>
 <h2 id="before-you-start">Before You Start</h2>
 <pre class="lab-code"><code class=" language-bash">srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=4 \
@@ -73,10 +75,12 @@ cd &quot;$MYWORK/week-02/session-02&quot;
 
 ls -lh &quot;$READS&quot;</code></pre>
 <p>Use the original downloaded FASTQ files, as in Session 1. If <code>$READS</code> is empty, finish the Week 1 download or use the staged FASTQ files:</p>
-<pre class="lab-code"><code class=" language-bash">export READS=$COURSE/shared/wk2/sub
+<pre class="lab-code"><code class=" language-bash">export READS=$COURSE/shared/wk2/fallback_fastq
 ls -lh &quot;$READS&quot;</code></pre>
-<pre class="lab-code"><code class=" language-bash">module load seqkit fastp chopper fastqc multiqc
-module list</code></pre>
+<pre class="lab-code"><code class=" language-bash">module load seqkit fastp fastplong fastqc multiqc
+module list
+fastplong --version</code></pre>
+<p><code>fastplong --version</code> should report 0.4.1, the version Week 3&#x27;s assembly pipeline uses. A different version can give different read counts from the same command.</p>
 <p>Repeat the six filename assignments from <a href="week-02-01-qc-across-platforms.html#identify-the-input-files">Session 1: Identify the Input Files</a>, using the files in your current <code>$READS</code> directory. You will use <code>ILLUMINA_R1</code>, <code>ILLUMINA_R2</code>, <code>BGISEQ_R1</code>, <code>BGISEQ_R2</code>, <code>PB</code>, and <code>LONG</code> below.</p>
 <h2 id="part-1-trim-the-short-reads">Part 1: Trim the Short Reads</h2>
 <h3 id="1-1-run-fastp-on-one-sample">1.1 Run fastp on One Sample</h3>
@@ -122,53 +126,106 @@ fastp \
   --thread 4
 ls reports/</code></pre>
 <p><strong>Checkpoint 1.</strong> Both short-read samples trimmed, with JSON and HTML reports.</p>
-<h2 id="part-2-long-reads-are-filtered-not-trimmed">Part 2: Long Reads Are Filtered, Not Trimmed</h2>
+<h2 id="part-2-long-reads-are-filtered-not-quality-trimmed">Part 2: Long Reads Are Filtered, Not Quality-Trimmed</h2>
 <h3 id="2-1-why-the-difference">2.1 Why the Difference</h3>
 <p>A short read has adapter at a predictable end and quality that decays toward the 3&#x27; end, so trimming the ends is meaningful. A long read has errors distributed along its whole length. Trimming the ends of a 20 kb read removes almost nothing useful and leaves the problem untouched.</p>
-<p>So for long reads you make a keep-or-discard decision per read, on length and mean quality.</p>
-<h3 id="2-2-filter-with-chopper">2.2 Filter with chopper</h3>
+<p>So for long reads you do two things. Remove any adapter left at the read ends, as you did for short reads. Then make a keep-or-discard decision per read, on length and mean quality.</p>
+<p><code>fastplong</code> does both in one pass. It comes from the authors of <code>fastp</code> and writes the same kind of JSON and HTML reports. It is also the first step of Week 3&#x27;s assembly pipeline, nf-core/genomeassembler, which runs it on every long-read file. The settings you choose today are the ones you will give the pipeline.</p>
+<h3 id="2-2-start-with-the-defaults">2.2 Start With the Defaults</h3>
+<p>Run <code>fastplong</code> on the Nanopore reads with no filtering options. Without <code>--out</code> it writes only its reports, not a new FASTQ file.</p>
+<pre class="lab-code"><code class=" language-bash">mkdir -p long_reports
+
+base=$(basename &quot;$LONG&quot; .fastq.gz)
+fastplong \
+  --in &quot;$LONG&quot; \
+  --json &quot;long_reports/${base}.default.fastplong.json&quot; \
+  --html &quot;long_reports/${base}.default.fastplong.html&quot; \
+  --thread 4</code></pre>
+<p>You asked for no filtering, but <code>fastplong</code> still filtered. Its defaults come from <code>fastp</code>: it trims adapters, discards a read if more than 40% of its bases are below Q15, and discards reads shorter than 20 bp. Nothing in the command shows any of that.</p>
+<h3 id="2-3-set-the-thresholds-yourself">2.3 Set the Thresholds Yourself</h3>
 <pre class="lab-code"><code class=" language-bash">for f in &quot;$LONG&quot; &quot;$PB&quot;; do
   base=$(basename &quot;$f&quot; .fastq.gz)
-  zcat &quot;$f&quot; | chopper -q 10 -l 1000 --threads 4 2&gt;/dev/null | gzip &gt; &quot;trimmed/${base}.filt.fq.gz&quot;
+  fastplong \
+    --in &quot;$f&quot; \
+    --out &quot;trimmed/${base}.filt.fq.gz&quot; \
+    --mean_qual 10 \
+    --length_required 1000 \
+    --unqualified_percent_limit 100 \
+    --json &quot;long_reports/${base}.fastplong.json&quot; \
+    --html &quot;long_reports/${base}.fastplong.html&quot; \
+    --thread 4
   echo &quot;filtered $base&quot;
-done
+done</code></pre>
+<ul>
+<li><code>--mean_qual 10</code> discards reads whose average quality is below Q10.</li>
+<li><code>--length_required 1000</code> discards reads shorter than 1,000 bp.</li>
+<li><code>--unqualified_percent_limit 100</code> turns off the per-base rule from 2.2, so average quality and length are the only filters.</li>
+<li>Adapter trimming stays on, as it is by default.</li>
+</ul>
+<p>The options are written out in full so that anyone reading the command knows what it did. Week 3 gives this same set to the assembly pipeline.</p>
+<h3 id="2-4-what-was-removed">2.4 What Was Removed</h3>
+<p>Summarize the three reports in one table:</p>
+<pre class="lab-code"><code class=" language-bash">python3 - &lt;&lt;&#x27;EOF&#x27;
+import json, glob, os
 
-seqkit stats -a &quot;$LONG&quot; &quot;$PB&quot; trimmed/*.filt.fq.gz</code></pre>
-<p><strong>Question 2.</strong> Compare the before and after rows. What happened to read count, total bases, and N50?</p>
+print(f&quot;{&#x27;report&#x27;:&lt;34}{&#x27;reads in&#x27;:&gt;12}{&#x27;reads out&#x27;:&gt;12}{&#x27;kept&#x27;:&gt;8}{&#x27;low qual&#x27;:&gt;10}{&#x27;too short&#x27;:&gt;11}{&#x27;adapter&#x27;:&gt;9}&quot;)
+for path in sorted(glob.glob(&quot;long_reports/*.fastplong.json&quot;)):
+    d = json.load(open(path))
+    before = d[&quot;summary&quot;][&quot;before_filtering&quot;][&quot;total_reads&quot;]
+    after = d[&quot;summary&quot;][&quot;after_filtering&quot;][&quot;total_reads&quot;]
+    failed = d[&quot;filtering_result&quot;]
+    adapter = d.get(&quot;adapter_cutting&quot;, {}).get(&quot;adapter_trimmed_reads&quot;, 0)
+    name = os.path.basename(path).replace(&quot;.fastplong.json&quot;, &quot;&quot;)
+    print(f&quot;{name:&lt;34}{before:&gt;12,}{after:&gt;12,}{100*after/before:&gt;7.1f}%&quot;
+          f&quot;{failed[&#x27;low_quality_reads&#x27;]:&gt;10,}{failed[&#x27;too_short_reads&#x27;]:&gt;11,}{adapter:&gt;9,}&quot;)
+EOF</code></pre>
+<p><code>low qual</code> and <code>too short</code> count the reads removed by each kind of rule. <code>adapter</code> counts reads that had adapter trimmed from an end. Then compare the lengths before and after:</p>
+<pre class="lab-code"><code class=" language-bash">seqkit stats -a -j 4 &quot;$LONG&quot; &quot;$PB&quot; trimmed/*.filt.fq.gz</code></pre>
+<p>Open the <code>.html</code> files in <code>long_reports/</code> through OnDemand Files to see the length and quality plots.</p>
+<p><strong>Question 2.</strong> Compare the before and after rows. What happened to read count, total bases, and N50 in each file? Why did the length filter remove nothing?</p>
 <details>
 <summary>Answer</summary>
-<p>Read count falls, total bases falls by less, and N50 goes up or stays flat.</p>
-<p>That pattern is the filter working as intended: it removes short and low-quality reads, which are numerous but contribute few bases. You lose a lot of reads and little sequence, and what remains is longer on average.</p>
-<p>If N50 had fallen you would have been discarding your best reads, which would mean the thresholds were wrong.</p>
+<p>For the Nanopore file, any reads removed appear under <code>low qual</code>. Compare the share of reads removed with the share of bases removed. Low-quality Nanopore reads are often shorter than average, so total bases usually falls by proportionally less than read count, and N50 rises or stays flat. If N50 had fallen, the filter would have been removing your longest reads, which would mean the thresholds were wrong.</p>
+<p>The PacBio HiFi file barely changes. A HiFi read is a consensus built from several passes over the same molecule, and a read is only called HiFi at about Q20 or better, so a Q10 threshold has almost nothing to remove. Running it still checks the read ends for adapter.</p>
+<p><code>too short</code> is zero, or nearly so, for both files because nothing was short to begin with. Session 1 showed that the shortest Nanopore read is 2,000 bp and the shortest HiFi read is 1,332 bp: the submitters removed short reads before depositing the data. A threshold below the data&#x27;s minimum does nothing. Check the data before assuming a filter did its job.</p>
 </details>
-<p><strong>Question 3.</strong> Why <code>-q 10</code> rather than the <code>-q 20</code> you might use for short reads?</p>
+<p><strong>Question 3.</strong> Why <code>--mean_qual 10</code> rather than the Q20 you might use for short reads?</p>
 <details>
 <summary>Answer</summary>
 <p>Q10 is one error in ten; Q20 is one in a hundred. Those would be alarming thresholds for Illumina.</p>
 <p>For nanopore they are not, because the whole platform operates at a lower per-base accuracy and the value comes from length and from consensus across many reads. Filtering at Q20 would discard most of a perfectly usable run.</p>
 <p>Thresholds are platform-specific. Carrying a short-read instinct onto long-read data throws away good data.</p>
+<p>One caution about the number itself. <code>fastplong</code> averages the quality scores directly. Quality scores are on a log scale, so a few very poor bases raise the read&#x27;s true error rate far more than they lower this average. A read that averages Q10 here has an error rate of at least one in ten, usually worse. Treat the threshold as a cut-off, not as a precise error rate.</p>
 </details>
-<p><strong>Checkpoint 2.</strong> Both long-read files filtered, and you can explain what the filter removed.</p>
+<p><strong>Question 4.</strong> Compare the two Nanopore rows: the default run and yours. Which kept more reads, and which rule removed reads in each?</p>
+<details>
+<summary>Answer</summary>
+<p>Both runs list their quality failures under <code>low qual</code>, but different rules put them there. In the default run it is the per-base rule: more than 40% of bases below Q15. In your run it is the average: below Q10.</p>
+<p>The two rules measure different things. The per-base rule counts how many bases are poor; a read&#x27;s average can stay above Q10 even when a large share of its bases is below Q15. In Session 1 only about 61% of Nanopore bases reached Q20, so many reads have a sizeable share below Q15, and the per-base rule is likely the stricter of the two for these data. Your table shows whether it was.</p>
+<p>The larger point is that the default run filtered reads although you asked for no filtering. Week 3&#x27;s pipeline runs <code>fastplong</code> with its defaults unless you give it options, which is why you will give it the ones you chose here.</p>
+</details>
+<p><strong>Checkpoint 2.</strong> Both long-read files filtered with thresholds you set, and you can say which rule removed reads in each Nanopore run.</p>
 <h2 id="part-3-aggregate-everything">Part 3: Aggregate Everything</h2>
-<h3 id="3-1-one-report-for-all-four-platforms">3.1 One Report for All Four Platforms</h3>
+<h3 id="3-1-compare-raw-and-trimmed-short-reads">3.1 Compare Raw and Trimmed Short Reads</h3>
 <pre class="lab-code"><code class=" language-bash">mkdir -p fastqc_trimmed
 fastqc -t 4 -o fastqc_trimmed trimmed/*.trim.fq.gz
 
-multiqc --force --title &quot;Week 2 all platforms&quot; -o multiqc \
-  &quot;$MYWORK/week-02/session-01/fastqc&quot; fastqc_trimmed reports</code></pre>
-<p>Open <code>multiqc/multiqc_report.html</code> through OnDemand Files.</p>
+multiqc --force --dirs --dirs-depth 1 --title &quot;Week 2: raw and trimmed short reads&quot; -o multiqc \
+  &quot;$MYWORK&quot;/week-02/session-01/fastqc/*SRR27956204*_fastqc.zip \
+  &quot;$MYWORK&quot;/week-02/session-01/fastqc/*SRR17374239*_fastqc.zip \
+  fastqc_trimmed reports</code></pre>
+<p>Open the HTML report in <code>multiqc/</code> through OnDemand Files. The directory prefixes keep raw and trimmed FastQC records distinct. The two accession patterns select the four original short-read reports and exclude the Nanopore FastQC demonstration. This report focuses on short reads before and after preprocessing. Keep the separate NanoPlot reports for the detailed long-read results. MultiQC has no module for <code>fastplong</code>, which is why the long-read reports went to <code>long_reports/</code> rather than <code>reports/</code>.</p>
 <h3 id="3-2-start-at-the-general-statistics-table">3.2 Start at the General Statistics Table</h3>
 <p>Click the column headers to sort: <strong>M Seqs</strong>, <strong>% Dups</strong>, <strong>% GC</strong>, <strong>% Passed</strong>.</p>
-<p><strong>Question 4.</strong> You are looking at raw and trimmed versions of two platforms in one table. What does sorting by %GC show you, and why is that reassuring?</p>
+<p><strong>Question 5.</strong> You are looking at raw and trimmed versions of two platforms in one table. What does sorting by %GC show you, and why is that reassuring?</p>
 <details>
 <summary>Answer</summary>
-<p>All samples should sit at roughly the same %GC, because they are the same yeast genome. Yeast is around 38%.</p>
-<p>That is reassuring because it is an independent check that you are looking at what you think you are. If one platform&#x27;s %GC were markedly different, it would point at contamination, a sample swap, or a coverage bias in the library prep rather than at anything the sequencer did.</p>
-<p>Agreement across platforms on a biological property is evidence; disagreement is a lead worth following.</p>
+<p>Sorting separates the libraries: the genomic BGISEQ reads are near 38% GC, while the Illumina RNA-seq reads are near 45% in these data. RNA-seq samples expressed transcripts, rather than sampling the whole genome uniformly, so matching species does not imply matching GC percentages.</p>
+<p>Compare each library with itself. Its raw and trimmed rows should usually remain close in GC content when preprocessing removes a modest fraction of the data. A large shift needs an explanation from the filtering results; it is not automatically an improvement. Agreement within each library is the reassuring comparison.</p>
 </details>
 <h3 id="3-3-what-one-report-cannot-show">3.3 What One Report Cannot Show</h3>
 <p>Scroll to the overlaid per-base quality and adapter content plots.</p>
-<p><strong>Question 5.</strong> Pick one thing visible here that you could not have seen in any single FastQC report.</p>
+<p><strong>Question 6.</strong> Pick one thing visible here that you could not have seen in any single FastQC report.</p>
 <details>
 <summary>Answer</summary>
 <p>Anything that is a comparison rather than a measurement: that one platform&#x27;s quality decays faster than another&#x27;s, that trimming removed adapter from one sample and there was none in the other to remove, that read counts differ by an order of magnitude.</p>
@@ -206,18 +263,20 @@ cd ..</code></pre>
 <pre class="lab-code"><code class=" language-bash">fastp --in1 R1.fq.gz --in2 R2.fq.gz --out1 t1.fq.gz --out2 t2.fq.gz \
       --detect_adapter_for_pe --json report.json
 
-zcat long.fastq.gz | chopper -q 10 -l 1000 | gzip &gt; filt.fq.gz</code></pre>
+fastplong --in long.fastq.gz --out filt.fq.gz \
+          --mean_qual 10 --length_required 1000 --unqualified_percent_limit 100 \
+          --json long.fastplong.json</code></pre>
 <p>Aggregate before you decide anything:</p>
 <pre class="lab-code"><code class=" language-bash">multiqc --force -o multiqc fastqc_dir reports_dir</code></pre>
 <p>Three things to carry forward:</p>
 <ol>
 <li>Over-trimming is worse than under-trimming. Trim adapters; leave quality mostly alone.</li>
-<li>Thresholds are platform-specific. Q20 is routine for Illumina and would destroy a nanopore run.</li>
+<li>Thresholds are platform-specific, and so are defaults. Q20 is routine for Illumina and would destroy a nanopore run, and a default carried over from short reads can filter long reads without telling you.</li>
 <li>Run MultiQC even on one sample, and always before deciding a dataset is fine. The problems that matter most are only visible across samples.</li>
 </ol>
           <nav class="lab-pager" aria-label="Lab sequence">
             <a class="pager-prev" href="week-02-01-qc-across-platforms.html"><span>Previous lab: Week 2, Session 1</span>QC Across Four Sequencing Platforms</a>
-            <a class="pager-next" href="../week-03/Lab_Week03_Session1_Genome_Assembly.html"><span>Next lab: Week 3, Session 1</span>Assembling a Genome</a>
+            <a class="pager-next" href="../week-03/Lab_Week03_Session1_Genome_Assembly.html"><span>Next lab: Week 3, Session 1</span>Genome Assembly</a>
           </nav>
         </article>
       </div>

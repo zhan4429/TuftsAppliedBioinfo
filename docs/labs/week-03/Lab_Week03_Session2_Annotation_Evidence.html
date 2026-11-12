@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Lab 3B — Annotation, and What Counts as Evidence for Applied Bioinformatics, Tufts University.">
-    <title>Lab 3B — Annotation, and What Counts as Evidence | Applied Bioinformatics</title>
+    <meta name="description" content="Week 3 Session 2: Annotation and Evidence for Applied Bioinformatics, Tufts University.">
+    <title>Week 3 Session 2: Annotation and Evidence | Applied Bioinformatics</title>
     <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="../../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../../styles.css">
@@ -35,19 +35,19 @@
           <details class="toc-details" open>
             <summary>On this page</summary>
             <nav>
-            <a class="toc-level-2" href="#before-you-start">Before you start</a>
-            <a class="toc-level-2" href="#part-1-make-the-evidence-then-submit-the-annotation">Part 1 — Make the evidence, then submit the annotation</a>
-            <a class="toc-level-3" href="#1-1-index-the-assembly-and-align-the-rna-seq">1.1 Index the assembly and align the RNA-seq</a>
+            <a class="toc-level-2" href="#before-you-start">Before You Start</a>
+            <a class="toc-level-2" href="#part-1-make-the-evidence-then-submit-the-annotation">Part 1: Make The Evidence, Then Submit The Annotation</a>
+            <a class="toc-level-3" href="#1-1-index-the-assembly-and-align-the-rna-seq">1.1 Index The Assembly And Align The RNA-seq</a>
             <a class="toc-level-3" href="#1-2-submit-braker3">1.2 Submit BRAKER3</a>
-            <a class="toc-level-2" href="#part-2-read-the-evidence">Part 2 — Read the evidence</a>
-            <a class="toc-level-3" href="#2-1-find-the-introns">2.1 Find the introns</a>
-            <a class="toc-level-3" href="#2-2-coverage-over-the-assembly">2.2 Coverage over the assembly</a>
-            <a class="toc-level-2" href="#part-3-judge-gene-models-against-evidence">Part 3 — Judge gene models against evidence</a>
-            <a class="toc-level-3" href="#3-1-does-this-annotation-describe-your-assembly">3.1 Does this annotation describe your assembly?</a>
-            <a class="toc-level-3" href="#3-2-look-at-the-annotation">3.2 Look at the annotation</a>
-            <a class="toc-level-3" href="#3-3-how-many-genes-have-evidence">3.3 How many genes have evidence?</a>
-            <a class="toc-level-3" href="#3-4-one-gene-read-from-the-command-line">3.4 One gene, read from the command line</a>
-            <a class="toc-level-2" href="#part-4-functional-annotation-and-what-it-is-worth">Part 4 — Functional annotation, and what it is worth</a>
+            <a class="toc-level-2" href="#part-2-read-the-evidence">Part 2: Read The Evidence</a>
+            <a class="toc-level-3" href="#2-1-find-the-introns">2.1 Find The Introns</a>
+            <a class="toc-level-3" href="#2-2-coverage-over-the-assembly">2.2 Coverage Over The Assembly</a>
+            <a class="toc-level-2" href="#part-3-judge-gene-models-against-evidence">Part 3: Judge Gene Models Against Evidence</a>
+            <a class="toc-level-3" href="#3-1-does-this-annotation-describe-your-assembly">3.1 Does This Annotation Describe Your Assembly?</a>
+            <a class="toc-level-3" href="#3-2-look-at-the-annotation">3.2 Look At The Annotation</a>
+            <a class="toc-level-3" href="#3-3-how-many-genes-have-evidence">3.3 How Many Genes Have Evidence?</a>
+            <a class="toc-level-3" href="#3-4-one-gene-read-from-the-command-line">3.4 One Gene, Read From The Command Line</a>
+            <a class="toc-level-2" href="#part-4-functional-annotation-and-what-it-is-worth">Part 4: Functional Annotation, And What It Is Worth</a>
             <a class="toc-level-2" href="#takeaways">Takeaways</a>
             </nav>
           </details>
@@ -55,12 +55,11 @@
         <article class="lab-article">
           <header class="lab-hero">
             <p class="lab-label">Week 3, Session 2</p>
-            <h1>Annotation, and What Counts as Evidence</h1>
+            <h1>Annotation and Evidence</h1>
           </header>
-          <p><strong>Runs alongside the lecture</strong></p>
-<blockquote>You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.</blockquote>
+          <blockquote>You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.</blockquote>
 <hr>
-<h2 id="before-you-start">Before you start</h2>
+<h2 id="before-you-start">Before You Start</h2>
 <pre class="lab-code"><code class=" language-bash">srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
   --mem=32G --time=03:00:00 --pty bash
 hostname
@@ -77,12 +76,12 @@ ls -lh $RNA</code></pre>
 <p>Fallbacks if either is missing:</p>
 <pre class="lab-code"><code class=" language-bash">export ASM=$SHARED/fallback_assembly/asm.p_ctg.fa
 export RNA=&quot;$SHARED/fallback_rna&quot;</code></pre>
-<pre class="lab-code"><code class=" language-bash">module load hisat2 samtools agat
+<pre class="lab-code"><code class=" language-bash">module load hisat2 samtools
 module list</code></pre>
 <hr>
-<h2 id="part-1-make-the-evidence-then-submit-the-annotation">Part 1 — Make the evidence, then submit the annotation</h2>
+<h2 id="part-1-make-the-evidence-then-submit-the-annotation">Part 1: Make The Evidence, Then Submit The Annotation</h2>
 <p>Structural annotation of a eukaryote is a <strong>project, not a step</strong>. A full BRAKER3 run on this genome takes hours, so it has to start early. It uses RNA-seq alignments as evidence, though, so align first; on a 12 Mb genome that is quick.</p>
-<h3 id="1-1-index-the-assembly-and-align-the-rna-seq">1.1 Index the assembly and align the RNA-seq</h3>
+<h3 id="1-1-index-the-assembly-and-align-the-rna-seq">1.1 Index The Assembly And Align The RNA-seq</h3>
 <p>Use the Illumina RNA-seq run <strong>SRR27956204</strong>, already downloaded in Week 1 and examined in Week 2. The same folder also contains paired-end BGISEQ genomic reads, so a general <code>*_1.fastq.gz</code> search could select the wrong experiment. Use the exact RNA-seq filenames below. If you use staged copies, check their names and adjust <code>R1</code> and <code>R2</code> if needed.</p>
 <pre class="lab-code"><code class=" language-bash">mkdir -p logs
 hisat2-build -p 8 $ASM asm_idx 2&gt; logs/hisat2_build.log
@@ -98,8 +97,11 @@ samtools index rna.sorted.bam
 
 cat rna_summary.txt</code></pre>
 <p><strong>Question 1.</strong> What overall alignment rate did you get? What would a low rate mean here, and what does a <em>spliced</em> aligner do that <code>bwa</code> would not?</p>
-<p>::: Answer For RNA-seq against its own genome, expect 80–95%. Substantially lower means the RNA came from a different organism or strain, the assembly is poor, or there is heavy contamination.</p>
-<p>HISAT2 is <strong>splice-aware</strong>: it can place one read across an intron, producing a CIGAR string containing <code>N</code>. A DNA aligner like <code>bwa</code> would either soft-clip the read at the junction or fail to place it — and you would lose exactly the reads that tell you where introns are. :::</p>
+<details>
+<summary>Answer</summary>
+<p>For RNA-seq against its own genome, expect 80–95%. Substantially lower means the RNA came from a different organism or strain, the assembly is poor, or there is heavy contamination.</p>
+<p>HISAT2 is <strong>splice-aware</strong>: it can place one read across an intron, producing a CIGAR string containing <code>N</code>. A DNA aligner like <code>bwa</code> would either soft-clip the read at the junction or fail to place it — and you would lose exactly the reads that tell you where introns are.</p>
+</details>
 <h3 id="1-2-submit-braker3">1.2 Submit BRAKER3</h3>
 <p>BRAKER3 annotates the same sequence the BAM was aligned to, so give it a copy of that assembly:</p>
 <pre class="lab-code"><code class=" language-bash">cp $ASM asm.fa
@@ -115,8 +117,8 @@ cat &gt; annotate.sh &lt;&lt;&#x27;EOF&#x27;
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-set -euo pipefail
 module load braker3
+set -euo pipefail
 
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=&quot;$COURSE/$USER&quot;
@@ -140,40 +142,53 @@ EOF
 
 bash -n annotate.sh
 sbatch annotate.sh
-squeue -u $USER</code></pre>
+squeue --me</code></pre>
 <p><strong>Job ID: ______________</strong></p>
 <p>Two choices in that script are deliberate. There is no repeat-masking step: yeast genomes carry few repeats, so we accept that risk here, but for a plant or animal you would mask first or BRAKER would annotate transposons as genes. And the species name includes your job ID, because AUGUSTUS refuses to overwrite a model that already exists. The result will be in <code>braker/braker.gff3</code> for your homework.</p>
-<p><strong>Question 2.</strong> Why is eukaryotic annotation a long job when the bacterial equivalent is quick?</p>
-<p>::: Answer Introns. A bacterial coding sequence is a continuous open reading frame, so you find ORFs and you are largely done. In a eukaryote the coding sequence is scattered across exons separated by tens of kilobases, so there <em>are</em> no long ORFs to find.</p>
-<p>Add alternative splicing, untranslated regions with no coding signal at all, repeats that contain their own ORFs and get annotated as genes unless masked first, and pseudogenes that look exactly like genes — and you have a problem that needs evidence, training, and reconciliation rather than a scan. :::</p>
-<blockquote><strong>CHECKPOINT 1</strong> — Everyone has a sorted, indexed RNA-seq BAM and a BRAKER3 job in the queue.</blockquote>
+<p><strong>Question 2.</strong> Most <em>S. cerevisiae</em> genes have no intron. Why can this BRAKER3 annotation still take much longer than a simple bacterial gene prediction?</p>
+<details>
+<summary>Answer</summary>
+<p>For this yeast, long introns and extensive alternative splicing are not the main explanation. Most genes are intronless, and its genome is compact.</p>
+<p>BRAKER3 combines RNA and protein evidence with gene-finding models. It must align protein evidence, train gene predictors such as AUGUSTUS, and combine candidate models with the evidence. Those computations can take substantial time even on a small genome. Runtime also depends on the protein database, software settings and available CPUs.</p>
+<p>Intron-rich plant and animal genomes add further complexity, but that architecture should not be used to describe this yeast.</p>
+</details>
+<p><strong>Checkpoint 1.</strong> Everyone has a sorted, indexed RNA-seq BAM and a BRAKER3 job in the queue.</p>
 <hr>
-<h2 id="part-2-read-the-evidence">Part 2 — Read the evidence</h2>
-<h3 id="2-1-find-the-introns">2.1 Find the introns</h3>
+<h2 id="part-2-read-the-evidence">Part 2: Read The Evidence</h2>
+<h3 id="2-1-find-the-introns">2.1 Find The Introns</h3>
 <pre class="lab-code"><code class=" language-bash">samtools view rna.sorted.bam | awk &#x27;$6 ~ /N/&#x27; | wc -l
 samtools view rna.sorted.bam | awk &#x27;$6 ~ /N/ {print $6}&#x27; | grep -o &#x27;[0-9]*N&#x27; | sort | uniq -c | sort -rn | head</code></pre>
 <p>The first command counts spliced reads. The second lists the most common intron lengths. Both look only at column 6, the CIGAR string: searching the whole line would also count <code>N</code> bases in the read sequences.</p>
 <p><strong>Question 3.</strong> Those <code>N</code> operations are introns your data observed directly. Why is that different in kind from a gene finder predicting an intron?</p>
-<p>::: Answer A prediction says <em>this looks like a splice site, based on a model of what splice sites look like in this kind of organism.</em></p>
+<details>
+<summary>Answer</summary>
+<p>A prediction says <em>this looks like a splice site, based on a model of what splice sites look like in this kind of organism.</em></p>
 <p>A spliced read says <em>a transcript was here, and it was spliced at this exact position.</em> One is a hypothesis; the other is an observation.</p>
-<p>This is the whole distinction between <em>ab initio</em> and evidence-based annotation. Neither is sufficient alone — prediction finds genes that were not expressed, evidence confirms genes that were. :::</p>
-<h3 id="2-2-coverage-over-the-assembly">2.2 Coverage over the assembly</h3>
+<p>This is the whole distinction between <em>ab initio</em> and evidence-based annotation. Neither is sufficient alone — prediction finds genes that were not expressed, evidence confirms genes that were.</p>
+</details>
+<h3 id="2-2-coverage-over-the-assembly">2.2 Coverage Over The Assembly</h3>
 <pre class="lab-code"><code class=" language-bash">samtools depth -a rna.sorted.bam | \
   awk &#x27;{t++; if($3&gt;0) c++} END {printf &quot;bases with any RNA coverage: %.1f%%\n&quot;, 100*c/t}&#x27;</code></pre>
 <p><strong>Question 4.</strong> Only a fraction of the genome is covered. Is that a problem?</p>
-<p>::: Answer No — it is the expected result and an important one. Only transcribed regions get reads. Intergenic sequence, introns (mostly), and genes not expressed in this condition all sit at zero.</p>
-<p>The corollary matters: <strong>absence of RNA-seq coverage is not evidence that there is no gene there.</strong> It may mean the gene was silent in the condition that was sequenced. This is why evidence alone cannot annotate a genome. :::</p>
+<details>
+<summary>Answer</summary>
+<p>No — it is the expected result and an important one. Only transcribed regions get reads. Intergenic sequence, introns (mostly), and genes not expressed in this condition all sit at zero.</p>
+<p>The corollary matters: <strong>absence of RNA-seq coverage is not evidence that there is no gene there.</strong> It may mean the gene was silent in the condition that was sequenced. This is why evidence alone cannot annotate a genome.</p>
+</details>
 <hr>
-<h2 id="part-3-judge-gene-models-against-evidence">Part 3 — Judge gene models against evidence</h2>
+<h2 id="part-3-judge-gene-models-against-evidence">Part 3: Judge Gene Models Against Evidence</h2>
 <p>A reference annotation for this organism is staged at <code>$SHARED/reference.gff3</code>. Before you compare it with your evidence, check that the two describe the same sequence.</p>
-<h3 id="3-1-does-this-annotation-describe-your-assembly">3.1 Does this annotation describe your assembly?</h3>
+<h3 id="3-1-does-this-annotation-describe-your-assembly">3.1 Does This Annotation Describe Your Assembly?</h3>
 <p><code>reference.gff3</code> was made on the staged assembly:</p>
 <pre class="lab-code"><code class=" language-bash">export REF_ASM=$SHARED/fallback_assembly/asm.p_ctg.fa
 grep -m 3 &#x27;^&gt;&#x27; $ASM $REF_ASM
 md5sum $ASM $REF_ASM</code></pre>
 <p><strong>Question 5.</strong> The contig names may look identical. Do the checksums agree? What would go wrong if you compared <code>reference.gff3</code> with a BAM made against your own assembly?</p>
-<p>::: Answer hifiasm names contigs by order (<code>ptg000001l</code>, <code>ptg000002l</code>, …), so two different assemblies share names. Unless you used the fallback assembly, the checksums differ: these are different sequences, and position 50,000 on one <code>ptg000001l</code> is not position 50,000 on the other.</p>
-<p>Nothing would fail. <code>samtools bedcov</code> would happily report coverage over regions that do not correspond to the genes, giving plausible numbers and a wrong answer. This is the lecture&#x27;s &quot;seqid must match the FASTA&quot; problem in its sharpest form: matching names are not enough; the sequence has to be the same. :::</p>
+<details>
+<summary>Answer</summary>
+<p>hifiasm names contigs by order (<code>ptg000001l</code>, <code>ptg000002l</code>, …), so two different assemblies share names. Unless you used the fallback assembly, the checksums differ: these are different sequences, and position 50,000 on one <code>ptg000001l</code> is not position 50,000 on the other.</p>
+<p>Nothing would fail. <code>samtools bedcov</code> would happily report coverage over regions that do not correspond to the genes, giving plausible numbers and a wrong answer. This is the lecture&#x27;s &quot;seqid must match the FASTA&quot; problem in its sharpest form: matching names are not enough; the sequence has to be the same.</p>
+</details>
 <p>If the checksums differ, align the same RNA-seq to the staged assembly too:</p>
 <pre class="lab-code"><code class=" language-bash">if ! cmp -s $ASM $REF_ASM; then
   hisat2-build -p 8 $REF_ASM ref_idx 2&gt; logs/hisat2_ref_build.log
@@ -184,31 +199,37 @@ else
 fi
 samtools index ref.sorted.bam</code></pre>
 <p>From here on, <code>ref.sorted.bam</code> and <code>reference.gff3</code> describe the same sequence.</p>
-<h3 id="3-2-look-at-the-annotation">3.2 Look at the annotation</h3>
+<h3 id="3-2-look-at-the-annotation">3.2 Look At The Annotation</h3>
 <pre class="lab-code"><code class=" language-bash">cp $SHARED/reference.gff3 .
 grep -v &#x27;^#&#x27; reference.gff3 | cut -f3 | sort | uniq -c | sort -rn</code></pre>
 <p>That is the Week 1 counting idiom, on a file you now understand.</p>
 <pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3==&quot;gene&quot;&#x27; reference.gff3 | wc -l
-awk -F&#x27;\t&#x27; &#x27;$3==&quot;mRNA&quot;&#x27; reference.gff3 | wc -l
+awk -F&#x27;\t&#x27; &#x27;$3==&quot;mRNA&quot; || $3==&quot;transcript&quot;&#x27; reference.gff3 | wc -l
 awk -F&#x27;\t&#x27; &#x27;$3==&quot;exon&quot; {s+=$5-$4+1} END {print &quot;exonic bases:&quot;, s}&#x27; reference.gff3</code></pre>
-<p><strong>Question 6.</strong> There are more mRNA features than gene features. Why, and what does that mean for counting &quot;how many genes are expressed&quot;?</p>
-<p>::: Answer Alternative splicing — one gene locus produces several transcripts. The GFF3 hierarchy is <code>gene → mRNA → exon/CDS</code>, and a gene can parent many mRNAs.</p>
-<p>For counting, it means you must decide what you are counting <em>before</em> you count. &quot;2,000 transcripts detected&quot; and &quot;1,400 genes detected&quot; can describe the same result. This is the transcript-choice problem from the lecture, and it is why MANE Select exists for human. :::</p>
-<h3 id="3-3-how-many-genes-have-evidence">3.3 How many genes have evidence?</h3>
+<p><strong>Question 6.</strong> Compare the gene and transcript-feature counts you obtained. Are they equal, or is one larger? What must you check before interpreting the difference as alternative splicing?</p>
+<details>
+<summary>Answer</summary>
+<p>Use the counts in the staged file; do not assume that transcripts outnumber genes. Most <em>S. cerevisiae</em> genes have a single main transcript, and alternative splicing is relatively uncommon.</p>
+<p>Inspect the feature types and <code>ID</code>/<code>Parent</code> attributes. Some GFF3 files use <code>transcript</code> instead of <code>mRNA</code>; some represent noncoding genes separately or omit a transcript layer. Multiple transcript records attached to one gene can indicate multiple annotated isoforms, but a difference in total counts alone is not proof.</p>
+<p>Gene features, transcript features and expressed genes are different quantities. Feature counts describe the annotation; expression requires the RNA-seq evidence.</p>
+</details>
+<h3 id="3-3-how-many-genes-have-evidence">3.3 How Many Genes Have Evidence?</h3>
 <pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;$3==&quot;gene&quot;&#x27; reference.gff3 | \
   awk &#x27;BEGIN{OFS=&quot;\t&quot;} {print $1, $4-1, $5}&#x27; | sort -k1,1 -k2,2n &gt; genes.bed
 
 samtools bedcov genes.bed ref.sorted.bam | \
   awk &#x27;{n++; if($4&gt;0) e++} END {printf &quot;genes with RNA-seq support: %d / %d (%.1f%%)\n&quot;, e, n, 100*e/n}&#x27;</code></pre>
 <p><strong>Question 7.</strong> You get some percentage below 100. Give two different explanations, and say how you would distinguish them.</p>
-<p>::: Answer</p>
+<details>
+<summary>Answer</summary>
 <ol>
 <li><strong>The gene is real but not expressed</strong> in the condition sequenced. How common this is depends on the organism: in a compact yeast genome grown in one condition most genes have at least some reads, while one tissue of a multicellular organism detects far fewer.</li>
 <li><strong>The gene model is wrong</strong> — an over-prediction from an <em>ab initio</em> method, a repeat annotated as a gene, or a pseudogene.</li>
 </ol>
 <p>To distinguish them: sequence more conditions, which raises the detection fraction for explanation 1 and leaves explanation 2 untouched. Also check whether the unsupported models cluster in repetitive regions, have unusual codon usage, or lack homologues — all signatures of over-prediction.</p>
-<p>Note what you cannot do: conclude from one RNA-seq sample that a gene does not exist. :::</p>
-<h3 id="3-4-one-gene-read-from-the-command-line">3.4 One gene, read from the command line</h3>
+<p>Note what you cannot do: conclude from one RNA-seq sample that a gene does not exist.</p>
+</details>
+<h3 id="3-4-one-gene-read-from-the-command-line">3.4 One Gene, Read From The Command Line</h3>
 <p>Take the best-covered gene, list its annotated exons, and list the introns that reads actually crossed:</p>
 <pre class="lab-code"><code class=" language-bash">samtools bedcov genes.bed ref.sorted.bam | sort -k4,4nr | head -1 &gt; top_gene.bed
 read CHR START END COV &lt; top_gene.bed
@@ -230,28 +251,39 @@ samtools view ref.sorted.bam &quot;$REGION&quot; | awk &#x27;{
   }}&#x27; | sort | uniq -c | sort -rn | head</code></pre>
 <p>An annotated intron runs from one base after an exon ends to one base before the next exon starts. Most yeast genes have no intron, so if the junction list is empty, that agrees with a one-exon model: change <code>head -1</code> to <code>sed -n 2p</code>, <code>3p</code> and so on to try the next genes.</p>
 <p><strong>Question 8.</strong> Find a gene where reads cross at least one intron. Do the observed introns match the gaps between annotated exons? Describe one agreement or disagreement.</p>
-<p>::: Answer An intron supported by many reads at exactly the annotated coordinates is the model confirmed by observation. Disagreements worth describing:</p>
+<details>
+<summary>Answer</summary>
+<p>An intron supported by many reads at exactly the annotated coordinates is the model confirmed by observation. Disagreements worth describing:</p>
 <ul>
 <li><strong>A frequent junction where no intron is annotated</strong> — an unannotated intron, or a different isoform</li>
 <li><strong>An annotated intron that no read crosses</strong> — low expression, or a wrong model</li>
 <li><strong>A junction a few bases from the annotated boundary</strong> — an alternative splice site, or the model is slightly off</li>
 <li><strong>A junction seen in one or two reads only</strong> — weak evidence; read counts matter</li>
 </ul>
-<p>Any of these, described accurately with the read counts, is a full answer. The skill is checking rather than trusting. :::</p>
-<blockquote><strong>CHECKPOINT 2</strong> — Everyone has compared observed introns with annotated exon boundaries for at least one gene.</blockquote>
+<p>Any of these, described accurately with the read counts, is a full answer. The skill is checking rather than trusting.</p>
+</details>
+<p><strong>Checkpoint 2.</strong> Everyone has compared observed introns with annotated exon boundaries for at least one gene.</p>
 <hr>
-<h2 id="part-4-functional-annotation-and-what-it-is-worth">Part 4 — Functional annotation, and what it is worth</h2>
+<h2 id="part-4-functional-annotation-and-what-it-is-worth">Part 4: Functional Annotation, And What It Is Worth</h2>
 <p>Structural annotation says <em>where</em>. Functional annotation says <em>what it does</em> — and it is inference all the way down.</p>
+<p>Inspect the header first. The counting examples assume one header row and product descriptions in column 2; change the column if your staged file uses another layout.</p>
 <pre class="lab-code"><code class=" language-bash">head -3 $SHARED/reference_functional.tsv
-awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; $2 ~ /hypothetical|unknown|uncharacterized/&#x27; $SHARED/reference_functional.tsv | wc -l
+awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; tolower($2) ~ /hypothetical|unknown|uncharacterized/&#x27; $SHARED/reference_functional.tsv | wc -l
 awk -F&#x27;\t&#x27; &#x27;NR&gt;1&#x27; $SHARED/reference_functional.tsv | wc -l</code></pre>
-<p><strong>Question 9.</strong> A large fraction come back &quot;hypothetical protein&quot;. Is that a failure of the annotation?</p>
-<p>::: Answer No. It means nobody has characterised anything similar enough to transfer a name from. It is an honest statement about the reference databases, not about your assembly or the organism.</p>
-<p>For a well-studied fungus expect 20–35% hypothetical; for an under-studied lineage, far more. Lowering thresholds to reduce that number does not create knowledge — it creates confident wrong names, which are worse than honest silence. :::</p>
+<p><strong>Question 9.</strong> Report the number and fraction of rows labeled hypothetical, unknown or uncharacterized in this file. Does that label by itself mean that the gene model is wrong?</p>
+<details>
+<summary>Answer</summary>
+<p>Calculate the fraction from your counts rather than expecting a fixed percentage. These commands assume one header row and product descriptions in column 2: check the displayed header and adjust if the staged file uses another layout.</p>
+<p>An uncharacterized product means the file does not assign a specific function; it does not by itself establish that the structural gene model is wrong. Conversely, a familiar product name does not validate the model. <em>S. cerevisiae</em> is extensively studied, so a large uncharacterized fraction should prompt checks of the annotation source, evidence, naming rules and file columns rather than being accepted as a universal fungal expectation.</p>
+<p>Assess structural support with alignments and protein evidence, and functional support with the evidence behind the assigned product name.</p>
+</details>
 <p><strong>Question 10.</strong> Your structural annotation truncated a gene because of a frameshift in the assembly. What does the functional step do?</p>
-<p>::: Answer It faithfully assigns a product name to the truncated protein, with no warning. You now have a confident functional annotation for a protein that does not exist.</p>
-<p>Functional annotation <strong>inherits structural errors</strong>. This is why Tuesday&#x27;s correctness question matters even when all you want is a gene list — and why an assembly with residual indel errors produces systematically shorter predicted proteins. Check mean CDS length against expectation; it is the cheapest diagnostic you have. :::</p>
-<blockquote><strong>CHECKPOINT 3</strong> — Everyone can state why functional annotation cannot be more reliable than the structural annotation beneath it.</blockquote>
+<details>
+<summary>Answer</summary>
+<p>It faithfully assigns a product name to the truncated protein, with no warning. You now have a confident functional annotation for a protein that does not exist.</p>
+<p>Functional annotation <strong>inherits structural errors</strong>. This is why Tuesday&#x27;s correctness question matters even when all you want is a gene list — and why an assembly with residual indel errors produces systematically shorter predicted proteins. Check mean CDS length against expectation; it is the cheapest diagnostic you have.</p>
+</details>
+<p><strong>Checkpoint 3.</strong> Everyone can state why functional annotation cannot be more reliable than the structural annotation beneath it.</p>
 <hr>
 <h2 id="takeaways">Takeaways</h2>
 <div class="table-wrap"><table>
@@ -282,8 +314,8 @@ awk -F&#x27;\t&#x27; &#x27;NR&gt;1&#x27; $SHARED/reference_functional.tsv | wc -
 <td><code>samtools bedcov genes.bed rna.sorted.bam</code></td>
 </tr>
 <tr>
-<td>Annotation summary</td>
-<td><code>agat_sp_statistics.pl --gff file.gff3</code></td>
+<td>Annotation feature counts</td>
+<td><code>grep -v &#x27;^#&#x27; reference.gff3</code> followed by <code>cut -f3</code>, <code>sort</code> and <code>uniq -c</code></td>
 </tr>
 </tbody>
 </table></div>
@@ -296,8 +328,8 @@ awk -F&#x27;\t&#x27; &#x27;NR&gt;1&#x27; $SHARED/reference_functional.tsv | wc -
 <li>Functional annotation inherits every structural error, silently. Correctness upstream is not optional.</li>
 </ol>
           <nav class="lab-pager" aria-label="Lab sequence">
-            <a class="pager-prev" href="Lab_Week03_Session1_Genome_Assembly.html"><span>Previous lab: Week 3, Session 1</span>Assembling a Genome</a>
-            <a class="pager-next" href="../week-04/Lab_Week04_Session1_Alignment_QC.html"><span>Next lab: Week 4, Session 1</span>Aligning Reads to Your Own Genome</a>
+            <a class="pager-prev" href="Lab_Week03_Session1_Genome_Assembly.html"><span>Previous lab: Week 3, Session 1</span>Genome Assembly</a>
+            <a class="pager-next" href="../week-04/Lab_Week04_Session1_Alignment_QC.html"><span>Next lab: Week 4, Session 1</span>Alignment QC</a>
           </nav>
         </article>
       </div>

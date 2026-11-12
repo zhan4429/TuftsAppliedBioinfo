@@ -8,18 +8,18 @@ In this lab you will log in to the Tufts HPC cluster, orient yourself in the fil
 
 The first four weeks follow one yeast genome from raw reads to a tested assembly. Each lab works on files an earlier lab produced, so keep your results in `$MYWORK`: later labs look for them there. If one of your steps did not finish, the later lab gives you a staged copy to use instead.
 
-![Flow chart of Weeks 1 to 4. Week 1 downloads four FASTQ datasets. Week 2 checks and cleans them. Week 3 assembles the cleaned HiFi reads and annotates the assembly with RNA-seq. Week 4 aligns BGISEQ and HiFi reads to the assembly, calls variants, and uses the Week 3 gene models to find which errors broke a gene.](assets/course-map-weeks-1-4.png)
+![Flow chart of Weeks 1 to 4. Week 1 downloads four FASTQ datasets. Week 2 checks and cleans them. Week 3 assembles the cleaned HiFi reads and annotates the assembly with RNA-seq. Week 4 aligns BGISEQ and HiFi reads to the assembly, calls candidate differences, and uses the Week 3 gene models to assess their possible effects.](assets/course-map-weeks-1-4.png)
 
 Where each dataset you download in Week 1 is used:
 
 | Dataset | Week 2 | Week 3 | Week 4 |
 | --- | --- | --- | --- |
-| Illumina RNA-seq | QC and trimming | – | – |
+| Illumina RNA-seq | QC and trimming | RNA evidence for annotation | – |
 | BGISEQ genomic | QC and trimming | – | Aligned to your assembly |
 | PacBio HiFi genomic | QC and filtering | Assembled | Aligned to your assembly |
 | Oxford Nanopore genomic | QC and filtering | – | – |
 
-The RNA-seq used for annotation in Week 3 is a separate download, made in Week 3.
+Week 3 reuses the Illumina RNA-seq downloaded in Week 1; no second RNA download is needed. Keep the published FASTQ files for the later labs.
 
 ## Before You Start
 

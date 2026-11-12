@@ -30,7 +30,7 @@ Use the original downloaded FASTQ files, as in Session 1. If `$READS` is empty,
 finish the Week 1 download or use the staged FASTQ files:
 
 ```bash
-export READS=$COURSE/shared/wk2/sub
+export READS=$COURSE/shared/wk2/fallback_fastq
 ls -lh "$READS"
 ```
 
@@ -288,17 +288,23 @@ which rule removed reads in each Nanopore run.
 
 ## Part 3: Aggregate Everything
 
-### 3.1 One Report for All Four Platforms
+### 3.1 Compare Raw and Trimmed Short Reads
 
 ```bash
 mkdir -p fastqc_trimmed
 fastqc -t 4 -o fastqc_trimmed trimmed/*.trim.fq.gz
 
-multiqc --force --title "Week 2 all platforms" -o multiqc \
-  "$MYWORK/week-02/session-01/fastqc" fastqc_trimmed reports
+multiqc --force --dirs --dirs-depth 1 --title "Week 2: raw and trimmed short reads" -o multiqc \
+  "$MYWORK"/week-02/session-01/fastqc/*SRR27956204*_fastqc.zip \
+  "$MYWORK"/week-02/session-01/fastqc/*SRR17374239*_fastqc.zip \
+  fastqc_trimmed reports
 ```
 
-Open `multiqc/multiqc_report.html` through OnDemand Files. MultiQC has no module for
+Open the HTML report in `multiqc/` through OnDemand Files. The directory prefixes
+keep raw and trimmed FastQC records distinct. The two accession patterns select the
+four original short-read reports and exclude the Nanopore FastQC demonstration.
+This report focuses on short reads before and after preprocessing. Keep the separate
+NanoPlot reports for the detailed long-read results. MultiQC has no module for
 `fastplong`, which is why the long-read reports went to `long_reports/` rather than
 `reports/`.
 
@@ -312,16 +318,15 @@ What does sorting by %GC show you, and why is that reassuring?
 <details>
 <summary>Answer</summary>
 
-All samples should sit at roughly the same %GC, because they are the same yeast genome.
-Yeast is around 38%.
+Sorting separates the libraries: the genomic BGISEQ reads are near 38% GC, while the
+Illumina RNA-seq reads are near 45% in these data. RNA-seq samples expressed
+transcripts, rather than sampling the whole genome uniformly, so matching species
+does not imply matching GC percentages.
 
-That is reassuring because it is an independent check that you are looking at what you
-think you are. If one platform's %GC were markedly different, it would point at
-contamination, a sample swap, or a coverage bias in the library prep rather than at
-anything the sequencer did.
-
-Agreement across platforms on a biological property is evidence; disagreement is a lead
-worth following.
+Compare each library with itself. Its raw and trimmed rows should usually remain
+close in GC content when preprocessing removes a modest fraction of the data. A
+large shift needs an explanation from the filtering results; it is not automatically
+an improvement. Agreement within each library is the reassuring comparison.
 
 </details>
 
