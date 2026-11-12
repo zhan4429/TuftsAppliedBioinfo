@@ -455,29 +455,58 @@ Here `-t 4` keeps the same thread limit, `-o fastqc` saves the report alongside 
 short-read reports, and `"$LONG"` selects the Nanopore input. This is a demonstration
 of tool interpretation; it does not convert or filter the reads.
 
-Open that report.
+Open that report. The two figures below come directly from the instructor-provided
+report for `SRX13548509_SRR17374240.fastq.gz`. Its Basic Statistics table reports
+**701,791 reads**, with lengths from **2,000 to 276,396 bp**. You can
+[open the complete Nanopore FastQC report](assets/fastqc-nanopore/nanopore-fastqc.html)
+to inspect the other checks.
 
-**Question 5.** Look at Basic Statistics and Per base sequence quality. Why is this
-report close to useless?
+![Nanopore FastQC read-length distribution: most reads are near the short end of a broad distribution, with a long tail extending beyond 270,000 bases.](assets/fastqc-nanopore/nanopore-read-length-distribution.png)
+
+**Figure 5. Read-length distribution — WARNING.** Unlike the BGISEQ reads, which
+were all 150 bp, these reads vary greatly in length. Most lie near the left of the
+plot, while a small number extend far to the right. FastQC warns when read lengths
+are not all identical. That warning describes an expected feature of Nanopore data;
+it does not by itself indicate a failed sequencing run.
+
+![Nanopore FastQC per-base quality plot extending to more than 270,000 bases; quality boxes stop well before the mean line, and later positions represent only the longest reads.](assets/fastqc-nanopore/nanopore-per-base-quality.png)
+
+**Figure 6. Per-base sequence quality — FAIL.** Read the horizontal axis carefully:
+after the first few positions, labels represent large ranges of bases, rather than
+consecutive single bases. The blue mean line extends far beyond the yellow
+quality boxes. A position near **100,000 bp** can only include reads at least that
+long; shorter reads have already ended. The far-right values therefore describe a
+small subset of the library, rather than all 701,791 reads.
+
+This plot still contains information about reported base quality, but it does not
+follow the same group of reads from start to finish. A change in the curve can
+reflect both quality variation and a change in which reads contribute. Do not
+choose a single trimming position for every read from this plot, or conclude that
+all Nanopore reads are unusable because the module says FAIL.
+
+**Question 5.** Why does the read-length module warn, and why is the far-right end of
+the quality plot difficult to interpret as a summary of the whole library?
 
 <details>
 <summary>Answer</summary>
 
-Sequence length is reported as a range spanning orders of magnitude, so "per base"
-position has no consistent meaning — position 5,000 exists in a handful of reads and not
-in most of them. The per-base quality plot bins positions that are not comparable, and the
-tail is computed from a shrinking and unrepresentative set of reads.
+The length warning occurs because the reads have different lengths, which is normal
+for this platform. At early positions, many reads contribute quality scores; at late
+positions, only the longest reads contribute. The changing set of reads makes this
+different from comparing the same positions across fixed-length 150 bp reads.
 
-FastQC also assumes a fixed length for several modules, and silently produces something
-anyway rather than refusing.
+FastQC's quality thresholds are not a platform-specific test of whether this library
+will work for an assembly or mapping analysis. Lower reported quality may still be
+real and worth investigating. Next, use NanoPlot to examine read-length and read-quality
+distributions together, and use downstream results to judge whether filtering helps.
 
-A tool producing output is not the same as a tool being appropriate. That judgement is
-yours.
+**The lesson is to interpret the plots and thresholds in context, rather than treating
+every warning as a defect or dismissing every warning as harmless.**
 
 </details>
 
-**Checkpoint 2.** You have FastQC reports for both short-read platforms and have seen one
-fail on long reads.
+**Checkpoint 2.** You have FastQC reports for both short-read platforms and can explain
+the limitations of applying the same checks to variable-length Nanopore reads.
 
 ## Part 3: The Right Tool for Long Reads
 
@@ -706,8 +735,8 @@ Three things to carry forward:
 
 1. Interpret QC with the metadata. The Illumina reads are RNA-seq; the BGISEQ, PacBio and
    Nanopore reads are genomic. Platform, library preparation and read processing all matter.
-2. A tool that produces output is not a tool that applies. FastQC runs happily on nanopore
-   data and tells you almost nothing true.
+2. Match QC interpretation to the read type. FastQC flags need context for variable-length
+   long reads; use NanoPlot to examine their length and quality distributions.
 3. No platform is best. Accuracy, length, throughput and turnaround trade against each
    other, and which one you need is a property of your question.
 
@@ -720,6 +749,7 @@ Three things to carry forward:
 - [FastQC: duplication and RNA-seq libraries](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html)
 - [FastQC: interpreting per-base quality](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/2%20Per%20Base%20Sequence%20Quality.html)
 - [FastQC: interpreting per-sequence quality](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/3%20Per%20Sequence%20Quality%20Scores.html)
+- [FastQC: read-length warnings](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/7%20Sequence%20Length%20Distribution.html)
 - [FastQC: GC-content warnings](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/5%20Per%20Sequence%20GC%20Content.html)
 - [FastQC: adapter-content checks](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/10%20Adapter%20Content.html)
 - [NanoPlot documentation and output descriptions](https://github.com/wdecoster/NanoPlot)
