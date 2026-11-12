@@ -3,11 +3,8 @@
 Applied Bioinformatics - Tufts University Department of Biology
 
 On Tuesday you measured four platforms. Today you act on what you found: trim the short
-reads, clean and filter the long reads, aggregate everything into one report, and diagnose
-four samples that are deliberately broken.
-
-The last part is the point of the session. Running QC is easy. Deciding what a bad plot
-means is the skill.
+reads, clean and filter the long reads, and compare short-read QC reports before and after
+trimming. Focus on what changed and whether preprocessing improved the reads.
 
 ## Before You Start
 
@@ -164,29 +161,14 @@ same kind of JSON and HTML reports. It is also the first step of Week 3's assemb
 pipeline, nf-core/genomeassembler, which runs it on every long-read file. The settings you
 choose today are the ones you will give the pipeline.
 
-### 2.2 Start With the Defaults
+### 2.2 Set the Thresholds Yourself
 
-Run `fastplong` on the Nanopore reads with no filtering options. Without `--out` it writes
-only its reports, not a new FASTQ file.
-
-```bash
-mkdir -p long_reports
-
-base=$(basename "$LONG" .fastq.gz)
-fastplong \
-  --in "$LONG" \
-  --json "long_reports/${base}.default.fastplong.json" \
-  --html "long_reports/${base}.default.fastplong.html" \
-  --thread 4
-```
-
-You asked for no filtering, but `fastplong` still filtered. Its defaults come from `fastp`:
-it trims adapters, discards a read if more than 40% of its bases are below Q15, and
-discards reads shorter than 20 bp. Nothing in the command shows any of that.
-
-### 2.3 Set the Thresholds Yourself
+Run the same filtering command on the Nanopore and PacBio HiFi files. Each run saves
+a filtered FASTQ file and its own HTML and JSON reports.
 
 ```bash
+mkdir -p trimmed long_reports
+
 for f in "$LONG" "$PB"; do
   base=$(basename "$f" .fastq.gz)
   fastplong \
@@ -204,16 +186,18 @@ done
 
 - `--mean_qual 10` discards reads whose average quality is below Q10.
 - `--length_required 1000` discards reads shorter than 1,000 bp.
-- `--unqualified_percent_limit 100` turns off the per-base rule from 2.2, so average
-  quality and length are the only filters.
+- `--unqualified_percent_limit 100` disables the default rule that rejects a read
+  when more than 40% of its bases are below Q15. We use the read's average quality
+  instead. Other default filters, such as filtering reads with too many N bases,
+  remain enabled.
 - Adapter trimming stays on, as it is by default.
 
 The options are written out in full so that anyone reading the command knows what it did.
 Week 3 gives this same set to the assembly pipeline.
 
-### 2.4 What Was Removed
+### 2.3 What Was Removed
 
-Summarize the three reports in one table:
+Summarize the two reports, one per long-read platform, in one table:
 
 ```bash
 python3 - <<'EOF'
@@ -289,30 +273,8 @@ precise error rate.
 
 </details>
 
-**Question 4.** Compare the two Nanopore rows: the default run and yours. Which kept more
-reads, and which rule removed reads in each?
-
-<details>
-<summary>Answer</summary>
-
-Both runs list their quality failures under `low qual`, but different rules put them
-there. In the default run it is the per-base rule: more than 40% of bases below Q15. In
-your run it is the average: below Q10.
-
-The two rules measure different things. The per-base rule counts how many bases are poor;
-a read's average can stay above Q10 even when a large share of its bases is below Q15. In
-Session 1 only about 61% of Nanopore bases reached Q20, so many reads have a sizeable
-share below Q15, and the per-base rule is likely the stricter of the two for these data.
-Your table shows whether it was.
-
-The larger point is that the default run filtered reads although you asked for no
-filtering. Week 3's pipeline runs `fastplong` with its defaults unless you give it
-options, which is why you will give it the ones you chose here.
-
-</details>
-
 **Checkpoint 2.** Both long-read files filtered with thresholds you set, and you can say
-which rule removed reads in each Nanopore run.
+how many reads were retained from each file.
 
 ## Part 3: Aggregate Everything
 
@@ -340,7 +302,7 @@ NanoPlot reports for the detailed long-read results. MultiQC has no module for
 
 Click the column headers to sort: **M Seqs**, **% Dups**, **% GC**, **% Passed**.
 
-**Question 5.** You are looking at raw and trimmed versions of two platforms in one table.
+**Question 4.** You are looking at raw and trimmed versions of two platforms in one table.
 What does sorting by %GC show you, and why is that reassuring?
 
 <details>
@@ -362,7 +324,7 @@ an improvement. Agreement within each library is the reassuring comparison.
 
 Scroll to the overlaid per-base quality and adapter content plots.
 
-**Question 6.** Pick one thing visible here that you could not have seen in any single
+**Question 5.** Pick one thing visible here that you could not have seen in any single
 FastQC report.
 
 <details>
@@ -380,71 +342,6 @@ in a table.
 
 **Checkpoint 3.** One MultiQC report covering raw and trimmed data from both short-read
 platforms.
-
-## Part 4: Four Samples That Are Not Fine
-
-Your own data was reasonably well behaved. Public data usually is, because it was
-deposited by people who had already fixed the obvious problems.
-
-These four have not been fixed. **Each has exactly one thing wrong with it.**
-
-```bash
-mkdir -p mystery_qc
-fastqc -t 4 -o mystery_qc "$COURSE"/shared/wk2/mystery/*.fastq.gz
-multiqc --force --title "Mystery samples" -o multiqc_mystery mystery_qc
-```
-
-Open `multiqc_mystery/multiqc_report.html`.
-
-For each sample write one sentence: **what is wrong, what is the evidence, what would you
-do?**
-
-```text
-Sample A
-Sample B
-Sample C
-Sample D
-```
-
-Useful extra checks:
-
-```bash
-cd mystery_qc
-for z in *_fastqc.zip; do unzip -o -q "$z"; done
-grep -H '^FAIL' */summary.txt | sed 's|/summary.txt||' | sort
-cd ..
-```
-
-<details>
-<summary>Answers — do not open until you have written yours</summary>
-
-**Sample A — adapter contamination.** Adapter content rises sharply from around position
-100 and overrepresented sequences include adapter. The insert was shorter than the read
-length, so the sequencer read through into the adapter. Trimming with
-`--detect_adapter_for_pe` fixes it. Not a reason to discard the sample.
-
-**Sample B — low yield.** An order of magnitude fewer reads than the others. Invisible in
-its own report and obvious in the MultiQC table. Under-loading, failed quantification, or
-a pooling error. This sample cannot support the same analysis as the others; re-sequence
-or exclude, and say which in your methods.
-
-**Sample C — quality crash partway through the run.** Per-base quality is fine and then
-collapses at a specific cycle, the same cycle in both mates. A run-level problem — a
-reagent issue or a bubble in the flow cell. Hard-trim to before the crash and accept
-shorter reads, or re-sequence. Check whether other samples on the same run show it, which
-tells you whether it is the sample or the run.
-
-**Sample D — contamination.** The per-sequence GC plot has two peaks rather than one, and
-overall %GC does not match the others. Another organism in the library, or a sample swap.
-Trimming will not touch this. Screen taxonomically before doing anything else.
-
-**The general lesson.** A, C and D would each have been missed by looking only at
-pass/fail flags. B was invisible in its own report entirely. QC is reading numbers across
-samples, not collecting green ticks.
-
-</details>
-
-**Checkpoint 4.** Four diagnoses written down before you opened the answers.
 
 ## Takeaways
 
@@ -468,8 +365,7 @@ multiqc --force -o multiqc fastqc_dir reports_dir
 Three things to carry forward:
 
 1. Over-trimming is worse than under-trimming. Trim adapters; leave quality mostly alone.
-2. Thresholds are platform-specific, and so are defaults. Q20 is routine for Illumina and
-   would destroy a nanopore run, and a default carried over from short reads can filter
-   long reads without telling you.
-3. Run MultiQC even on one sample, and always before deciding a dataset is fine. The
-   problems that matter most are only visible across samples.
+2. Choose quality thresholds for the platform and dataset. Q20 would discard most reads
+   from this Nanopore run. Write your chosen settings explicitly in the command.
+3. Use MultiQC to compare raw and trimmed short-read reports. Check read retention,
+   quality, and adapter content together to judge the effect of preprocessing.
