@@ -40,10 +40,21 @@ module list
 fastplong --version
 ```
 
-Repeat the six filename assignments from
-[Session 1: Identify the Input Files](week-02-01-qc-across-platforms.html#identify-the-input-files),
-using the files in your current `$READS` directory. You will use `ILLUMINA_R1`,
-`ILLUMINA_R2`, `BGISEQ_R1`, `BGISEQ_R2`, `PB`, and `LONG` below.
+Define the six input files again in this session, using your current `$READS` directory:
+
+```bash
+ILLUMINA_R1="$READS/SRX23612877_SRR27956204_1.fastq.gz"
+ILLUMINA_R2="$READS/SRX23612877_SRR27956204_2.fastq.gz"
+BGISEQ_R1="$READS/SRX13548510_SRR17374239_1.fastq.gz"
+BGISEQ_R2="$READS/SRX13548510_SRR17374239_2.fastq.gz"
+PB="$READS/SRX14356846_SRR18210286.fastq.gz"
+LONG="$READS/SRX13548509_SRR17374240.fastq.gz"
+
+ls -lh "$ILLUMINA_R1" "$ILLUMINA_R2" "$BGISEQ_R1" "$BGISEQ_R2" "$PB" "$LONG"
+```
+
+All six files should exist before you continue. If your filenames differ, update
+the filenames on the right while keeping the variable names on the left.
 
 ## Part 1: Trim the Short Reads
 

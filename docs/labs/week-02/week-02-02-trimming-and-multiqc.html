@@ -80,7 +80,16 @@ ls -lh &quot;$READS&quot;</code></pre>
 <pre class="lab-code"><code class=" language-bash">module load seqkit fastp fastplong fastqc multiqc
 module list
 fastplong --version</code></pre>
-<p>Repeat the six filename assignments from <a href="week-02-01-qc-across-platforms.html#identify-the-input-files">Session 1: Identify the Input Files</a>, using the files in your current <code>$READS</code> directory. You will use <code>ILLUMINA_R1</code>, <code>ILLUMINA_R2</code>, <code>BGISEQ_R1</code>, <code>BGISEQ_R2</code>, <code>PB</code>, and <code>LONG</code> below.</p>
+<p>Define the six input files again in this session, using your current <code>$READS</code> directory:</p>
+<pre class="lab-code"><code class=" language-bash">ILLUMINA_R1=&quot;$READS/SRX23612877_SRR27956204_1.fastq.gz&quot;
+ILLUMINA_R2=&quot;$READS/SRX23612877_SRR27956204_2.fastq.gz&quot;
+BGISEQ_R1=&quot;$READS/SRX13548510_SRR17374239_1.fastq.gz&quot;
+BGISEQ_R2=&quot;$READS/SRX13548510_SRR17374239_2.fastq.gz&quot;
+PB=&quot;$READS/SRX14356846_SRR18210286.fastq.gz&quot;
+LONG=&quot;$READS/SRX13548509_SRR17374240.fastq.gz&quot;
+
+ls -lh &quot;$ILLUMINA_R1&quot; &quot;$ILLUMINA_R2&quot; &quot;$BGISEQ_R1&quot; &quot;$BGISEQ_R2&quot; &quot;$PB&quot; &quot;$LONG&quot;</code></pre>
+<p>All six files should exist before you continue. If your filenames differ, update the filenames on the right while keeping the variable names on the left.</p>
 <h2 id="part-1-trim-the-short-reads">Part 1: Trim the Short Reads</h2>
 <h3 id="1-1-run-fastp-on-one-sample">1.1 Run fastp on One Sample</h3>
 <pre class="lab-code"><code class=" language-bash">mkdir -p trimmed reports
