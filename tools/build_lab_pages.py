@@ -328,6 +328,19 @@ def discover_tutorial_pages() -> list[dict[str, str | Path]]:
     ]
 
 
+def discover_reading_pages() -> list[dict[str, str | Path]]:
+    return [
+        {
+            "source": ROOT / "readings" / "index.md",
+            "output": DOCS / "readings" / "index.html",
+            "label": "Reading guide",
+            "back_label": "Back to reading materials",
+            "back_fragment": "readings",
+            "section": "readings",
+        }
+    ]
+
+
 def slugify(text: str) -> str:
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"`([^`]+)`", r"\1", text)
@@ -650,6 +663,12 @@ def page_template(page: dict) -> str:
         if level <= 3
     )
     time_note = f'\n            <p class="lab-time">{esc(page["time_note"])}</p>' if page["time_note"] else ""
+    reading_link = ""
+    if is_lab_page and page.get("week") in {1, 2, 3, 4, 10} and page.get("session") in {1, 2}:
+        reading_href = prefixed(
+            prefix, f'readings/index.html#week-{page["week"]}-session-{page["session"]}'
+        )
+        reading_link = f'\n            <p><a href="{reading_href}">Reading materials for this lab</a></p>'
 
     pager = ""
     if is_lab_page and (page.get("prev") or page.get("next")):
@@ -677,6 +696,7 @@ def page_template(page: dict) -> str:
         <a class="site-title" href="{index_href}">{esc(COURSE_TITLE)}</a>
         <nav class="site-nav" aria-label="Main navigation">
           <a href="{prefixed(prefix, 'index.html#labs')}">Schedule</a>
+          <a href="{prefixed(prefix, 'readings/index.html')}">Readings</a>
           <a href="{prefixed(prefix, 'index.html#setup')}">Setup</a>
           <a href="{REPO_URL}">GitHub</a>
         </nav>
@@ -696,7 +716,7 @@ def page_template(page: dict) -> str:
         <article class="lab-article">
           <header class="lab-hero">
             <p class="lab-label">{esc(str(page["label"]))}</p>
-            <h1>{esc(heading)}</h1>{time_note}
+            <h1>{esc(heading)}</h1>{time_note}{reading_link}
           </header>
           {page["body"]}{pager}
         </article>
@@ -795,6 +815,7 @@ def index_template(lab_pages: list[dict], tutorial_pages: list[dict]) -> str:
     <nav class="course-nav" aria-label="Main navigation">
       <div class="wrap">
         <a href="#labs">Schedule</a>
+        <a href="#readings">Readings</a>
         <a href="#setup">Setup</a>
         <a href="#expectations">Expectations</a>
         <a href="{REPO_URL}">GitHub</a>
@@ -821,6 +842,34 @@ def index_template(lab_pages: list[dict], tutorial_pages: list[dict]) -> str:
 {schedule_markup(lab_pages)}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section class="home-section" id="readings" aria-labelledby="readings-title">
+        <h2 id="readings-title">Reading materials</h2>
+        <p class="section-note">
+          Selected tutorials, papers, and reference pages for the current labs and homework.
+          Each entry names the sections or figures to read and explains how they support the course work.
+        </p>
+        <div class="two-col">
+          <div>
+            <h3><a href="readings/index.html">Open the reading guide</a></h3>
+            <ul class="plain-list">
+              <li><a href="readings/index.html#week-1">Week 1: Command line, Git, and HPC</a></li>
+              <li><a href="readings/index.html#week-2">Week 2: Read quality and preprocessing</a></li>
+              <li><a href="readings/index.html#week-3">Week 3: Assembly and annotation</a></li>
+              <li><a href="readings/index.html#week-4">Week 4: Alignment and variant calling</a></li>
+              <li><a href="readings/index.html#week-10">Week 10: Microbiome and metagenomics</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3>How to use the readings</h3>
+            <ul class="plain-list">
+              <li><strong>Before class:</strong> start with the named excerpts, aiming for about 20–30 minutes per session.</li>
+              <li><strong>For homework:</strong> consult the relevant reference while working on the assignment.</li>
+              <li><strong>Optional background:</strong> explore a topic in more depth when you are ready.</li>
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -880,7 +929,7 @@ git pull</code></pre>
 
 
 def main() -> None:
-    pages = [*discover_lab_pages(), *discover_tutorial_pages()]
+    pages = [*discover_lab_pages(), *discover_tutorial_pages(), *discover_reading_pages()]
 
     for page in pages:
         source = Path(page["source"])

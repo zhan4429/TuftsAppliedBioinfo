@@ -23,6 +23,7 @@
         <a class="site-title" href="../index.html">Applied Bioinformatics</a>
         <nav class="site-nav" aria-label="Main navigation">
           <a href="../index.html#labs">Schedule</a>
+          <a href="../readings/index.html">Readings</a>
           <a href="../index.html#setup">Setup</a>
           <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
         </nav>
@@ -111,7 +112,7 @@ git config --global pull.rebase false</code></pre>
 <pre class="lab-code"><code class=" language-text">~/.ssh/id_ed25519       private key; never share this
 ~/.ssh/id_ed25519.pub   public key; this is what you add to GitHub</code></pre>
 <h3 id="permissions-matter">Permissions Matter</h3>
-<p>SSH refuses to use a private key if other people could read it. If you ever see a message such as <code>Permissions 0644 for &amp;#x27;id_ed25519&amp;#x27; are too open</code>, fix the permissions:</p>
+<p>SSH refuses to use a private key if other people could read it. If you ever see a message such as <code>Permissions 0644 for &#x27;id_ed25519&#x27; are too open</code>, fix the permissions:</p>
 <pre class="lab-code"><code class=" language-bash">chmod 700 ~/.ssh
 chmod 600 ~/.ssh/id_ed25519
 chmod 644 ~/.ssh/id_ed25519.pub</code></pre>
@@ -253,7 +254,7 @@ du -sh .</code></pre>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <p><strong><code>Permission denied (publickey)</code></strong> means GitHub does not recognize your key. Confirm that the key exists with <code>ls ~/.ssh/id_ed25519</code>, confirm the public key is registered on GitHub, and test again with <code>ssh -T git@github.com</code>.</p>
 <p><strong><code>Connection timed out</code></strong> usually means port 22 is blocked. Use Part 5.</p>
-<p><strong><code>Permissions 0644 for &amp;#x27;...&amp;#x27; are too open</code></strong> means SSH will not use the key until the permissions are fixed. Use the <code>chmod</code> commands in Part 2.</p>
+<p><strong><code>Permissions 0644 for &#x27;...&#x27; are too open</code></strong> means SSH will not use the key until the permissions are fixed. Use the <code>chmod</code> commands in Part 2.</p>
 <p><strong><code>Host key verification failed</code></strong> means the saved server identity does not match what SSH sees now. Ask for help if you are unsure. If directed, remove the old entry and reconnect:</p>
 <pre class="lab-code"><code class=" language-bash">ssh-keygen -R github.com
 ssh -T git@github.com</code></pre>
@@ -263,7 +264,7 @@ git remote set-url origin git@github.com:YOURUSERNAME/appbio-hw.git
 git remote -v</code></pre>
 <p><strong><code>Please tell me who you are</code></strong> means Part 1 was skipped or did not save correctly. Re-run the <code>git config --global</code> commands.</p>
 <p><strong><code>fatal: not a git repository</code></strong> means you are not inside a Git repository. Use <code>cd</code> to enter the repository directory, or run <code>git init</code> if this directory should become a repository.</p>
-<p><strong><code>remote: error: File ... exceeds GitHub&amp;#x27;s file size limit</code></strong> means a large file was committed. Ask for help rather than guessing; removing it correctly requires rewriting Git history.</p>
+<p><strong><code>remote: error: File ... exceeds GitHub&#x27;s file size limit</code></strong> means a large file was committed. Ask for help rather than guessing; removing it correctly requires rewriting Git history.</p>
 <h2 id="quick-reference">Quick Reference</h2>
 <p>One-time setup:</p>
 <pre class="lab-code"><code class=" language-bash">git config --global user.name &quot;Your Full Name&quot;

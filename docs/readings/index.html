@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Reading Materials for Applied Bioinformatics, Tufts University.">
+    <title>Reading Materials | Applied Bioinformatics</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../assets/lab-code-copy.js" defer></script>
+  </head>
+  <body class="doc-page">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="institution-bar">
+      <div class="wrap">
+        <a href="https://www.tufts.edu">Tufts University</a>
+        <span>Department of Biology</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="wrap site-header-inner">
+        <a class="site-title" href="../index.html">Applied Bioinformatics</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="../index.html#labs">Schedule</a>
+          <a href="../readings/index.html">Readings</a>
+          <a href="../index.html#setup">Setup</a>
+          <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <main class="lab-main wrap" id="main">
+      <div class="lab-shell">
+        <aside class="lab-toc" aria-label="Table of contents">
+          <a class="back-link" href="../index.html#readings">Back to reading materials</a>
+          <details class="toc-details" open>
+            <summary>On this page</summary>
+            <nav>
+            <a class="toc-level-2" href="#the-study-behind-homeworks-2-and-3">The Study Behind Homeworks 2 and 3</a>
+            <a class="toc-level-2" href="#week-1">Week 1</a>
+            <a class="toc-level-3" href="#week-1-session-1">Week 1, Session 1</a>
+            <a class="toc-level-3" href="#week-1-session-2">Week 1, Session 2</a>
+            <a class="toc-level-2" href="#week-2">Week 2</a>
+            <a class="toc-level-3" href="#week-2-session-1">Week 2, Session 1</a>
+            <a class="toc-level-3" href="#week-2-session-2">Week 2, Session 2</a>
+            <a class="toc-level-2" href="#week-3">Week 3</a>
+            <a class="toc-level-3" href="#week-3-session-1">Week 3, Session 1</a>
+            <a class="toc-level-3" href="#week-3-session-2">Week 3, Session 2</a>
+            <a class="toc-level-2" href="#week-4">Week 4</a>
+            <a class="toc-level-3" href="#week-4-session-1">Week 4, Session 1</a>
+            <a class="toc-level-3" href="#week-4-session-2">Week 4, Session 2</a>
+            <a class="toc-level-2" href="#week-10">Week 10</a>
+            <a class="toc-level-3" href="#week-10-session-1">Week 10, Session 1</a>
+            <a class="toc-level-3" href="#week-10-session-2">Week 10, Session 2</a>
+            </nav>
+          </details>
+        </aside>
+        <article class="lab-article">
+          <header class="lab-hero">
+            <p class="lab-label">Reading guide</p>
+            <h1>Reading Materials</h1>
+          </header>
+          <p>These readings support the current labs and homework for Weeks 1–4 and 10. Start with the named excerpts under <strong>Before class</strong>, aiming for about 20–30 minutes per session. Use <strong>For homework</strong> as a reference while working on an assignment. <strong>Optional background</strong> provides more detail when you want to explore a topic.</p>
+<p>For research papers, read the specified sections and figures first. You do not need to understand every algorithm or run a second workflow from a tutorial. Use the commands and cluster settings in the course labs for your analysis.</p>
+<h2 id="the-study-behind-homeworks-2-and-3">The Study Behind Homeworks 2 and 3</h2>
+<p>Jia et al. (2023), <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10085805/">A high-quality reference genome for the fission yeast Schizosaccharomyces osmophilus</a>.</p>
+<p>Read the abstract and the sequencing, genome assembly, and gene annotation methods. This is the study behind the data you download and clean in Homework 2, then assemble and annotate in Homework 3. Use the published genome as biological context for your results. The classroom analysis uses a different workflow, so identical results are not expected.</p>
+<h2 id="week-1">Week 1</h2>
+<h3 id="week-1-session-1">Week 1, Session 1</h3>
+<p><strong>Command line, text processing, and Git</strong></p>
+<ul>
+<li><strong>Before class:</strong> Software Carpentry&#x27;s <a href="https://swcarpentry.github.io/shell-novice/04-pipefilter.html">Pipes and Filters</a>. Focus on redirecting output and connecting commands with pipes. These ideas explain how the lab counts and summarizes annotation features.</li>
+<li><strong>Before class:</strong> Software Carpentry&#x27;s <a href="https://swcarpentry.github.io/git-novice/04-changes.html">Tracking Changes with Git</a>. Follow the modify–stage–commit cycle and the use of <code>git status</code> and <code>git diff</code>.</li>
+<li><strong>For homework:</strong> Keep the course <a href="../tutorials/awk-cheatsheet.html">AWK cheat sheet</a> and <a href="../tutorials/sed-cheatsheet.html">sed cheat sheet</a> open while working on Homework 1&#x27;s feature queries and text replacements. Use the Git reading when creating your course-script repository and recording commits.</li>
+</ul>
+<h3 id="week-1-session-2">Week 1, Session 2</h3>
+<p><strong>HPC, environments, and fetching public data</strong></p>
+<ul>
+<li><strong>Before class:</strong> Tufts Research Technology&#x27;s <a href="https://rtguides.it.tufts.edu/hpc/access/60-brief-slurm.html">Running your software</a>. Focus on compute resources, interactive sessions, and batch scripts.</li>
+<li><strong>For homework:</strong> Nextflow training&#x27;s <a href="https://training.nextflow.io/latest/nextflow_run/03_manage_executions/">Manage workflow executions</a>. Read the sections on execution history and cleaning work directories. They explain <code>nextflow log</code>, run names, and the relationship between cleanup and the ability to resume a run.</li>
+</ul>
+<p>Connect these readings to Homework 1&#x27;s job-script troubleshooting and after-class cleanup. A submitted job, a completed job, and verified output are different checks.</p>
+<h2 id="week-2">Week 2</h2>
+<h3 id="week-2-session-1">Week 2, Session 1</h3>
+<p><strong>Read quality across sequencing platforms</strong></p>
+<ul>
+<li><strong>Before class:</strong> Data Carpentry&#x27;s <a href="https://datacarpentry.github.io/wrangling-genomics/02-quality-control.html">Assessing Read Quality</a>. Read the FASTQ and quality-control explanations, especially how Phred scores relate to the FastQC plots.</li>
+<li><strong>For homework:</strong> The <a href="https://github.com/wdecoster/NanoPlot">NanoPlot documentation</a> provides a reference for long-read plots and report outputs. Compare read-length distributions, base yield, and quality rather than judging a long-read dataset from a short-read QC flag.</li>
+<li><strong>For homework:</strong> In the <a href="https://bioinf.shenwei.me/seqkit/usage/#stats">SeqKit statistics documentation</a>, look up <code>num_seqs</code>, <code>sum_len</code>, N50, and <code>AvgQual</code>. Check what each number measures before using it in Homework 2&#x27;s raw-read summaries and coverage calculations.</li>
+</ul>
+<h3 id="week-2-session-2">Week 2, Session 2</h3>
+<p><strong>Trimming, filtering, and MultiQC</strong></p>
+<ul>
+<li><strong>Before class:</strong> In the <a href="https://github.com/OpenGene/fastp#adapters">fastp documentation</a>, read the adapter-trimming and quality-filtering sections. Distinguish removing sequence from a read from discarding the whole read.</li>
+<li><strong>Before class:</strong> MultiQC&#x27;s <a href="https://docs.seqera.io/multiqc/reports/">Using reports</a> explains how to navigate tables and plots and compare samples. Use the raw-versus-trimmed examples in the lab as your concrete case.</li>
+<li><strong>For homework:</strong> Read the filtering section of the <a href="https://github.com/OpenGene/fastplong#filtering">fastplong documentation</a> alongside the lab&#x27;s explanation of mean quality and length thresholds.</li>
+</ul>
+<p>For Homework 2, explain what preprocessing changed using retained reads and bases, quality, and adapter content together. A higher retained percentage or more green QC flags does not by itself establish a better result.</p>
+<h2 id="week-3">Week 3</h2>
+<h3 id="week-3-session-1">Week 3, Session 1</h3>
+<p><strong>Genome assembly and evaluation</strong></p>
+<ul>
+<li><strong>Before class:</strong> Li and Durbin (2024), <a href="https://www.genome.gov/sites/default/files/media/files/2024-10/Genome-assembly-in-the-telomere-to-telomere-era.pdf">Genome assembly in the telomere-to-telomere era</a>. Read the introduction, sequencing-data overview, and assembly-evaluation section. Focus on coverage, repeats, and the distinction between contiguity, completeness, and correctness.</li>
+<li><strong>For homework:</strong> Rhie et al. (2020), <a href="https://link.springer.com/article/10.1186/s13059-020-02134-9">Merqury: reference-free quality, completeness, and phasing assessment for genome assemblies</a>. Start with the abstract, Figure 1, and the explanations of QV and k-mer completeness. These support Homework 3&#x27;s accuracy assessment.</li>
+</ul>
+<p>Be ready to explain why a large N50 is useful but cannot establish base accuracy, and why an accuracy estimate depends on the evidence used to calculate it.</p>
+<h3 id="week-3-session-2">Week 3, Session 2</h3>
+<p><strong>Annotation and evidence</strong></p>
+<ul>
+<li><strong>Before class:</strong> Gabriel et al. (2024), <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11216308/">BRAKER3: Fully automated genome annotation using RNA-seq and protein evidence with GeneMark-ETP, AUGUSTUS, and TSEBRA</a>. Read the abstract, Figure 1, and its workflow explanation. Identify the inputs and what RNA and protein evidence contribute.</li>
+<li><strong>For homework:</strong> Use the <a href="https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md">GFF3 specification</a> as a lookup reference for feature types and the <code>ID</code> and <code>Parent</code> attributes. Focus on how genes, transcripts, exons, and CDS features are related.</li>
+</ul>
+<p>Connect the readings to Homework 3&#x27;s feature counts, intron-containing transcripts, and RNA-seq support. An annotation feature count and the number of genes expressed in one sampled condition are different quantities.</p>
+<h2 id="week-4">Week 4</h2>
+<h3 id="week-4-session-1">Week 4, Session 1</h3>
+<p><strong>Alignment and alignment QC</strong></p>
+<ul>
+<li><strong>Before class:</strong> In the official <a href="https://samtools.github.io/hts-specs/SAMv1.pdf">SAM/BAM specification</a>, read the example in Section 1.1 and the mandatory fields in Section 1.4. Use the FLAG table and CIGAR definitions as references; the binary-format details are not needed for this lab.</li>
+<li><strong>For homework:</strong> In the <a href="https://github.com/brentp/mosdepth">mosdepth documentation</a>, look up the output summaries, coverage thresholds, and mapping-quality filter. Relate these to the lab&#x27;s comparison of all-read coverage with coverage supported by higher-MAPQ alignments.</li>
+</ul>
+<p>For Homework 4, explain what a record and its coverage evidence mean, including ambiguously placed reads, clipping, and supplementary alignments.</p>
+<h3 id="week-4-session-2">Week 4, Session 2</h3>
+<p><strong>Variant calling and interpretation</strong></p>
+<ul>
+<li><strong>Before class:</strong> GATK&#x27;s <a href="https://gatk.broadinstitute.org/hc/en-us/articles/360035531692-VCF-Variant-Call-Format">VCF—Variant Call Format</a>. Focus on the header, REF/ALT, FILTER, INFO versus FORMAT, and genotype fields such as GT, AD, and DP.</li>
+<li><strong>For homework:</strong> Krusche et al. (2019), <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6699627/">Best practices for benchmarking germline small-variant calls in human genomes</a>. Read the benchmarking recommendations and discussion of variant representations. Use the concepts to interpret normalization, caller agreement, and the limits of comparison without a truth set.</li>
+<li><strong>Optional background:</strong> Morales et al. (2022), <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9007741/">A joint NCBI and EMBL-EBI transcript set for clinical genomics and research</a>. Read the introduction and MANE rationale for the human transcript-choice example in Homework 4.</li>
+</ul>
+<p>Keep the identity of the biological samples in mind. Differences between reads and an assembly can have biological as well as technical explanations. Caller agreement alone does not identify an assembly error.</p>
+<h2 id="week-10">Week 10</h2>
+<h3 id="week-10-session-1">Week 10, Session 1</h3>
+<p><strong>Amplicon reads to an ASV table</strong></p>
+<ul>
+<li><strong>Before class:</strong> In QIIME 2&#x27;s <a href="https://amplicon-docs.qiime2.org/en/stable/tutorials/gut-to-soil/">Gut-to-soil axis tutorial</a>, read the sequence-quality-control and feature-table-construction section, including the paired-end DADA2 example and denoising statistics.</li>
+<li><strong>For the lab:</strong> Relate truncation choices to the overlap needed for paired reads to merge. Follow the read counts through filtering, denoising, merging, and chimera removal, then connect the resulting ASVs to the feature table.</li>
+<li><strong>Optional background:</strong> Gloor et al. (2017), <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5695134/">Microbiome Datasets Are Compositional: And This Is Not Optional</a>. Read the introduction and Figure 1 for the lab&#x27;s final relative-abundance exercise. Reuse this reading in Session 2.</li>
+</ul>
+<h3 id="week-10-session-2">Week 10, Session 2</h3>
+<p><strong>Shotgun profiles, community statistics, and MAG quality</strong></p>
+<ul>
+<li><strong>Before class:</strong> Read or revisit the introduction and Figure 1 of <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5695134/">Gloor et al. (2017)</a>. Focus on why a change in relative abundance does not establish the same change in absolute abundance.</li>
+<li><strong>For the lab:</strong> Read the dispersion discussion in the <a href="https://vegandevs.github.io/vegan/reference/adonis.html"> 0  documentation</a>, alongside the description of <a href="https://vegandevs.github.io/vegan/reference/betadisper.html"> 1 </a>. Connect the two outputs to differences between groups and variation within groups.</li>
+<li><strong>For MAG assessment:</strong> Bowers et al. (2017), <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6436528/">Minimum information about a single amplified genome (MISAG) and a metagenome-assembled genome (MIMAG) of bacteria and archaea</a>. Read the quality categories and their requirements, including the RNA-gene requirements for high-quality drafts.</li>
+<li><strong>Optional background:</strong> Nearing et al. (2022), <a href="https://www.nature.com/articles/s41467-022-28034-z">Microbiome differential abundance methods produce different results across 38 datasets</a>. Read the abstract and discussion for the motivation behind comparing methods and reporting sensitivity to analysis choices.</li>
+</ul>
+<p>Use these readings to explain the statistical assumptions and limitations of a result, including why completeness and contamination estimates alone do not establish every requirement for a high-quality MAG.</p>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          Applied Bioinformatics, Department of Biology, Tufts University.
+          Course policies, grading, and due dates are set by the official syllabus.
+        </p>
+        <a href="https://github.com/zhan4429/TuftsAppliedBioinfo">Course repository on GitHub</a>
+      </div>
+    </footer>
+    <script>
+      (function () {
+        var toc = document.querySelector(".toc-details");
+        if (toc && window.matchMedia("(max-width: 860px)").matches) toc.removeAttribute("open");
+      })();
+    </script>
+  </body>
+</html>

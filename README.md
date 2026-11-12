@@ -86,6 +86,13 @@ Current labs:
 - [Week 1: Command Line, Text Processing, and Git](labs/week-01/01-command-line-git.md)
 - [Week 1: HPC, Environments, and Fetching Public Data](labs/week-01/02-hpc-environments-fetchngs.md)
 
+## Reading Materials
+
+The [reading guide](readings/index.md) organizes selected tutorials, papers, and
+reference pages by lab session for Weeks 1–4 and 10. Each entry names the excerpts
+to read and connects them to the labs and homework. Readings are labeled
+**Before class**, **For homework**, or **Optional background**.
+
 Command references:
 
 - [AWK cheat sheet](tutorials/awk-cheatsheet.md)
