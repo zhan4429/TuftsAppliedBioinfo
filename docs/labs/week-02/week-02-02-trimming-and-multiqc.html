@@ -191,17 +191,49 @@ EOF</code></pre>
 <p><strong>Question 2.</strong> Compare the before and after rows. What happened to read count, total bases, and N50 in each file? Why did the length filter remove nothing?</p>
 <details>
 <summary>Answer</summary>
-<p>For the Nanopore file, any reads removed appear under <code>low qual</code>. Compare the share of reads removed with the share of bases removed. Low-quality Nanopore reads are often shorter than average, so total bases usually falls by proportionally less than read count, and N50 rises or stays flat. If N50 had fallen, the filter would have been removing your longest reads, which would mean the thresholds were wrong.</p>
-<p>The PacBio HiFi file barely changes. A HiFi read is a consensus built from several passes over the same molecule, and a read is only called HiFi at about Q20 or better, so a Q10 threshold has almost nothing to remove. Running it still checks the read ends for adapter.</p>
-<p><code>too short</code> is zero, or nearly so, for both files because nothing was short to begin with. Session 1 showed that the shortest Nanopore read is 2,000 bp and the shortest HiFi read is 1,332 bp: the submitters removed short reads before depositing the data. A threshold below the data&#x27;s minimum does nothing. Check the data before assuming a filter did its job.</p>
+<p><strong>Example results from the class reports (<code>fastplong</code> 0.7.1, using the settings above):</strong></p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Metric</th>
+<th>Nanopore: before → after</th>
+<th>PacBio HiFi: before → after</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Reads</td>
+<td>701,791 → 701,785</td>
+<td>227,298 → 227,298</td>
+</tr>
+<tr>
+<td>Total bases (Gb)</td>
+<td>9.633075 → 9.632954</td>
+<td>4.583595 → 4.583595</td>
+</tr>
+<tr>
+<td>N50 (bp)</td>
+<td>20,948 → 20,948</td>
+<td>21,020 → 21,020</td>
+</tr>
+<tr>
+<td>Minimum length (bp)</td>
+<td>2,000 → 2,000</td>
+<td>1,332 → 1,332</td>
+</tr>
+</tbody>
+</table></div>
+<p>Only <strong>6 Nanopore reads</strong> failed the quality filter: <strong>99.9991% were retained</strong>. All HiFi reads were retained. Total bases hardly change and N50 stays the same, so these settings have very little effect on these already processed datasets.</p>
+<p>Neither file loses reads to the 1,000 bp length cutoff because its shortest read is already longer than that. A filter can be working correctly and remove nothing. Passing these lenient filters does not mean every base is high quality.</p>
+<p>The following plots use the same axes. Blue bars count the percentage of <strong>reads</strong> in each mean-quality bin; purple bars count the percentage of <strong>bases contributed by those reads</strong>. The dashed line marks the Q10 cutoff.</p>
+<p><img src="assets/fastplong-long-reads/nanopore-mean-quality.png" alt="Nanopore read mean-quality distribution before filtering, peaking near Q24 and almost entirely above the Q10 cutoff." loading="lazy" decoding="async"></p>
+<p><strong>Nanopore:</strong> the distribution peaks near a mean score of Q24. Almost all reads are above Q10; the six quality failures are too few to see clearly at this scale. The after-filtering plot looks almost identical. <a href="assets/fastplong-long-reads/nanopore-mean-quality.png">Open the full-size Nanopore figure.</a></p>
+<p><img src="assets/fastplong-long-reads/hifi-mean-quality.png" alt="PacBio HiFi read mean-quality distribution before filtering, with all reads well above the Q10 cutoff." loading="lazy" decoding="async"></p>
+<p><strong>PacBio HiFi:</strong> the reported mean scores are much higher, with a peak near Q92. All reads pass Q10, and the before/after distributions are identical. These are averages of reported Phred scores, not a measurement of sequence accuracy. <a href="assets/fastplong-long-reads/hifi-mean-quality.png">Open the full-size HiFi figure.</a></p>
 </details>
-<p><strong>Question 3.</strong> Why <code>--mean_qual 10</code> rather than the Q20 you might use for short reads?</p>
+<p><strong>Question 3.</strong> Why should you inspect the quality distribution before choosing <code>--mean_qual</code>? Can you compare this plot directly with SeqKit&#x27;s <code>AvgQual</code>?</p>
 <details>
 <summary>Answer</summary>
-<p>Q10 is one error in ten; Q20 is one in a hundred. Those would be alarming thresholds for Illumina.</p>
-<p>For nanopore they are not, because the whole platform operates at a lower per-base accuracy and the value comes from length and from consensus across many reads. Filtering at Q20 would discard most of a perfectly usable run.</p>
-<p>Thresholds are platform-specific. Carrying a short-read instinct onto long-read data throws away good data.</p>
-<p>One caution about the number itself. <code>fastplong</code> averages the quality scores directly. Quality scores are on a log scale, so a few very poor bases raise the read&#x27;s true error rate far more than they lower this average. A read that averages Q10 here has an error rate of at least one in ten, usually worse. Treat the threshold as a cut-off, not as a precise error rate.</p>
+<p>Q10 is a lenient starting point here: it retains almost every Nanopore read and all HiFi reads. A higher cutoff would be stricter, but it should be chosen for the dataset and downstream task. Retaining more reads is not automatically better, and removing more is not automatically an improvement.</p>
+<p>The two quality summaries use different calculations. <code>fastplong</code> uses the <a href="https://github.com/OpenGene/fastplong/blob/main/src/filter.cpp">arithmetic mean of the Phred scores</a> within each read. <a href="https://bioinf.shenwei.me/seqkit/usage/#stats">SeqKit&amp;#x27;s  1 </a> first converts scores to error probabilities, averages those across the file, then converts back. Poor bases have a stronger effect on the latter. That is why the Nanopore peak near Q24 here can coexist with an <code>AvgQual</code> of 11.94 in Session 1. Read the metric definition before comparing numbers across tools.</p>
 </details>
 <p><strong>Checkpoint 2.</strong> Both long-read files filtered with thresholds you set, and you can say how many reads were retained from each file.</p>
 <h2 id="part-3-aggregate-everything">Part 3: Aggregate Everything</h2>
@@ -244,7 +276,7 @@ fastplong --in long.fastq.gz --out filt.fq.gz \
 <p>Three things to carry forward:</p>
 <ol>
 <li>Over-trimming is worse than under-trimming. Trim adapters; leave quality mostly alone.</li>
-<li>Choose quality thresholds for the platform and dataset. Q20 would discard most reads from this Nanopore run. Write your chosen settings explicitly in the command.</li>
+<li>Choose quality thresholds for the platform, dataset, and downstream task. Check how the tool calculates quality, and write your chosen settings explicitly in the command.</li>
 <li>Use MultiQC to compare raw and trimmed short-read reports. Check read retention, quality, and adapter content together to judge the effect of preprocessing.</li>
 </ol>
           <nav class="lab-pager" aria-label="Lab sequence">

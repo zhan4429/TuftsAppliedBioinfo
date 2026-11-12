@@ -524,7 +524,8 @@ summary:focus-visible {
   width: 75%;
 }
 
-.lab-article img[src*="assets/nanoplot-nanopore/"] {
+.lab-article img[src*="assets/nanoplot-nanopore/"],
+.lab-article img[src*="assets/fastplong-long-reads/"] {
   width: 80%;
 }
 
