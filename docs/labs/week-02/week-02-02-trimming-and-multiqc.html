@@ -106,7 +106,16 @@ fastp \
   --json &quot;reports/${S}.fastp.json&quot; \
   --html &quot;reports/${S}.fastp.html&quot; \
   --thread 4</code></pre>
-<p><code>--detect_adapter_for_pe</code> is not on by default for paired-end data, and it is almost always what you want. That is the kind of default that quietly costs people a project.</p>
+<p><strong>Extra adapter detection for paired-end reads</strong></p>
+<p>Paired-end (PE) sequencing reads a DNA fragment from both ends. Adapters are artificial sequences used during library preparation. If the biological insert is shorter than a read, sequencing can continue into an adapter. For example:</p>
+<pre class="lab-code"><code class=" language-text">150-base read = 120 bases of biological insert + 30 bases of adapter</code></pre>
+<p><strong>Adapter trimming and adapter auto-detection are different:</strong></p>
+<ul>
+<li><strong>Without this flag:</strong> fastp still trims paired-end adapters by finding where R1 and R2 overlap. Adapter trimming is enabled by default.</li>
+<li><strong>With this flag:</strong> fastp also infers adapter sequences from input. This can trim adapters when a reliable overlap cannot be found, for example because of sequencing errors. This extra detection step is off by default for paired-end input.</li>
+</ul>
+<p>We enable it here to supplement overlap-based trimming; it may remove some additional adapter sequence and take slightly longer. It does not merge R1 and R2 or trim every read to a fixed length. See the <a href="https://github.com/OpenGene/fastp#adapters">fastp adapter documentation</a>.</p>
+<p>Open <code>reports/illumina.fastp.html</code> to inspect adapter trimming and QC before and after processing. Later, rerun FastQC on both trimmed mates to check for remaining adapters. Verify the output: enabling detection does not guarantee complete adapter removal.</p>
 <h3 id="1-2-how-much-survived">1.2 How Much Survived</h3>
 <pre class="lab-code"><code class=" language-bash">python3 -c &quot;
 import json, glob
