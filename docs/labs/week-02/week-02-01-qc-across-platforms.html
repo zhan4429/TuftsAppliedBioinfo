@@ -50,6 +50,9 @@
             <a class="toc-level-3" href="#3-1-nanoplot">3.1 NanoPlot</a>
             <a class="toc-level-3" href="#3-2-five-numbers-that-matter">3.2 Five Numbers That Matter</a>
             <a class="toc-level-3" href="#3-3-compare-the-two-long-read-platforms">3.3 Compare the Two Long-Read Platforms</a>
+            <a class="toc-level-2" href="#part-4-multiqc-compare-all-datasets-in-one-report">Part 4: MultiQC — Compare All Datasets in One Report</a>
+            <a class="toc-level-3" href="#4-1-build-the-combined-report">4.1 Build the Combined Report</a>
+            <a class="toc-level-3" href="#4-2-read-the-report-as-a-comparison">4.2 Read the Report as a Comparison</a>
             <a class="toc-level-2" href="#takeaways">Takeaways</a>
             <a class="toc-level-2" href="#dataset-records-and-qc-reference">Dataset Records and QC Reference</a>
             </nav>
@@ -110,9 +113,9 @@ ls -lh &quot;$READS&quot;</code></pre>
 <pre class="lab-code"><code class=" language-bash">export READS=$COURSE/shared/wk2/fallback_fastq
 ls -lh &quot;$READS&quot;</code></pre>
 <p>Load the software:</p>
-<pre class="lab-code"><code class=" language-bash">module load seqkit fastqc nanoplot
+<pre class="lab-code"><code class=" language-bash">module load seqkit fastqc nanoplot multiqc
 module list</code></pre>
-<p><code>module load</code> makes these programs available in your shell. SeqKit provides sequence statistics, FastQC creates read-QC reports, and NanoPlot plots long-read data. The NanoPlot command is written <code>NanoPlot</code> with capital letters, even though its module is named <code>nanoplot</code>.</p>
+<p><code>module load</code> makes these programs available in your shell. SeqKit provides sequence statistics, FastQC creates read-QC reports, NanoPlot plots long-read data, and MultiQC combines existing QC results into one report. The NanoPlot command is written <code>NanoPlot</code> with capital letters, even though its module is named <code>nanoplot</code>.</p>
 <h3 id="identify-the-input-files">Identify the Input Files</h3>
 <p>These are the filenames confirmed in the example download below. Use the fetchngs samplesheet to check the two Illumina mates, two BGISEQ mates, and single PacBio and Nanopore files. If your filenames differ, update the filename after <code>$READS/</code> while keeping the variable names on the left.</p>
 <pre class="lab-code"><code class=" language-bash">ILLUMINA_R1=&quot;$READS/SRX23612877_SRR27956204_1.fastq.gz&quot;
@@ -728,6 +731,63 @@ grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/
 <p>HiFi consensus sequencing supports high per-base accuracy. Very long Nanopore reads can help span long repeats. The choice depends on the analysis, and these separate libraries do not establish a universal platform ranking. Quality values above are from SeqKit, not substituted for NanoPlot&#x27;s own summary.</p>
 </details>
 <p><strong>Checkpoint 3.</strong> You have opened both NanoPlot HTML reports, compared their plots and summary statistics, and can describe the trade-off between the two datasets.</p>
+<h2 id="part-4-multiqc-compare-all-datasets-in-one-report">Part 4: MultiQC — Compare All Datasets in One Report</h2>
+<p>The worked example in Section 2.3 explains one mate file in detail. <strong>MultiQC brings results from many files together</strong>, making differences easier to see. It reads the QC outputs you have already produced; it does not rerun FastQC or NanoPlot, or change the FASTQ files.</p>
+<p>Here we combine <strong>four FastQC reports</strong> (Illumina R1/R2 and BGISEQ R1/R2) with <strong>two NanoPlot summaries</strong> (Nanopore and PacBio HiFi). These represent four datasets, not six independent biological samples: R1 and R2 are mates from the same paired-end library.</p>
+<h3 id="4-1-build-the-combined-report">4.1 Build the Combined Report</h3>
+<p>Run this after completing both the FastQC and NanoPlot sections:</p>
+<pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-02/session-01&quot;
+multiqc --force --dirs --dirs-depth 1 \
+  --title &quot;Week 2: QC across four platforms&quot; --outdir multiqc \
+  fastqc/*SRR27956204*_fastqc.zip \
+  fastqc/*SRR17374239*_fastqc.zip \
+  nanoplot/NanoStats.txt nanoplot_pb/NanoStats.txt</code></pre>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Part</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>multiqc</code></td>
+<td>Collect supported QC results and build a combined report.</td>
+</tr>
+<tr>
+<td><code>--force</code></td>
+<td>Replace the previous report when you rerun this command.</td>
+</tr>
+<tr>
+<td><code>--dirs --dirs-depth 1</code></td>
+<td>Add the containing folder to report labels, keeping the two files named <code>NanoStats.txt</code> distinct.</td>
+</tr>
+<tr>
+<td><code>--title</code></td>
+<td>Set the report title.</td>
+</tr>
+<tr>
+<td><code>--outdir multiqc</code></td>
+<td>Write the report and its data into <code>multiqc/</code>.</td>
+</tr>
+<tr>
+<td>The two <code>fastqc/*..._fastqc.zip</code> patterns</td>
+<td>Select the two mate reports for each short-read run. The stars match the variable parts of the filenames.</td>
+</tr>
+<tr>
+<td>The two <code>NanoStats.txt</code> paths</td>
+<td>Include the long-read summary statistics through MultiQC&#x27;s NanoStat module.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Keep the FastQC <strong>ZIP files</strong>: MultiQC reads their data, rather than the standalone FastQC HTML pages. These accession patterns also exclude the Nanopore FastQC report created only for the tool-choice demonstration. If your report filenames differ, adjust the patterns to select the four short-read ZIP files.</p>
+<p>Open <strong><code>week-02/session-01/multiqc/multiqc_report.html</code></strong> through OnDemand Files, or download it and open it in a browser. Look for both <strong>FastQC</strong> and <strong>NanoStat</strong> sections, and confirm that both long-read datasets and all four short-read inputs are represented. Some versions group mates in the display; expand the group to inspect R1 and R2.</p>
+<h3 id="4-2-read-the-report-as-a-comparison">4.2 Read the Report as a Comparison</h3>
+<ul>
+<li><strong>General Statistics:</strong> compare read counts, GC content, duplication and read N50 where available. Empty cells can mean that a tool does not report that metric; they do not mean zero.</li>
+<li><strong>FastQC plots:</strong> compare the quality curves, GC distributions, adapter content and warning flags across the short-read files. Check whether an issue affects one mate, both mates, or both libraries. Use the report&#x27;s sample controls to focus on a library.</li>
+<li><strong>NanoStat summaries:</strong> compare long-read lengths, N50 and quality. MultiQC collects summary statistics; keep the original NanoPlot reports for their detailed length and quality plots.</li>
+</ul>
+<p>Use the metadata when explaining differences. For example, the supplied SeqKit results show about <strong>45% GC for Illumina RNA-seq</strong> and <strong>38% for BGISEQ genomic reads</strong>. RNA-seq samples expressed transcripts, so the same species need not give the same GC percentage in both libraries. A difference is a reason to investigate, not a contamination diagnosis.</p>
+<p><strong>Checkpoint 4.</strong> You have one report containing QC results from all four datasets and can describe one difference between them. In <a href="week-02-02-trimming-and-multiqc.html#part-3-aggregate-everything">Session 2, Part 3</a>, you will extend the comparison to reads before and after preprocessing.</p>
 <h2 id="takeaways">Takeaways</h2>
 <p>Measure every dataset the same way first. <code>stats</code> prints one summary row per file, <code>-a</code> includes the additional metrics, and the filename pattern selects all input FASTQs:</p>
 <pre class="lab-code"><code class=" language-bash">seqkit stats -a &quot;$READS&quot;/*.fastq.gz</code></pre>
@@ -735,6 +795,7 @@ grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/
 <pre class="lab-code"><code class=" language-bash">fastqc -t 4 -o fastqc &quot;$ILLUMINA_R1&quot; &quot;$ILLUMINA_R2&quot; &quot;$BGISEQ_R1&quot; &quot;$BGISEQ_R2&quot;</code></pre>
 <p>Use NanoPlot for long reads. <code>--fastq</code> names the input, <code>-o</code> names the output folder, <code>-t 4</code> sets the thread limit, and <code>--N50</code> adds the N50 marker:</p>
 <pre class="lab-code"><code class=" language-bash">NanoPlot --fastq &quot;$LONG&quot; -o nanoplot -t 4 --N50</code></pre>
+<p>Combine QC outputs with MultiQC to compare datasets, then return to the individual reports when you need more detail. MultiQC summarizes existing results; it does not replace the platform-appropriate QC tools.</p>
 <p>Three things to carry forward:</p>
 <ol>
 <li>Interpret QC with the metadata. The Illumina reads are RNA-seq; the BGISEQ, PacBio and Nanopore reads are genomic. Platform, library preparation and read processing all matter.</li>
@@ -755,6 +816,9 @@ grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/
 <li><a href="https://github.com/wdecoster/NanoPlot">NanoPlot documentation and output descriptions</a></li>
 <li><a href="https://bioinf.shenwei.me/seqkit/usage/">SeqKit command and parameter reference</a></li>
 <li><a href="https://github.com/s-andrews/FastQC/blob/master/INSTALL.md">FastQC installation and command-line usage</a></li>
+<li><a href="https://docs.seqera.io/multiqc/modules/fastqc/">MultiQC: FastQC input files</a></li>
+<li><a href="https://docs.seqera.io/multiqc/modules/nanostat/">MultiQC: NanoStat and NanoPlot summaries</a></li>
+<li><a href="https://docs.seqera.io/multiqc/getting_started/running_multiqc/">MultiQC: running reports and distinguishing sample names</a></li>
 </ul>
           <nav class="lab-pager" aria-label="Lab sequence">
             <a class="pager-prev" href="../week-01/02-hpc-environments-fetchngs.html"><span>Previous lab: Week 1, Session 2</span>HPC, Environments, and Fetching Public Data</a>
