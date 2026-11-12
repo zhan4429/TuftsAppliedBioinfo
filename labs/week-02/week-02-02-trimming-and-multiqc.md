@@ -348,13 +348,34 @@ FastQC report.
 <details>
 <summary>Answer</summary>
 
-Anything that is a comparison rather than a measurement: that one platform's quality
-decays faster than another's, that trimming removed adapter from one sample and there was
-none in the other to remove, that read counts differ by an order of magnitude.
+The class report lets you compare **both mates, both libraries, and raw versus
+trimmed reads** together. These two figures use shorter labels, dashed lines for raw
+reads, and solid lines for trimmed reads. R1 and R2 are the two mates of each library.
 
-The general point is that a sample's own report shows its numbers without context. A
-sample with a tenth of the reads of its siblings looks fine alone and is obviously wrong
-in a table.
+![MultiQC mean-quality curves for raw and trimmed BGISEQ and Illumina mates, with modest quality changes after trimming.](assets/multiqc-raw-trimmed/short-read-quality-before-after.png)
+
+**Quality was already high.** All plotted means stay above Q30. The BGISEQ curves
+decline toward the read ends, but raw and trimmed curves almost overlap. The
+Illumina RNA-seq curves improve modestly after preprocessing. The y-axis is zoomed
+to Q30–38 so these small differences are visible. These are means, so they do not
+show the spread of quality scores that you saw in the original FastQC box plots.
+[Open the full-size quality figure.](assets/multiqc-raw-trimmed/short-read-quality-before-after.png)
+
+![MultiQC adapter-content curves showing raw Illumina universal-adapter matches rising to about 8.6–8.8%, while those curves are absent after trimming.](assets/multiqc-raw-trimmed/short-read-adapters-before-after.png)
+
+**High quality scores did not rule out adapters.** The raw Illumina universal-adapter
+curves (labeled `adapter`) reach about **8.6% for R1 and 8.8% for R2** near the read
+ends. After trimming, those curves are below this report's **0.1% display threshold**
+and are hidden; this does not prove exactly zero adapter remains. The plot is
+[cumulative](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/10%20Adapter%20Content.html):
+a read stays counted after a match is first detected. The smaller polyA/polyG curves
+are separate sequence matches, not the Illumina universal adapter.
+[Open the full-size adapter figure.](assets/multiqc-raw-trimmed/short-read-adapters-before-after.png)
+
+Together, the plots show a clear benefit from adapter removal in the Illumina
+library, while the BGISEQ library changes little. The fastp summaries report that
+**97.7% of Illumina reads and 99.65% of BGISEQ reads pass filtering**. Trimming an
+adapter can preserve the rest of a read; it does not require discarding that read.
 
 </details>
 
