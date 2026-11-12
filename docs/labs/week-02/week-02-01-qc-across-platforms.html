@@ -37,8 +37,7 @@
             <nav>
             <a class="toc-level-2" href="#before-you-start">Before You Start</a>
             <a class="toc-level-2" href="#part-1-subsample-before-you-measure">Part 1: Subsample Before You Measure</a>
-            <a class="toc-level-3" href="#1-1-why-this-comes-first">1.1 Why This Comes First</a>
-            <a class="toc-level-3" href="#1-2-take-a-slice-of-each">1.2 Take a Slice of Each</a>
+            <a class="toc-level-3" href="#1-1-take-a-slice-of-each">1.1 Take a Slice of Each</a>
             <a class="toc-level-2" href="#part-2-measure-all-four-side-by-side">Part 2: Measure All Four Side by Side</a>
             <a class="toc-level-3" href="#2-1-one-command-every-platform">2.1 One Command, Every Platform</a>
             <a class="toc-level-3" href="#2-2-quality-is-not-one-number-either">2.2 Quality Is Not One Number Either</a>
@@ -114,12 +113,7 @@ ls -lh &quot;$READS&quot;</code></pre>
 <pre class="lab-code"><code class=" language-bash">module load seqkit fastqc nanoplot
 module list</code></pre>
 <h2 id="part-1-subsample-before-you-measure">Part 1: Subsample Before You Measure</h2>
-<h3 id="1-1-why-this-comes-first">1.1 Why This Comes First</h3>
-<p>The original files contain millions of reads. A small subset makes QC practical during class and lets you learn the reports. It may miss rare problems or patterns found later in a file, so record how you selected it.</p>
-<p>Check the storage used by the downloaded reads:</p>
-<pre class="lab-code"><code class=" language-bash">du -sh &quot;$READS&quot;</code></pre>
-<p>Do not interpret the Illumina RNA-seq base count divided by genome size as uniform genome coverage. RNA-seq samples expressed transcripts, whose abundances differ.</p>
-<h3 id="1-2-take-a-slice-of-each">1.2 Take a Slice of Each</h3>
+<h3 id="1-1-take-a-slice-of-each">1.1 Take a Slice of Each</h3>
 <pre class="lab-code"><code class=" language-bash">mkdir -p sub
 
 # short-read runs: 400,000 reads from each mate, order preserved so pairs stay matched

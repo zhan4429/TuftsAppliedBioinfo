@@ -65,22 +65,7 @@ module list
 
 ## Part 1: Subsample Before You Measure
 
-### 1.1 Why This Comes First
-
-The original files contain millions of reads. A small subset makes QC practical during
-class and lets you learn the reports. It may miss rare problems or patterns found later
-in a file, so record how you selected it.
-
-Check the storage used by the downloaded reads:
-
-```bash
-du -sh "$READS"
-```
-
-Do not interpret the Illumina RNA-seq base count divided by genome size as uniform
-genome coverage. RNA-seq samples expressed transcripts, whose abundances differ.
-
-### 1.2 Take a Slice of Each
+### 1.1 Take a Slice of Each
 
 ```bash
 mkdir -p sub
