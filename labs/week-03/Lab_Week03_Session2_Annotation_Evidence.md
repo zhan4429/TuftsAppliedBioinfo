@@ -16,9 +16,9 @@ hostname
 
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
-export SHARED=$COURSE$/shared/wk3
+export SHARED="$COURSE/shared/wk3"
 export ASM=$MYWORK/week-03/session-01/asm.p_ctg.fa
-export RNA=$MYWORK/week-03/session-01/fetch_rna/results/fastq
+export RNA="$MYWORK/week-01/session-02/fetch/results/fastq"
 
 mkdir -p $MYWORK/week-03/session-02 && cd $MYWORK/week-03/session-02
 ls -lh $ASM
@@ -29,7 +29,7 @@ Fallbacks if either is missing:
 
 ```bash
 export ASM=$SHARED/fallback_assembly/asm.p_ctg.fa
-export RNA=$SHARED/fallback_rna
+export RNA="$SHARED/fallback_rna"
 ```
 
 ```bash
@@ -45,13 +45,19 @@ Structural annotation of a eukaryote is a **project, not a step**. A full BRAKER
 
 ### 1.1 Index the assembly and align the RNA-seq
 
+Use the Illumina RNA-seq run **SRR27956204**, already downloaded in Week 1 and
+examined in Week 2. The same folder also contains paired-end BGISEQ genomic reads,
+so a general `*_1.fastq.gz` search could select the wrong experiment. Use the exact
+RNA-seq filenames below. If you use staged copies, check their names and adjust
+`R1` and `R2` if needed.
+
 ```bash
 mkdir -p logs
 hisat2-build -p 8 $ASM asm_idx 2> logs/hisat2_build.log
 
-R1=$(ls $RNA/*_1.fastq.gz | head -1)
-R2=${R1/_1.fastq.gz/_2.fastq.gz}
-echo "Aligning: $(basename $R1)"
+R1="$RNA/SRX23612877_SRR27956204_1.fastq.gz"
+R2="$RNA/SRX23612877_SRR27956204_2.fastq.gz"
+ls -lh "$R1" "$R2"
 
 # the first 4 million pairs are plenty of evidence for a 12 Mb genome
 hisat2 -p 8 -u 4000000 -x asm_idx -1 $R1 -2 $R2 --summary-file rna_summary.txt \
@@ -90,9 +96,9 @@ cat > annotate.sh <<'EOF'
 set -euo pipefail
 module load braker3
 
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
-export SHARED=/cluster/tufts/bio_appbio/shared/wk3
+export SHARED="$COURSE/shared/wk3"
 cd $MYWORK/week-03/session-02
 
 # AUGUSTUS saves its trained model in its config directory, and the module's copy is read-only

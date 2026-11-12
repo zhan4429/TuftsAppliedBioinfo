@@ -23,13 +23,13 @@ export GENOME=12100000        # expected genome size in bases
 mkdir -p $MYWORK/week-03/session-01 && cd $MYWORK/week-03/session-01
 
 # the PacBio HiFi run you fetched in Week 1
-export HIFI=$(ls $FETCH/results/fastq/*SRR18210286*.fastq.gz 2>/dev/null)
+export HIFI="$FETCH/results/fastq/SRX14356846_SRR18210286.fastq.gz"
 ls -lh "$HIFI"
 ```
 
-These are the Week 1 paths: your work under `$COURSE`, shared course files in the separate `bio_appbio` allocation. If the allocation announced in class differs, change `COURSE` to match.
+These are the Week 1 paths: your work is under `$COURSE/$USER`, and instructor-staged Week 3 files are under `$COURSE/shared/wk3`. If the allocation announced in class differs, change `COURSE` to match.
 
-If `$HIFI` is empty, your Week 1 fetchngs download did not finish. Use the staged copy:
+If the HiFi file is missing, check your Week 1 download or use the instructor-staged copy:
 
 ```bash
 export HIFI=$(ls $SHARED/fallback_hifi/*.fastq.gz | head -1)
@@ -279,127 +279,58 @@ This is also why the hybrid design keeps appearing, and why Week 10 will tell yo
 
 ---
 
-## Part 4 — Fetch the evidence for next session
+## Part 4 — Prepare the evidence for next session
 
-Session 2 annotates this genome. Structural annotation of a eukaryote is far better with RNA evidence, so fetch some now.
+Session 2 uses RNA-seq as evidence for gene annotation. You already downloaded the
+Illumina RNA-seq run **SRR27956204** in Week 1 and inspected it in Week 2; reuse those
+files rather than submitting another download job.
 
-### 4.1 Check what you are asking for
+### 4.1 Check the RNA-seq files
 
 ```bash
-export RNA_PROJECT=PRJNA000000        # ← REPLACE THIS with the accession on the board
-
-ENA_API="https://www.ebi.ac.uk/ena/portal/api/filereport"
-FIELDS="run_accession,instrument_platform,library_strategy,library_layout,read_count,base_count"
-
-curl -sS --fail --max-time 120 \
-  "${ENA_API}?accession=${RNA_PROJECT}&result=read_run&fields=${FIELDS}&format=tsv" \
-  -o rna_runs.tsv
-
-# Header plus at least one run?
-[ "$(wc -l < rna_runs.tsv)" -ge 2 ] \
-  && echo "OK: $(($(wc -l < rna_runs.tsv) - 1)) runs" \
-  || echo "NO DATA — see troubleshooting below"
-
-# Aligned table, without needing `column`
-awk -F'\t' '{ for (i=1; i<=NF; i++) printf "%-22s", ($i=="" ? "-" : $i); print "" }' rna_runs.tsv
+export RNA="$FETCH/results/fastq"
+export RNA_R1="$RNA/SRX23612877_SRR27956204_1.fastq.gz"
+export RNA_R2="$RNA/SRX23612877_SRR27956204_2.fastq.gz"
+ls -lh "$RNA_R1" "$RNA_R2"
 ```
 
-::: If that produced no output or an error
-Work through these in order:
+The `_1` and `_2` files are the two mates of the same paired-end RNA-seq run. The
+BGISEQ run, **SRR17374239**, is genomic DNA and must not be substituted for these
+RNA-seq reads. Both runs are in the same download folder, so select the filenames
+explicitly.
 
-1. **`curl: command not found`** — use `wget` with the same URL instead.
-2. **`curl: (22) ... error: 400`** — the accession is wrong. Check it against the board; the placeholder is not a real accession.
-3. **Empty file, no error** — compute nodes may have no outbound internet. Test with
-   a bare `curl` to the ENA API endpoint, discarding the output, to see if it responds.
-   If unreachable, run this one command from a **login** node (it is tiny), or use the staged copy:
-   `cp $SHARED/runs.tsv rna_runs.tsv`
-4. **Times out** — ENA is busy. Re-run; it is safe to repeat.
-:::
-
-> **Why `-sS --fail` rather than `-s`?** `curl -s` is silent about everything, including a 404 — you
-> would get an empty file and no explanation. `-sS --fail` stays quiet on success and complains
-> loudly on failure. And `column` is not installed everywhere, and the bash tab-escape syntax is a bash-ism that
-> silently produces the wrong separator under `sh`; `awk` with an explicit field separator avoids both problems.
-
-`library_strategy` should say `RNA-Seq`.
+[The ENA record for SRR27956204](https://www.ebi.ac.uk/ena/browser/view/SRR27956204)
+identifies it as paired-end Illumina RNA-seq from *Saccharomyces cerevisiae*. You do
+not need a second fetchngs job or a new configuration file.
 
 **Question 8.** Why does RNA-seq help annotate a genome, and what can it not tell you?
 
 ::: Answer
-RNA-seq reads come from transcripts, so where they align tells you directly where exons are and — from reads spanning junctions — where introns are. That is evidence, not prediction, and it is the single largest improvement available to a eukaryotic annotation.
+RNA-seq reads provide evidence for transcribed regions. Reads that span splice
+junctions help locate exon boundaries and introns.
 
-What it cannot do: reveal genes that were not expressed in the tissue or condition sequenced. A gene silent in your sample is invisible to the evidence, and only the *ab initio* model will find it. This is why modern pipelines combine both.
+A gene that was not expressed in the sampled condition may have no RNA-seq support.
+Absence of coverage does not establish absence of a gene, so annotation also uses
+sequence-based predictions and protein evidence.
 :::
 
-### 4.2 Submit it
+### 4.2 Before Session 2
+
+After the assembly job finishes, check that the assembly and both RNA-seq files exist:
 
 ```bash
-mkdir -p $MYWORK/week-03/session-01/fetch_rna/logs
-cd $MYWORK/week-03/session-01/fetch_rna
-cp $SHARED/ids_rna.csv ids.csv
-cat ids.csv
-
-cat > fetch_rna.sh <<'EOF'
-#!/bin/bash
-#SBATCH --job-name=fetch_rna
-#SBATCH --partition=batch
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=18G
-#SBATCH --time=08:00:00
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=logs/%x_%j.err
-
-module load nextflow singularity
-
-export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
-export MYWORK="$COURSE/$USER"
-cd "$MYWORK/week-03/session-01/fetch_rna"
-
-export NXF_HOME="$SCRATCH/.nextflow"
-export NXF_SINGULARITY_CACHEDIR="$SCRATCH/.singularity_cache"
-export SINGULARITY_CACHEDIR="$MYWORK/.singularity/oci"
-export NXF_OPTS='-Xms512m -Xmx4g'
-mkdir -p "$NXF_HOME" "$NXF_SINGULARITY_CACHEDIR" "$SINGULARITY_CACHEDIR"
-
-nextflow run nf-core/fetchngs \
-  -r 1.13.0 \
-  -profile singularity \
-  -c "$MYWORK/week-01/session-02/lab.config" \
-  --input ids.csv \
-  --outdir results \
-  --download_method sratools \
-  -resume
-EOF
-
-bash -n fetch_rna.sh
-RNA_JOB_ID=$(sbatch --parsable fetch_rna.sh)
-printf '%s\n' "$RNA_JOB_ID" > fetch_rna_job_id.txt
-squeue -j "$RNA_JOB_ID"
+ls -lh "$MYWORK/week-03/session-01/asm.p_ctg.fa"
+ls -lh "$RNA_R1" "$RNA_R2"
 ```
 
-This is your Week 1 download job with three changes: the job name, the directory, and the list of runs. It reuses the `lab.config` you wrote in Week 1, so the same resource limits apply.
+Keep the Week 1 `results/fastq` files. Cleaning a completed Nextflow run's intermediate
+`work/` directory, as taught in Week 1, is different from deleting its published
+`results/` files; later labs still need these reads.
 
-**Job ID: ______________** (also saved in `fetch_rna_job_id.txt`)
+If the RNA files are missing, check the Week 1 download or ask for the staged copies
+in `$SHARED/fallback_rna/`. The staged assembly is in `$SHARED/fallback_assembly/`.
 
-### 4.3 Before Thursday
-
-```bash
-cd $MYWORK/week-03/session-01/fetch_rna
-seff "$(cat fetch_rna_job_id.txt)"
-ls -lh results/fastq/
-```
-
-Also make sure your assembly survived:
-
-```bash
-ls -lh $MYWORK/week-03/session-01/asm.p_ctg.fa
-```
-
-**Bring both to Session 2.** Fallbacks are at `$SHARED/fallback_rna/` and `$SHARED/fallback_assembly/`.
-
-> **CHECKPOINT 4** — Assembly done, RNA-seq job submitted, both job IDs written down.
+> **CHECKPOINT 4** — Assembly available, both RNA-seq mate files located, and their paths recorded for Session 2.
 
 ---
 
