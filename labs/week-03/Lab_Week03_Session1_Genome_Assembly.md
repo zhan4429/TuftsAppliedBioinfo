@@ -22,14 +22,23 @@ export GENOME=12100000        # expected genome size in bases
 
 mkdir -p $MYWORK/week-03/session-01 && cd $MYWORK/week-03/session-01
 
-# the PacBio HiFi run you fetched in Week 1
-export HIFI="$FETCH/results/fastq/SRX14356846_SRR18210286.fastq.gz"
+# the PacBio HiFi reads you cleaned with fastplong in Week 2
+export HIFI=$(ls $MYWORK/week-02/session-02/trimmed/*SRR18210286*.filt.fq.gz 2>/dev/null)
 ls -lh "$HIFI"
 ```
 
-These are the Week 1 paths: your work is under `$COURSE/$USER`, and instructor-staged Week 3 files are under `$COURSE/shared/wk3`. If the allocation announced in class differs, change `COURSE` to match.
+These are the same paths as Weeks 1 and 2: your work under `$MYWORK`, shared course files under `$COURSE/shared`. If the allocation announced in class differs, change `COURSE` to match.
 
-If the HiFi file is missing, check your Week 1 download or use the instructor-staged copy:
+nf-core/genomeassembler runs the same two steps in the same order: `fastplong` on the reads, then `hifiasm`.
+
+If `$HIFI` is empty, you did not finish Week 2 Part 2. Use the reads you downloaded in Week 1 instead. In Week 2, `fastplong` removed almost nothing from the HiFi reads, so the assembly will be essentially the same:
+
+```bash
+export HIFI=$(ls $FETCH/results/fastq/*SRR18210286*.fastq.gz 2>/dev/null)
+ls -lh "$HIFI"
+```
+
+If that is empty too, your Week 1 download did not finish. Use the staged copy:
 
 ```bash
 export HIFI=$(ls $SHARED/fallback_hifi/*.fastq.gz | head -1)
@@ -101,7 +110,7 @@ EOF
 
 bash -n assemble.sh
 sbatch assemble.sh
-squeue -u $USER
+squeue --me
 ```
 
 **Job ID: ______________**
@@ -174,7 +183,7 @@ They will not span long tandem arrays: the rDNA array, which runs to hundreds of
 ### 2.4 Check on the job
 
 ```bash
-squeue -u $USER
+squeue --me
 tail -5 logs/hifiasm_*.out
 ```
 
@@ -279,58 +288,233 @@ This is also why the hybrid design keeps appearing, and why Week 10 will tell yo
 
 ---
 
-## Part 4 — Prepare the evidence for next session
+## Part 4 — Fetch the evidence for next session
 
-Session 2 uses RNA-seq as evidence for gene annotation. You already downloaded the
-Illumina RNA-seq run **SRR27956204** in Week 1 and inspected it in Week 2; reuse those
-files rather than submitting another download job.
+Session 2 annotates this genome. Structural annotation of a eukaryote is far better with RNA evidence, so fetch some now.
 
-### 4.1 Check the RNA-seq files
+### 4.1 Check what you are asking for
 
 ```bash
-export RNA="$FETCH/results/fastq"
-export RNA_R1="$RNA/SRX23612877_SRR27956204_1.fastq.gz"
-export RNA_R2="$RNA/SRX23612877_SRR27956204_2.fastq.gz"
-ls -lh "$RNA_R1" "$RNA_R2"
+export RNA_PROJECT=PRJNA000000        # ← REPLACE THIS with the accession on the board
+
+ENA_API="https://www.ebi.ac.uk/ena/portal/api/filereport"
+FIELDS="run_accession,instrument_platform,library_strategy,library_layout,read_count,base_count"
+
+curl -sS --fail --max-time 120 \
+  "${ENA_API}?accession=${RNA_PROJECT}&result=read_run&fields=${FIELDS}&format=tsv" \
+  -o rna_runs.tsv
+
+# Header plus at least one run?
+[ "$(wc -l < rna_runs.tsv)" -ge 2 ] \
+  && echo "OK: $(($(wc -l < rna_runs.tsv) - 1)) runs" \
+  || echo "NO DATA — see troubleshooting below"
+
+# Aligned table, without needing `column`
+awk -F'\t' '{ for (i=1; i<=NF; i++) printf "%-22s", ($i=="" ? "-" : $i); print "" }' rna_runs.tsv
 ```
 
-The `_1` and `_2` files are the two mates of the same paired-end RNA-seq run. The
-BGISEQ run, **SRR17374239**, is genomic DNA and must not be substituted for these
-RNA-seq reads. Both runs are in the same download folder, so select the filenames
-explicitly.
+::: If that produced no output or an error
+Work through these in order:
 
-[The ENA record for SRR27956204](https://www.ebi.ac.uk/ena/browser/view/SRR27956204)
-identifies it as paired-end Illumina RNA-seq from *Saccharomyces cerevisiae*. You do
-not need a second fetchngs job or a new configuration file.
+1. **`curl: command not found`** — use `wget` with the same URL instead.
+2. **`curl: (22) ... error: 400`** — the accession is wrong. Check it against the board; the placeholder is not a real accession.
+3. **Empty file, no error** — compute nodes may have no outbound internet. Test with
+   a bare `curl` to the ENA API endpoint, discarding the output, to see if it responds.
+   If unreachable, run this one command from a **login** node (it is tiny), or use the staged copy:
+   `cp $SHARED/runs.tsv rna_runs.tsv`
+4. **Times out** — ENA is busy. Re-run; it is safe to repeat.
+:::
+
+> **Why `-sS --fail` rather than `-s`?** `curl -s` is silent about everything, including a 404 — you
+> would get an empty file and no explanation. `-sS --fail` stays quiet on success and complains
+> loudly on failure. And `column` is not installed everywhere, and the bash tab-escape syntax is a bash-ism that
+> silently produces the wrong separator under `sh`; `awk` with an explicit field separator avoids both problems.
+
+`library_strategy` should say `RNA-Seq`.
 
 **Question 8.** Why does RNA-seq help annotate a genome, and what can it not tell you?
 
 ::: Answer
-RNA-seq reads provide evidence for transcribed regions. Reads that span splice
-junctions help locate exon boundaries and introns.
+RNA-seq reads come from transcripts, so where they align tells you directly where exons are and — from reads spanning junctions — where introns are. That is evidence, not prediction, and it is the single largest improvement available to a eukaryotic annotation.
 
-A gene that was not expressed in the sampled condition may have no RNA-seq support.
-Absence of coverage does not establish absence of a gene, so annotation also uses
-sequence-based predictions and protein evidence.
+What it cannot do: reveal genes that were not expressed in the tissue or condition sequenced. A gene silent in your sample is invisible to the evidence, and only the *ab initio* model will find it. This is why modern pipelines combine both.
 :::
 
-### 4.2 Before Session 2
-
-After the assembly job finishes, check that the assembly and both RNA-seq files exist:
+### 4.2 Submit it
 
 ```bash
-ls -lh "$MYWORK/week-03/session-01/asm.p_ctg.fa"
-ls -lh "$RNA_R1" "$RNA_R2"
+mkdir -p $MYWORK/week-03/session-01/fetch_rna/logs
+cd $MYWORK/week-03/session-01/fetch_rna
+cp $SHARED/ids_rna.csv ids.csv
+cat ids.csv
+
+cat > fetch_rna.sh <<'EOF'
+#!/bin/bash
+#SBATCH --job-name=fetch_rna
+#SBATCH --partition=batch
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=48G
+#SBATCH --time=08:00:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+
+module load nextflow singularity
+
+export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK="$COURSE/$USER"
+cd "$MYWORK/week-03/session-01/fetch_rna"
+
+export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
+mkdir -p "$NXF_SINGULARITY_CACHEDIR"
+
+nextflow run nf-core/fetchngs \
+  -r 1.13.0 \
+  -profile singularity \
+  --input ids.csv \
+  --outdir results \
+  --download_method sratools \
+  -resume
+EOF
+
+bash -n fetch_rna.sh
+RNA_JOB_ID=$(sbatch --parsable fetch_rna.sh)
+printf '%s\n' "$RNA_JOB_ID" > fetch_rna_job_id.txt
+squeue -j "$RNA_JOB_ID"
 ```
 
-Keep the Week 1 `results/fastq` files. Cleaning a completed Nextflow run's intermediate
-`work/` directory, as taught in Week 1, is different from deleting its published
-`results/` files; later labs still need these reads.
+This is your Week 1 download job with a different job name, directory, list of runs, and time limit. It uses the same container cache as Week 1, so the images you downloaded then are reused. `sbatch --parsable` prints only the job ID, so the script saves it for you instead of you copying it from `squeue --me`.
 
-If the RNA files are missing, check the Week 1 download or ask for the staged copies
-in `$SHARED/fallback_rna/`. The staged assembly is in `$SHARED/fallback_assembly/`.
+**Job ID: ______________** (also saved in `fetch_rna_job_id.txt`)
 
-> **CHECKPOINT 4** — Assembly available, both RNA-seq mate files located, and their paths recorded for Session 2.
+### 4.3 Before Thursday
+
+```bash
+cd $MYWORK/week-03/session-01/fetch_rna
+seff "$(cat fetch_rna_job_id.txt)"
+ls -lh results/fastq/
+```
+
+Also make sure your assembly survived:
+
+```bash
+ls -lh $MYWORK/week-03/session-01/asm.p_ctg.fa
+```
+
+**Bring both to Session 2.** Fallbacks are at `$SHARED/fallback_rna/` and `$SHARED/fallback_assembly/`.
+
+> **CHECKPOINT 4** — Assembly done, RNA-seq job submitted, both job IDs written down.
+
+---
+
+## Part 5 — After class: the same assembly as a pipeline
+
+In class you ran each step yourself: subsample, assemble, convert the graph, measure. nf-core/genomeassembler packages the same kind of work as one pipeline. It runs `fastplong` on the reads, assembles them with `hifiasm`, measures the result with QUAST and BUSCO, and writes a report. Run it on the same 30× reads and compare its answer with yours.
+
+Session 2 uses the assembly you made by hand, so Thursday does not depend on this run.
+
+### 5.1 Write the samplesheet
+
+```bash
+export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK="$COURSE/$USER"
+mkdir -p $MYWORK/week-03/session-01/genomeassembler/logs
+cd $MYWORK/week-03/session-01/genomeassembler
+
+cat > samplesheet.csv <<EOF
+sample,hifireads,hifi_fastplong_args
+yeast_hifi,$MYWORK/week-03/session-01/hifi_30x.fastq.gz,--mean_qual 10 --length_required 1000 --unqualified_percent_limit 100
+EOF
+cat samplesheet.csv
+```
+
+The pipeline reads one row per sample. `hifireads` points to the same 30× file you assembled in class. `hifi_fastplong_args` gives `fastplong` the settings you chose in Week 2; without that column, the pipeline would run `fastplong` with its defaults.
+
+This heredoc is not quoted, unlike the job scripts. Here you want `$MYWORK` replaced by your real path as the file is written, because the pipeline needs full paths. Check that `cat` shows a path starting with `/cluster`.
+
+### 5.2 Submit the pipeline
+
+```bash
+cat > run_genomeassembler.sh <<'EOF'
+#!/bin/bash
+#SBATCH --job-name=genomeassembler
+#SBATCH --partition=batch
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8G
+#SBATCH --time=24:00:00
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+
+module load nextflow singularity
+
+export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK="$COURSE/$USER"
+cd "$MYWORK/week-03/session-01/genomeassembler"
+
+export NXF_SINGULARITY_CACHEDIR="$MYWORK/.singularity_cache"
+mkdir -p "$NXF_SINGULARITY_CACHEDIR"
+
+nextflow run nf-core/genomeassembler \
+  -r 2.0.1 \
+  -profile tufts \
+  --input samplesheet.csv \
+  --outdir results \
+  --busco true \
+  --busco_lineage fungi_odb10 \
+  --quast true \
+  -resume
+EOF
+
+bash -n run_genomeassembler.sh
+sbatch run_genomeassembler.sh
+squeue --me
+```
+
+**Job ID: ______________**
+
+This job is small on purpose. In Week 1, `-profile singularity` ran every step inside one large job. `-profile tufts` loads the Tufts cluster settings instead, so Nextflow submits each step as its own SLURM job, with the CPUs and memory that step asks for. The job you submitted only runs Nextflow, which hands out the work and waits. Once it starts, `squeue --me` also lists the jobs it submits; their names begin with `nf-`.
+
+`--busco_lineage fungi_odb10` is the lineage you gave compleasm in §3.3, so the two completeness results are comparable. The Tufts profile deletes `work/` automatically when a run succeeds, so there is no clean-up step this time. If the run fails, `work/` stays: read `logs/genomeassembler_*.err` and `.nextflow.log`, fix the problem, and resubmit the same script, and `-resume` reuses the steps that finished.
+
+### 5.3 Compare the two assemblies
+
+When the job has finished:
+
+```bash
+cd $MYWORK/week-03/session-01/genomeassembler
+tail -n 5 logs/genomeassembler_*.out
+ls results results/yeast_hifi
+
+cat results/yeast_hifi/QC/QUAST/yeast_hifi_assembly/report.txt
+cat results/yeast_hifi/QC/BUSCO/short_summary.*.txt
+```
+
+The last lines of the log should say the pipeline completed successfully. Open `results/report/report.html` through OnDemand Files for the pipeline's summary. `results/pipeline_info/` records what ran, which software versions were used, and how long each step took.
+
+**Question 9.** Compare QUAST's number of contigs, total length and N50 with your §3.1 values, and BUSCO's `S` and `D` with compleasm's from §3.3. Should they be identical?
+
+::: Answer
+Close, but not necessarily identical, and each difference has a reason you can check.
+
+The pipeline runs QUAST in its large-genome mode, which skips contigs shorter than 3,000 bp. `seqkit stats` counted every sequence, so QUAST can report fewer contigs and a slightly smaller total. The pipeline also ran `hifiasm` from its own container, which may be a different version from the cluster module: compare the version in `results/pipeline_info/nf_core_genomeassembler_software_versions.yml` with `hifiasm --version`.
+
+BUSCO and compleasm look for the same `fungi_odb10` genes with different software, so their percentages usually agree closely without matching exactly.
+
+A large disagreement would be worth chasing. Two routes to the same assembly should not tell different stories.
+:::
+
+**Question 10.** What did the pipeline do that you did not do by hand, and what did you do that the pipeline did not?
+
+::: Answer
+The pipeline ran `fastplong` on the reads again, mapped the reads back to the assembly for QUAST, ran BUSCO, wrote a report, and recorded every command and software version. Each step got a job sized for that step, and an interrupted run can resume where it stopped.
+
+You did things it did not. You chose the coverage and subsampled with `rasusa`; the pipeline assembles whatever reads it is given. You looked at the assembly graph, not just the FASTA. And you know what each number means, which is the only reason you can check the pipeline's answer at all.
+
+A pipeline makes a method repeatable. It does not make it understood.
+:::
 
 ---
 
