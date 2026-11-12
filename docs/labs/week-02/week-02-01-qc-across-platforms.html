@@ -44,7 +44,8 @@
             <a class="toc-level-2" href="#part-2-fastqc-and-where-it-applies">Part 2: FastQC, and Where It Applies</a>
             <a class="toc-level-3" href="#2-1-run-it-on-the-short-reads-only">2.1 Run It on the Short Reads Only</a>
             <a class="toc-level-3" href="#2-2-read-it-properly">2.2 Read It Properly</a>
-            <a class="toc-level-3" href="#2-3-try-it-where-it-does-not-belong">2.3 Try It Where It Does Not Belong</a>
+            <a class="toc-level-3" href="#2-3-worked-example-bgiseq-read-1">2.3 Worked Example: BGISEQ Read 1</a>
+            <a class="toc-level-3" href="#2-4-try-it-where-it-does-not-belong">2.4 Try It Where It Does Not Belong</a>
             <a class="toc-level-2" href="#part-3-the-right-tool-for-long-reads">Part 3: The Right Tool for Long Reads</a>
             <a class="toc-level-3" href="#3-1-nanoplot">3.1 NanoPlot</a>
             <a class="toc-level-3" href="#3-2-five-numbers-that-matter">3.2 Five Numbers That Matter</a>
@@ -544,7 +545,31 @@ Overrepresented sequences anything named?</code></pre>
 <p>Any accurate observation supported by the reports earns credit. The Illumina run is RNA-seq, while the BGISEQ run is whole-genome sequencing. Expressed transcripts are present at different abundances, which can affect duplication and sequence composition in RNA-seq. Higher duplication alone does not establish a library failure.</p>
 <p>Quality profiles can also reflect sequencing chemistry and read processing; adapter content depends on library preparation. Describe what differs, then explain plausible causes without assigning every difference to the platform. FastQC warnings need to be interpreted in the context of the library type.</p>
 </details>
-<h3 id="2-3-try-it-where-it-does-not-belong">2.3 Try It Where It Does Not Belong</h3>
+<h3 id="2-3-worked-example-bgiseq-read-1">2.3 Worked Example: BGISEQ Read 1</h3>
+<p>These figures come from the instructor-provided FastQC 0.12.1 report for <code>SRX13548510_SRR17374239_1.fastq.gz</code>: <strong>12,142,029 reads, all 150 bp long</strong>. You can <a href="assets/fastqc-bgiseq-r1/bgiseq-r1-fastqc.html">open the complete original report</a> to inspect the other modules. The figures below are the original report images.</p>
+<p><strong>Overall finding:</strong> base quality is generally strong, and the report has <strong>nine PASS modules, one WARNING, and no FAIL modules</strong>. The warning is for the shape of the per-sequence GC distribution. There is also a wider lower-quality tail toward the ends of the reads. These findings support further inspection, rather than rejecting the dataset or trimming every read to an arbitrary length.</p>
+<h4 id="quality-along-the-read">Quality Along the Read</h4>
+<p><img src="assets/fastqc-bgiseq-r1/bgiseq-r1-per-base-quality.png" alt="BGISEQ R1 per-base quality plot: median scores stay near Q36 while the lower quality tail widens toward base 150." loading="lazy" decoding="async"></p>
+<p><strong>Figure 1. Per-base sequence quality — PASS.</strong> Each position or position range has a red median, a yellow box containing the middle 50% of scores, and whiskers marking the 10th and 90th percentiles. The blue line is the mean. Higher scores indicate more confident base calls.</p>
+<p>Here the median stays near <strong>Q36</strong>. The mean declines gently from about <strong>Q35 to Q33</strong>, while the lower whisker falls to about <strong>Q21</strong> near the end. Most scores remain high, but a subset of reads has poorer-quality ends. A falling lower whisker is not the same as all reads becoming poor. Inspect R2 and downstream results before deciding whether quality trimming is useful; this plot does not justify discarding every read&#x27;s last several dozen bases.</p>
+<h4 id="quality-across-whole-reads">Quality Across Whole Reads</h4>
+<p><img src="assets/fastqc-bgiseq-r1/bgiseq-r1-per-read-quality.png" alt="BGISEQ R1 per-sequence quality distribution with its largest peak near mean read quality Q35." loading="lazy" decoding="async"></p>
+<p><strong>Figure 2. Per-sequence quality scores — PASS.</strong> This counts reads by their mean quality score. The largest peak is near <strong>Q35</strong>, with no large, separate peak of very low-quality reads. This supports the conclusion that the file is generally high quality, while Figure 1 shows where quality is more variable within reads. The peak of this distribution is a different summary from the single <code>AvgQual</code> value in the SeqKit table; do not expect those numbers to be identical.</p>
+<h4 id="the-gc-warning">The GC Warning</h4>
+<p><img src="assets/fastqc-bgiseq-r1/bgiseq-r1-gc-content.png" alt="BGISEQ R1 GC distribution: the observed curve has a sharper main peak and a small low-GC tail compared with FastQC&#x27;s theoretical curve." loading="lazy" decoding="async"></p>
+<p><strong>Figure 3. Per-sequence GC content — WARNING.</strong> The red curve is the observed read-GC distribution; the blue curve is FastQC&#x27;s theoretical distribution. The main peak is around <strong>38–40% GC</strong>, with a sharper peak and a small excess of very low-GC reads relative to the model. The warning concerns the <strong>distribution&#x27;s shape</strong>, not a test that the organism has the wrong average GC content. Basic Statistics displays an integer GC value of 37%; the earlier SeqKit result reports 37.91% for this file.</p>
+<p>This plot alone does <strong>not</strong> identify contamination. Genome composition, uneven representation of genomic regions, library preparation, and contamination are possible contributors to a non-model distribution. Compare R2 and, if the pattern needs further investigation, use mapping or taxonomic evidence to distinguish those explanations. The report finds no overrepresented sequences, which is useful context but does not exclude all contaminants.</p>
+<h4 id="adapter-evidence">Adapter Evidence</h4>
+<p><img src="assets/fastqc-bgiseq-r1/bgiseq-r1-adapter-content.png" alt="BGISEQ R1 adapter-content plot with the tested adapter and homopolymer traces close to zero." loading="lazy" decoding="async"></p>
+<p><strong>Figure 4. Adapter content — PASS.</strong> The traces for the sequences tested in this report remain close to zero, so there is no strong signal of those adapters building up at the read ends. However, the legend lists Illumina/Nextera sequences and PolyA/PolyG; it does not show a BGISEQ-specific adapter. A PASS therefore does not prove that every possible library adapter is absent. Check the actual library adapter sequences if there is other evidence of adapter contamination.</p>
+<h4 id="other-findings-and-what-to-do-next">Other Findings and What to Do Next</h4>
+<ul>
+<li><strong>Duplication passes.</strong> The full report estimates that <strong>71.03%</strong> of sequences would remain after sequence-based deduplication. This is not a unique-mapping percentage, and the remainder cannot automatically be called PCR duplicates. Repeated sequences can also arise from sequencing a small genome deeply. Do not deduplicate solely from this FastQC estimate.</li>
+<li><strong>N content passes, but Ns are present.</strong> The supplied SeqKit result counts <strong>136,577 N bases</strong>, about <strong>0.0075%</strong> of the 1,821,304,350 bases in this mate file. A PASS means the module did not cross its warning threshold; it does not mean zero unresolved bases.</li>
+<li><strong>Inspect both mates.</strong> These figures cover R1 only. Check R2 before drawing conclusions about the whole paired-end library. In Session 2, compare QC before and after any justified preprocessing and record whether the suspected issue improved.</li>
+</ul>
+<p>The practical decision for this report is to <strong>keep the reads for further analysis, inspect the GC warning, and verify adapter coverage in the checks</strong>. Avoid treating a warning as a diagnosis or assuming that more trimming always gives better data.</p>
+<h3 id="2-4-try-it-where-it-does-not-belong">2.4 Try It Where It Does Not Belong</h3>
 <p>Run the same FastQC checks on the Nanopore file to examine how its report behaves with long reads:</p>
 <pre class="lab-code"><code class=" language-bash">fastqc -t 4 -o fastqc &quot;$LONG&quot;</code></pre>
 <p>Here <code>-t 4</code> keeps the same thread limit, <code>-o fastqc</code> saves the report alongside the short-read reports, and <code>&quot;$LONG&quot;</code> selects the Nanopore input. This is a demonstration of tool interpretation; it does not convert or filter the reads.</p>
@@ -723,6 +748,10 @@ grep -E &#x27;Mean read length|Median read|N50|Mean read quality&#x27; nanoplot/
 <li><a href="https://www.ebi.ac.uk/ena/browser/view/SRR18210286">PacBio genomic reads: SRR18210286</a></li>
 <li><a href="https://www.ebi.ac.uk/ena/browser/view/SRR17374240">Nanopore genomic reads: SRR17374240</a></li>
 <li><a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/8%20Duplicate%20Sequences.html">FastQC: duplication and RNA-seq libraries</a></li>
+<li><a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/2%20Per%20Base%20Sequence%20Quality.html">FastQC: interpreting per-base quality</a></li>
+<li><a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/3%20Per%20Sequence%20Quality%20Scores.html">FastQC: interpreting per-sequence quality</a></li>
+<li><a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/5%20Per%20Sequence%20GC%20Content.html">FastQC: GC-content warnings</a></li>
+<li><a href="https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/3%20Analysis%20Modules/10%20Adapter%20Content.html">FastQC: adapter-content checks</a></li>
 <li><a href="https://github.com/wdecoster/NanoPlot">NanoPlot documentation and output descriptions</a></li>
 <li><a href="https://bioinf.shenwei.me/seqkit/usage/">SeqKit command and parameter reference</a></li>
 <li><a href="https://github.com/s-andrews/FastQC/blob/master/INSTALL.md">FastQC installation and command-line usage</a></li>
