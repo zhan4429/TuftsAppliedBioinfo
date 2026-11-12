@@ -18,25 +18,31 @@ hostname
 
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=$COURSE/$USER
-export SUB=$MYWORK/week-02/session-01/sub
+export READS=$MYWORK/week-01/session-02/fetch/results/fastq
 
 mkdir -p "$MYWORK/week-02/session-02"
 cd "$MYWORK/week-02/session-02"
 
-ls -lh "$SUB"
+ls -lh "$READS"
 ```
 
-If `$SUB` is empty, you did not finish Tuesday's lab. Use the staged subsamples:
+Use the original downloaded FASTQ files, as in Session 1. If `$READS` is empty,
+finish the Week 1 download or use the staged FASTQ files:
 
 ```bash
-export SUB=$COURSE/shared/wk2/sub
-ls -lh "$SUB"
+export READS=$COURSE/shared/wk2/sub
+ls -lh "$READS"
 ```
 
 ```bash
 module load seqkit fastp chopper fastqc multiqc
 module list
 ```
+
+Repeat the six filename assignments from
+[Session 1: Identify the Input Files](week-02-01-qc-across-platforms.html#identify-the-input-files),
+using the files in your current `$READS` directory. You will use `ILLUMINA_R1`,
+`ILLUMINA_R2`, `BGISEQ_R1`, `BGISEQ_R2`, `PB`, and `LONG` below.
 
 ## Part 1: Trim the Short Reads
 
@@ -45,12 +51,12 @@ module list
 ```bash
 mkdir -p trimmed reports
 
-S=$(basename $(ls "$SUB"/*_1.fastq.gz | head -1) _1.fastq.gz)
+S=illumina
 echo "working on $S"
 
 fastp \
-  --in1 "$SUB/${S}_1.fastq.gz" \
-  --in2 "$SUB/${S}_2.fastq.gz" \
+  --in1 "$ILLUMINA_R1" \
+  --in2 "$ILLUMINA_R2" \
   --out1 "trimmed/${S}_1.trim.fq.gz" \
   --out2 "trimmed/${S}_2.trim.fq.gz" \
   --detect_adapter_for_pe \
@@ -97,17 +103,13 @@ adapters; leave quality mostly alone.
 ### 1.3 Trim the Other Short-Read Sample
 
 ```bash
-for f in "$SUB"/*_1.fastq.gz; do
-  S=$(basename "$f" _1.fastq.gz)
-  [ -f "reports/${S}.fastp.json" ] && continue
-  fastp \
-    --in1 "$SUB/${S}_1.fastq.gz" --in2 "$SUB/${S}_2.fastq.gz" \
-    --out1 "trimmed/${S}_1.trim.fq.gz" --out2 "trimmed/${S}_2.trim.fq.gz" \
-    --detect_adapter_for_pe \
-    --json "reports/${S}.fastp.json" --html "reports/${S}.fastp.html" \
-    --thread 4 2>/dev/null
-  echo "trimmed $S"
-done
+S=bgiseq
+fastp \
+  --in1 "$BGISEQ_R1" --in2 "$BGISEQ_R2" \
+  --out1 "trimmed/${S}_1.trim.fq.gz" --out2 "trimmed/${S}_2.trim.fq.gz" \
+  --detect_adapter_for_pe \
+  --json "reports/${S}.fastp.json" --html "reports/${S}.fastp.html" \
+  --thread 4
 ls reports/
 ```
 
@@ -128,14 +130,13 @@ quality.
 ### 2.2 Filter with chopper
 
 ```bash
-for f in "$SUB"/*.fastq.gz; do
+for f in "$LONG" "$PB"; do
   base=$(basename "$f" .fastq.gz)
-  case "$base" in *_1|*_2) continue ;; esac
   zcat "$f" | chopper -q 10 -l 1000 --threads 4 2>/dev/null | gzip > "trimmed/${base}.filt.fq.gz"
   echo "filtered $base"
 done
 
-seqkit stats -a "$SUB"/*.fastq.gz trimmed/*.filt.fq.gz 2>/dev/null | grep -v '_[12]'
+seqkit stats -a "$LONG" "$PB" trimmed/*.filt.fq.gz
 ```
 
 **Question 2.** Compare the before and after rows. What happened to read count, total

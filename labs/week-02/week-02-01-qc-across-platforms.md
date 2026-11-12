@@ -3,7 +3,7 @@
 Applied Bioinformatics - Tufts University Department of Biology
 
 Last week you fetched four yeast sequencing datasets from Illumina, BGISEQ, PacBio HiFi
-and Oxford Nanopore. In this lab you subsample the reads, measure them, and use QC tools
+and Oxford Nanopore. In this lab you measure the downloaded reads and use QC tools
 suited to short or long reads.
 
 | Run | Platform | Library type |
@@ -63,58 +63,33 @@ module load seqkit fastqc nanoplot
 module list
 ```
 
-## Part 1: Subsample Before You Measure
+### Identify the Input Files
 
-### 1.1 Take a Slice of Each
+Use the fetchngs samplesheet to identify the two Illumina mate files, the two BGISEQ
+mate files, and the single PacBio and Nanopore files. Replace each filename below with
+the actual filename in your `$READS` directory. Keep the variable names on the left.
 
 ```bash
-mkdir -p sub
+ILLUMINA_R1="$READS/REPLACE_WITH_ILLUMINA_R1.fastq.gz"
+ILLUMINA_R2="$READS/REPLACE_WITH_ILLUMINA_R2.fastq.gz"
+BGISEQ_R1="$READS/REPLACE_WITH_BGISEQ_R1.fastq.gz"
+BGISEQ_R2="$READS/REPLACE_WITH_BGISEQ_R2.fastq.gz"
+PB="$READS/REPLACE_WITH_PACBIO.fastq.gz"
+LONG="$READS/REPLACE_WITH_NANOPORE.fastq.gz"
 
-# short-read runs: 400,000 reads from each mate, order preserved so pairs stay matched
-for f in "$READS"/*_1.fastq.gz; do
-  base=$(basename "$f" _1.fastq.gz)
-  seqkit head -n 400000 "$READS/${base}_1.fastq.gz" -o "sub/${base}_1.fastq.gz"
-  seqkit head -n 400000 "$READS/${base}_2.fastq.gz" -o "sub/${base}_2.fastq.gz"
-  echo "subsampled $base"
-done
-
-# long-read runs: fewer reads, because each one is far longer
-for f in "$READS"/*.fastq.gz; do
-  base=$(basename "$f" .fastq.gz)
-  case "$base" in *_1|*_2) continue ;; esac
-  seqkit head -n 20000 "$f" -o "sub/${base}.fastq.gz"
-  echo "subsampled $base"
-done
-
-ls -lh sub/
+ls -lh "$ILLUMINA_R1" "$ILLUMINA_R2" "$BGISEQ_R1" "$BGISEQ_R2" "$PB" "$LONG"
 ```
 
-**Question 1.** `seqkit head` takes the first N reads rather than a random sample. What
-bias does that introduce, and why is it acceptable here?
+All six paths should point to existing files before you continue. `$LONG` names the
+Nanopore file and `$PB` names the PacBio file. These variables refer directly to the
+downloaded reads; this lab does not create a separate subset.
 
-<details>
-<summary>Answer</summary>
+## Part 1: Measure All Four Side by Side
 
-The first N reads may not represent the full file. Read order depends on how the data
-were produced and processed; an early subset could overrepresent a particular region
-or batch. Do not assume this bias is equal across the four datasets.
-
-We use this shortcut to learn the QC tools within the class period. For a full analysis,
-check the complete data or use a suitable random sample, keeping paired reads matched.
-`seqkit sample` supports random sampling, which requires reading through the file.
-
-The habit worth keeping: know which shortcut you took, and say so.
-
-</details>
-
-**Checkpoint 1.** `ls sub/` shows six files, and they are far smaller than the originals.
-
-## Part 2: Measure All Four Side by Side
-
-### 2.1 One Command, Every Platform
+### 1.1 One Command, Every Platform
 
 ```bash
-seqkit stats -a sub/*.fastq.gz
+seqkit stats -a "$READS"/*.fastq.gz
 ```
 
 Fill this in from the output. One row per file.
@@ -123,7 +98,7 @@ Fill this in from the output. One row per file.
 file                 num_seqs    sum_len    avg_len    N50     Q20(%)   Q30(%)
 ```
 
-**Question 2.** Compare `avg_len` across the four platforms. Which two are nearly
+**Question 1.** Compare `avg_len` across the four platforms. Which two are nearly
 constant, and which two vary? Why?
 
 <details>
@@ -140,11 +115,11 @@ length distribution for each platform.
 
 </details>
 
-### 2.2 Quality Is Not One Number Either
+### 1.2 Quality Is Not One Number Either
 
 Look at the `Q20(%)` and `Q30(%)` columns.
 
-**Question 3.** Rank the four datasets by their reported Q30. Does that ranking tell you
+**Question 2.** Rank the four datasets by their reported Q30. Does that ranking tell you
 which platform is best?
 
 <details>
@@ -161,12 +136,11 @@ purpose.
 
 </details>
 
-### 2.3 Read Length as a Distribution
+### 1.3 Read Length as a Distribution
 
 An average hides the shape. Look at the real distribution for one long-read file:
 
 ```bash
-LONG=$(ls sub/*.fastq.gz | grep -v '_[12].fastq.gz' | head -1)
 echo "$LONG"
 
 seqkit fx2tab -nl "$LONG" | awk '{print $NF}' | sort -n | \
@@ -181,10 +155,10 @@ seqkit fx2tab -nl "$LONG" | awk '{print $NF}' | sort -n | \
 Now the same for a short-read file:
 
 ```bash
-seqkit fx2tab -nl sub/*_1.fastq.gz | awk '{print $NF}' | sort -n | uniq -c | head
+seqkit fx2tab -nl "$ILLUMINA_R1" | awk '{print $NF}' | sort -n | uniq -c | head
 ```
 
-**Question 4.** The short-read file gives one length repeated hundreds of thousands of
+**Question 3.** The short-read file gives one length repeated hundreds of thousands of
 times. Why does that make the mean a useful summary there and a misleading one for long
 reads?
 
@@ -203,23 +177,24 @@ depends on whether reads span repeats.
 
 </details>
 
-**Checkpoint 2.** You have a filled-in stats table and can describe differences between
+**Checkpoint 1.** You have a filled-in stats table and can describe differences between
 the datasets while considering both platform and library type.
 
-## Part 3: FastQC, and Where It Applies
+## Part 2: FastQC, and Where It Applies
 
-### 3.1 Run It on the Short Reads Only
+### 2.1 Run It on the Short Reads Only
 
 ```bash
 mkdir -p fastqc
-fastqc -t 4 --outdir fastqc sub/*_1.fastq.gz sub/*_2.fastq.gz
+fastqc -t 4 --outdir fastqc \
+  "$ILLUMINA_R1" "$ILLUMINA_R2" "$BGISEQ_R1" "$BGISEQ_R2"
 ls fastqc/
 ```
 
 View a report through OnDemand: **Files > Home Directory**, navigate to your
 `week-02/session-01/fastqc/` directory, and click an `.html` file.
 
-### 3.2 Read It Properly
+### 2.2 Read It Properly
 
 Work through these panels for one Illumina sample and write down what you see.
 
@@ -232,7 +207,7 @@ Adapter content           does it rise, and from which position?
 Overrepresented sequences anything named?
 ```
 
-**Question 5.** Compare the Illumina and BGISEQ reports. Both are short-read platforms.
+**Question 4.** Compare the Illumina and BGISEQ reports. Both are short-read platforms.
 Name one panel where they differ. Why should you consider library type as well as
 platform when interpreting that difference?
 
@@ -251,7 +226,7 @@ interpreted in the context of the library type.
 
 </details>
 
-### 3.3 Try It Where It Does Not Belong
+### 2.3 Try It Where It Does Not Belong
 
 ```bash
 fastqc -t 4 -o fastqc "$LONG"
@@ -259,7 +234,7 @@ fastqc -t 4 -o fastqc "$LONG"
 
 Open that report.
 
-**Question 6.** Look at Basic Statistics and Per base sequence quality. Why is this
+**Question 5.** Look at Basic Statistics and Per base sequence quality. Why is this
 report close to useless?
 
 <details>
@@ -278,12 +253,12 @@ yours.
 
 </details>
 
-**Checkpoint 3.** You have FastQC reports for both short-read platforms and have seen one
+**Checkpoint 2.** You have FastQC reports for both short-read platforms and have seen one
 fail on long reads.
 
-## Part 4: The Right Tool for Long Reads
+## Part 3: The Right Tool for Long Reads
 
-### 4.1 NanoPlot
+### 3.1 NanoPlot
 
 NanoPlot generates **plots and an HTML report**, as well as a text summary. It can
 summarize both Nanopore and PacBio HiFi FASTQ reads; its name does not limit it to
@@ -320,7 +295,7 @@ easier to compare. Some quality plots may be skipped when the scores have no var
 These plots summarize the scores stored in the FASTQ file; they do not independently
 measure sequencing accuracy.
 
-### 4.2 Five Numbers That Matter
+### 3.2 Five Numbers That Matter
 
 From `NanoStats.txt`, record:
 
@@ -332,7 +307,7 @@ Mean read quality
 Number of reads
 ```
 
-**Question 7.** NanoPlot reports both mean and median read length, and they differ
+**Question 6.** NanoPlot reports both mean and median read length, and they differ
 substantially. Which is larger, and what does that tell you about the run?
 
 <details>
@@ -347,12 +322,11 @@ is what matters for assembly.
 
 </details>
 
-### 4.3 Compare the Two Long-Read Platforms
+### 3.3 Compare the Two Long-Read Platforms
 
 Run NanoPlot on the PacBio file as well, then compare:
 
 ```bash
-PB=$(ls sub/*.fastq.gz | grep -v '_[12].fastq.gz' | sed -n 2p)
 mkdir -p nanoplot_pb
 NanoPlot --fastq "$PB" -o nanoplot_pb -t 4 --N50 --loglength
 grep -E 'Mean read length|Median read|N50|Mean read quality' nanoplot/NanoStats.txt nanoplot_pb/NanoStats.txt
@@ -362,7 +336,7 @@ Open **`nanoplot_pb/NanoPlot-report.html`** for the PacBio report, using the sam
 OnDemand or download steps as above. Compare the read-length and quality plots with
 those in `nanoplot/NanoPlot-report.html`, as well as the numbers in `NanoStats.txt`.
 
-**Question 8.** Both are long-read platforms. Which has higher read quality, and which
+**Question 7.** Both are long-read platforms. Which has higher read quality, and which
 has longer reads? What does that trade-off mean for choosing between them?
 
 <details>
@@ -380,7 +354,7 @@ today. Many projects use both, which is why this study has both.
 
 </details>
 
-**Checkpoint 4.** You have opened both NanoPlot HTML reports, compared their plots and
+**Checkpoint 3.** You have opened both NanoPlot HTML reports, compared their plots and
 summary statistics, and can describe the trade-off between the two datasets.
 
 ## Takeaways
@@ -388,20 +362,14 @@ summary statistics, and can describe the trade-off between the two datasets.
 Measure every dataset the same way first:
 
 ```bash
-seqkit stats -a sub/*.fastq.gz
-```
-
-Subsample before QC, and know which shortcut you took:
-
-```bash
-seqkit head -n 400000 in.fastq.gz -o out.fastq.gz
+seqkit stats -a "$READS"/*.fastq.gz
 ```
 
 Use FastQC for short reads and NanoPlot for long ones:
 
 ```bash
-fastqc -t 4 -o fastqc sub/*_1.fastq.gz
-NanoPlot --fastq long.fastq.gz -o nanoplot --N50
+fastqc -t 4 -o fastqc "$ILLUMINA_R1" "$ILLUMINA_R2" "$BGISEQ_R1" "$BGISEQ_R2"
+NanoPlot --fastq "$LONG" -o nanoplot -t 4 --N50
 ```
 
 Three things to carry forward:

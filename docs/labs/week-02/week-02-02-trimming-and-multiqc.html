@@ -60,33 +60,34 @@
           <p>On Tuesday you measured four platforms. Today you act on what you found: trim the short reads, filter the long reads, aggregate everything into one report, and diagnose four samples that are deliberately broken.</p>
 <p>The last part is the point of the session. Running QC is easy. Deciding what a bad plot means is the skill.</p>
 <h2 id="before-you-start">Before You Start</h2>
-<pre class="lab-code"><code class=" language-bash">srun --pty -p interactive -n 4 --mem=16g --time=0-03:00:00 bash
+<pre class="lab-code"><code class=" language-bash">srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=4 \
+  --mem=16G --time=03:00:00 --pty bash
 hostname
 
-export COURSE=/cluster/tufts/bio_appbio
+export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=$COURSE/$USER
-export SUB=$MYWORK/week-02/session-01/sub
+export READS=$MYWORK/week-01/session-02/fetch/results/fastq
 
 mkdir -p &quot;$MYWORK/week-02/session-02&quot;
 cd &quot;$MYWORK/week-02/session-02&quot;
 
-ls -lh &quot;$SUB&quot;</code></pre>
-<p>If <code>$SUB</code> is empty, you did not finish Tuesday&#x27;s lab. Use the staged subsamples:</p>
-<pre class="lab-code"><code class=" language-bash">export SUB=$COURSE/shared/wk2/sub
-ls -lh &quot;$SUB&quot;</code></pre>
-<pre class="lab-code"><code class=" language-bash">module load miniforge
-conda activate appbio-week1
-conda install -y -c conda-forge -c bioconda fastp multiqc chopper</code></pre>
+ls -lh &quot;$READS&quot;</code></pre>
+<p>Use the original downloaded FASTQ files, as in Session 1. If <code>$READS</code> is empty, finish the Week 1 download or use the staged FASTQ files:</p>
+<pre class="lab-code"><code class=" language-bash">export READS=$COURSE/shared/wk2/sub
+ls -lh &quot;$READS&quot;</code></pre>
+<pre class="lab-code"><code class=" language-bash">module load seqkit fastp chopper fastqc multiqc
+module list</code></pre>
+<p>Repeat the six filename assignments from <a href="week-02-01-qc-across-platforms.html#identify-the-input-files">Session 1: Identify the Input Files</a>, using the files in your current <code>$READS</code> directory. You will use <code>ILLUMINA_R1</code>, <code>ILLUMINA_R2</code>, <code>BGISEQ_R1</code>, <code>BGISEQ_R2</code>, <code>PB</code>, and <code>LONG</code> below.</p>
 <h2 id="part-1-trim-the-short-reads">Part 1: Trim the Short Reads</h2>
 <h3 id="1-1-run-fastp-on-one-sample">1.1 Run fastp on One Sample</h3>
 <pre class="lab-code"><code class=" language-bash">mkdir -p trimmed reports
 
-S=$(basename $(ls &quot;$SUB&quot;/*_1.fastq.gz | head -1) _1.fastq.gz)
+S=illumina
 echo &quot;working on $S&quot;
 
 fastp \
-  --in1 &quot;$SUB/${S}_1.fastq.gz&quot; \
-  --in2 &quot;$SUB/${S}_2.fastq.gz&quot; \
+  --in1 &quot;$ILLUMINA_R1&quot; \
+  --in2 &quot;$ILLUMINA_R2&quot; \
   --out1 &quot;trimmed/${S}_1.trim.fq.gz&quot; \
   --out2 &quot;trimmed/${S}_2.trim.fq.gz&quot; \
   --detect_adapter_for_pe \
@@ -112,17 +113,13 @@ print(f&#x27;kept  : {100*a/b:.1f}%&#x27;)
 <p>But the direction people get wrong is the other one. Over-trimming is worse than under-trimming: it removes real sequence, biases you toward reads that were easy to sequence, and shortens reads so they map worse. Aligners already soft-clip bad ends. Trim adapters; leave quality mostly alone.</p>
 </details>
 <h3 id="1-3-trim-the-other-short-read-sample">1.3 Trim the Other Short-Read Sample</h3>
-<pre class="lab-code"><code class=" language-bash">for f in &quot;$SUB&quot;/*_1.fastq.gz; do
-  S=$(basename &quot;$f&quot; _1.fastq.gz)
-  [ -f &quot;reports/${S}.fastp.json&quot; ] &amp;&amp; continue
-  fastp \
-    --in1 &quot;$SUB/${S}_1.fastq.gz&quot; --in2 &quot;$SUB/${S}_2.fastq.gz&quot; \
-    --out1 &quot;trimmed/${S}_1.trim.fq.gz&quot; --out2 &quot;trimmed/${S}_2.trim.fq.gz&quot; \
-    --detect_adapter_for_pe \
-    --json &quot;reports/${S}.fastp.json&quot; --html &quot;reports/${S}.fastp.html&quot; \
-    --thread 4 2&gt;/dev/null
-  echo &quot;trimmed $S&quot;
-done
+<pre class="lab-code"><code class=" language-bash">S=bgiseq
+fastp \
+  --in1 &quot;$BGISEQ_R1&quot; --in2 &quot;$BGISEQ_R2&quot; \
+  --out1 &quot;trimmed/${S}_1.trim.fq.gz&quot; --out2 &quot;trimmed/${S}_2.trim.fq.gz&quot; \
+  --detect_adapter_for_pe \
+  --json &quot;reports/${S}.fastp.json&quot; --html &quot;reports/${S}.fastp.html&quot; \
+  --thread 4
 ls reports/</code></pre>
 <p><strong>Checkpoint 1.</strong> Both short-read samples trimmed, with JSON and HTML reports.</p>
 <h2 id="part-2-long-reads-are-filtered-not-trimmed">Part 2: Long Reads Are Filtered, Not Trimmed</h2>
@@ -130,14 +127,13 @@ ls reports/</code></pre>
 <p>A short read has adapter at a predictable end and quality that decays toward the 3&#x27; end, so trimming the ends is meaningful. A long read has errors distributed along its whole length. Trimming the ends of a 20 kb read removes almost nothing useful and leaves the problem untouched.</p>
 <p>So for long reads you make a keep-or-discard decision per read, on length and mean quality.</p>
 <h3 id="2-2-filter-with-chopper">2.2 Filter with chopper</h3>
-<pre class="lab-code"><code class=" language-bash">for f in &quot;$SUB&quot;/*.fastq.gz; do
+<pre class="lab-code"><code class=" language-bash">for f in &quot;$LONG&quot; &quot;$PB&quot;; do
   base=$(basename &quot;$f&quot; .fastq.gz)
-  case &quot;$base&quot; in *_1|*_2) continue ;; esac
   zcat &quot;$f&quot; | chopper -q 10 -l 1000 --threads 4 2&gt;/dev/null | gzip &gt; &quot;trimmed/${base}.filt.fq.gz&quot;
   echo &quot;filtered $base&quot;
 done
 
-seqkit stats -a &quot;$SUB&quot;/*.fastq.gz trimmed/*.filt.fq.gz 2&gt;/dev/null | grep -v &#x27;_[12]&#x27;</code></pre>
+seqkit stats -a &quot;$LONG&quot; &quot;$PB&quot; trimmed/*.filt.fq.gz</code></pre>
 <p><strong>Question 2.</strong> Compare the before and after rows. What happened to read count, total bases, and N50?</p>
 <details>
 <summary>Answer</summary>
