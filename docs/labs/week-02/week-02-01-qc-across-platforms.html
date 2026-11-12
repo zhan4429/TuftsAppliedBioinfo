@@ -655,6 +655,50 @@ cat nanoplot/NanoStats.txt</code></pre>
 <li><strong>Read length versus average quality:</strong> shows whether longer and shorter reads have different reported qualities. The report may show points or a density view.</li>
 </ul>
 <p><code>--loglength</code> adds plots with a logarithmic length axis, making broad length ranges easier to compare. Some quality plots may be skipped when the scores have no variation. These plots summarize the scores stored in the FASTQ file; they do not independently measure sequencing accuracy.</p>
+<h4 id="worked-example-reading-the-nanopore-report">Worked Example: Reading the Nanopore Report</h4>
+<p>The supplied NanoPlot report matches the Nanopore dataset summarized earlier: <strong>701,791 reads</strong> and <strong>9,633,074,833 bases</strong>. The figures below are static exports of its original plots. You can <a href="assets/nanoplot-nanopore/NanoPlot-report.html">open the full interactive report</a> to inspect the other views; its interactive plots need an internet connection.</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Summary from this NanoPlot report</th>
+<th>Value</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Mean read length</td>
+<td>13,726.4 bp</td>
+</tr>
+<tr>
+<td>Median read length</td>
+<td>11,063 bp</td>
+</tr>
+<tr>
+<td>Read length N50</td>
+<td>20,948 bp</td>
+</tr>
+<tr>
+<td>Mean read quality</td>
+<td>Q12.0</td>
+</tr>
+<tr>
+<td>Median read quality</td>
+<td>Q12.9</td>
+</tr>
+<tr>
+<td>Longest read</td>
+<td>276,396 bp, with mean quality Q8.1</td>
+</tr>
+</tbody>
+</table></div>
+<p><img src="assets/nanoplot-nanopore/nanopore-read-count-by-length.png" alt="NanoPlot read-count histogram with many shorter reads, a long right tail, and an N50 marker at 20,948 bp." loading="lazy" decoding="async"></p>
+<p><strong>Figure 7. How many reads occur at each length?</strong> Each bar counts reads in a length range. Many reads are shorter than 20 kb, with fewer long reads forming a right-hand tail. This is consistent with the mean length being higher than the median. Very rare, extremely long reads contribute too little to make a visible bar on this scale; use the summary to find the maximum.</p>
+<p>The vertical line marks <strong>N50 = 20,948 bp</strong>. It does not mark the middle read: the median is <strong>11,063 bp</strong>. N50 means that at least half of all sequenced bases are in reads at least 20,948 bp long.</p>
+<p><img src="assets/nanoplot-nanopore/nanopore-base-yield-by-length.png" alt="NanoPlot base-weighted length histogram, showing that reads around 20 kb contribute much more sequence than their read counts alone suggest." loading="lazy" decoding="async"></p>
+<p><strong>Figure 8. Where do the sequenced bases come from?</strong> This uses the same length axis, but bar heights count <strong>bases</strong>, rather than reads. A 20 kb read contributes twice as many bases as a 10 kb read. Compare this with Figure 7: shorter reads are numerous, but reads around 15–25 kb make a large contribution to the total sequence yield. This distinction explains why N50 is higher than the median read length.</p>
+<p><img src="assets/nanoplot-nanopore/nanopore-length-vs-quality.png" alt="NanoPlot length-versus-quality scatter plot of 10,000 sampled reads, with length and quality histograms along the margins." loading="lazy" decoding="async"></p>
+<p><strong>Figure 9. Are the longest reads also the highest-quality reads?</strong> Each point is one read, positioned by its length and average reported quality. The histograms above and to the right summarize those two variables. Most displayed reads are shorter than about 40 kb, with a broad quality spread; length alone is not a quality score.</p>
+<p>The title says <strong>downsampled</strong>: this view contains <strong>10,000 sampled reads</strong>, and its displayed length range does not include every extreme read. Do not use the farthest point to estimate the maximum length or count the dots as the full library. The summary identifies a 276,396 bp read with mean quality Q8.1, illustrating that a very long read can also have low reported quality.</p>
+<p>The full report lists <strong>83.4% of reads above Q10</strong>, <strong>16.7% above Q15</strong>, and <strong>47 reads above Q20</strong>. These cutoffs use per-read quality, whereas SeqKit&#x27;s <code>Q20(%)</code> counts individual bases. A read can contain many Q20 bases while its overall read-quality score is below Q20, so the two summaries need not agree.</p>
+<p><strong>Interpretation:</strong> assess length and quality together before choosing a filter. These plots summarize basecaller scores, rather than independently measuring errors against a known reference. Compare QC summaries before and after any filtering to see how many reads and bases were removed.</p>
 <h3 id="3-2-five-numbers-that-matter">3.2 Five Numbers That Matter</h3>
 <p>From <code>NanoStats.txt</code>, record:</p>
 <pre class="lab-code"><code class=" language-text">Mean read length
@@ -685,7 +729,7 @@ Number of reads</code></pre>
 </tr>
 </tbody>
 </table></div>
-<p>The mean exceeds the median in both files, consistent with longer reads pulling the average upward. The maximum lengths and plots help show the tail. N50 summarizes where the bases lie, rather than the length of the middle read. These values come from SeqKit; record the values produced by your own NanoPlot run for this question.</p>
+<p>The mean exceeds the median in both files, consistent with longer reads pulling the average upward. The maximum lengths and plots help show the tail. N50 summarizes where the bases lie, rather than the length of the middle read. The Nanopore length values match the supplied NanoPlot report above; the PacBio values here remain a SeqKit cross-check. Record the values from your own NanoPlot runs for this question.</p>
 </details>
 <h3 id="3-3-compare-the-two-long-read-platforms">3.3 Compare the Two Long-Read Platforms</h3>
 <p>Run NanoPlot on the PacBio file as well. Use a separate output directory so its report is easy to distinguish from the Nanopore report:</p>

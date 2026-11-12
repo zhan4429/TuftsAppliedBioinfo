@@ -558,6 +558,65 @@ easier to compare. Some quality plots may be skipped when the scores have no var
 These plots summarize the scores stored in the FASTQ file; they do not independently
 measure sequencing accuracy.
 
+#### Worked Example: Reading the Nanopore Report
+
+The supplied NanoPlot report matches the Nanopore dataset summarized earlier:
+**701,791 reads** and **9,633,074,833 bases**. The figures below are static exports of
+its original plots. You can [open the full interactive report](assets/nanoplot-nanopore/NanoPlot-report.html)
+to inspect the other views; its interactive plots need an internet connection.
+
+| Summary from this NanoPlot report | Value |
+| --- | --- |
+| Mean read length | 13,726.4 bp |
+| Median read length | 11,063 bp |
+| Read length N50 | 20,948 bp |
+| Mean read quality | Q12.0 |
+| Median read quality | Q12.9 |
+| Longest read | 276,396 bp, with mean quality Q8.1 |
+
+![NanoPlot read-count histogram with many shorter reads, a long right tail, and an N50 marker at 20,948 bp.](assets/nanoplot-nanopore/nanopore-read-count-by-length.png)
+
+**Figure 7. How many reads occur at each length?** Each bar counts reads in a length
+range. Many reads are shorter than 20 kb, with fewer long reads forming a right-hand
+tail. This is consistent with the mean length being higher than the median. Very
+rare, extremely long reads contribute too little to make a visible bar on this scale;
+use the summary to find the maximum.
+
+The vertical line marks **N50 = 20,948 bp**. It does not mark the middle read: the
+median is **11,063 bp**. N50 means that at least half of all sequenced bases are in
+reads at least 20,948 bp long.
+
+![NanoPlot base-weighted length histogram, showing that reads around 20 kb contribute much more sequence than their read counts alone suggest.](assets/nanoplot-nanopore/nanopore-base-yield-by-length.png)
+
+**Figure 8. Where do the sequenced bases come from?** This uses the same length axis,
+but bar heights count **bases**, rather than reads. A 20 kb read contributes twice
+as many bases as a 10 kb read. Compare this with Figure 7: shorter reads are numerous,
+but reads around 15–25 kb make a large contribution to the total sequence yield.
+This distinction explains why N50 is higher than the median read length.
+
+![NanoPlot length-versus-quality scatter plot of 10,000 sampled reads, with length and quality histograms along the margins.](assets/nanoplot-nanopore/nanopore-length-vs-quality.png)
+
+**Figure 9. Are the longest reads also the highest-quality reads?** Each point is one
+read, positioned by its length and average reported quality. The histograms above
+and to the right summarize those two variables. Most displayed reads are shorter
+than about 40 kb, with a broad quality spread; length alone is not a quality score.
+
+The title says **downsampled**: this view contains **10,000 sampled reads**, and its
+displayed length range does not include every extreme read. Do not use the farthest
+point to estimate the maximum length or count the dots as the full library. The
+summary identifies a 276,396 bp read with mean quality Q8.1, illustrating that a very
+long read can also have low reported quality.
+
+The full report lists **83.4% of reads above Q10**, **16.7% above Q15**, and **47 reads
+above Q20**. These cutoffs use per-read quality, whereas SeqKit's `Q20(%)` counts
+individual bases. A read can contain many Q20 bases while its overall read-quality
+score is below Q20, so the two summaries need not agree.
+
+**Interpretation:** assess length and quality together before choosing a filter.
+These plots summarize basecaller scores, rather than independently measuring errors
+against a known reference. Compare QC summaries before and after any filtering to
+see how many reads and bases were removed.
+
 ### 3.2 Five Numbers That Matter
 
 From `NanoStats.txt`, record:
@@ -586,8 +645,10 @@ instructor's SeqKit results show:
 
 The mean exceeds the median in both files, consistent with longer reads pulling the
 average upward. The maximum lengths and plots help show the tail. N50 summarizes
-where the bases lie, rather than the length of the middle read. These values come
-from SeqKit; record the values produced by your own NanoPlot run for this question.
+where the bases lie, rather than the length of the middle read. The Nanopore length
+values match the supplied NanoPlot report above; the PacBio values here remain a
+SeqKit cross-check. Record the values from your own NanoPlot
+runs for this question.
 
 </details>
 
