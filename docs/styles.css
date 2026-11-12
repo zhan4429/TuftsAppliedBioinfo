@@ -524,6 +524,10 @@ summary:focus-visible {
   width: 75%;
 }
 
+.lab-article img[src*="assets/nanoplot-nanopore/"] {
+  width: 80%;
+}
+
 .lab-hero {
   margin-bottom: 2rem;
   padding-bottom: 1.25rem;
