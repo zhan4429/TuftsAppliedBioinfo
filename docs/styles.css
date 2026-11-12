@@ -642,6 +642,16 @@ summary:focus-visible {
   font-weight: 600;
 }
 
+/* Keep wide data tables readable; .table-wrap provides horizontal scrolling. */
+.lab-article table:has(thead th:nth-child(6)) {
+  min-width: 44rem;
+}
+
+.lab-article table:has(thead th:nth-child(6)) th,
+.lab-article table:has(thead th:nth-child(6)) td {
+  white-space: nowrap;
+}
+
 /* ---------- Code ---------- */
 
 code {

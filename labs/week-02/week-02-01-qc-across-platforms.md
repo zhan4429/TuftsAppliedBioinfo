@@ -70,17 +70,18 @@ named `nanoplot`.
 
 ### Identify the Input Files
 
-Use the fetchngs samplesheet to identify the two Illumina mate files, the two BGISEQ
-mate files, and the single PacBio and Nanopore files. Replace each filename below with
-the actual filename in your `$READS` directory. Keep the variable names on the left.
+These are the filenames confirmed in the example download below. Use the fetchngs
+samplesheet to check the two Illumina mates, two BGISEQ mates, and single PacBio and
+Nanopore files. If your filenames differ, update the filename after `$READS/` while
+keeping the variable names on the left.
 
 ```bash
-ILLUMINA_R1="$READS/REPLACE_WITH_ILLUMINA_R1.fastq.gz"
-ILLUMINA_R2="$READS/REPLACE_WITH_ILLUMINA_R2.fastq.gz"
-BGISEQ_R1="$READS/REPLACE_WITH_BGISEQ_R1.fastq.gz"
-BGISEQ_R2="$READS/REPLACE_WITH_BGISEQ_R2.fastq.gz"
-PB="$READS/REPLACE_WITH_PACBIO.fastq.gz"
-LONG="$READS/REPLACE_WITH_NANOPORE.fastq.gz"
+ILLUMINA_R1="$READS/SRX23612877_SRR27956204_1.fastq.gz"
+ILLUMINA_R2="$READS/SRX23612877_SRR27956204_2.fastq.gz"
+BGISEQ_R1="$READS/SRX13548510_SRR17374239_1.fastq.gz"
+BGISEQ_R2="$READS/SRX13548510_SRR17374239_2.fastq.gz"
+PB="$READS/SRX14356846_SRR18210286.fastq.gz"
+LONG="$READS/SRX13548509_SRR17374240.fastq.gz"
 
 ls -lh "$ILLUMINA_R1" "$ILLUMINA_R2" "$BGISEQ_R1" "$BGISEQ_R2" "$PB" "$LONG"
 ```
@@ -116,20 +117,88 @@ Fill this in from the output. One row per file.
 file                 num_seqs    sum_len    avg_len    N50     Q20(%)   Q30(%)
 ```
 
+<details>
+<summary>Example SeqKit result</summary>
+
+This instructor-provided run processed **6 of 6 files**. The tables below preserve its
+reported values, using short labels and filenames instead of the personal directory
+path. All six rows have `format = FASTQ`, `type = DNA`, and `sum_gap = 0`.
+SeqKit's `DNA` label describes the sequence alphabet; the Illumina libraries are still
+RNA-seq, as recorded in the run metadata. On a phone, swipe across the wide tables to
+see all columns.
+
+| Label | Filename |
+| --- | --- |
+| Nanopore | `SRX13548509_SRR17374240.fastq.gz` |
+| BGISEQ R1 | `SRX13548510_SRR17374239_1.fastq.gz` |
+| BGISEQ R2 | `SRX13548510_SRR17374239_2.fastq.gz` |
+| PacBio HiFi | `SRX14356846_SRR18210286.fastq.gz` |
+| Illumina R1 | `SRX23612877_SRR27956204_1.fastq.gz` |
+| Illumina R2 | `SRX23612877_SRR27956204_2.fastq.gz` |
+
+**Read counts and lengths.** Lengths and total sequence are in bases.
+
+| File | num_seqs | sum_len | min_len | avg_len | max_len |
+| --- | --- | --- | --- | --- | --- |
+| Nanopore | 701,791 | 9,633,074,833 | 2,000 | 13,726.4 | 276,396 |
+| BGISEQ R1 | 12,142,029 | 1,821,304,350 | 150 | 150 | 150 |
+| BGISEQ R2 | 12,142,029 | 1,821,304,350 | 150 | 150 | 150 |
+| PacBio HiFi | 227,298 | 4,583,595,361 | 1,332 | 20,165.6 | 50,260 |
+| Illumina R1 | 44,824,178 | 6,768,450,878 | 151 | 151 | 151 |
+| Illumina R2 | 44,824,178 | 6,768,450,878 | 151 | 151 | 151 |
+
+**Length distribution.** `Q2` is the median read length. `N50_num` is the number of
+reads, starting with the longest, needed to reach at least half the total bases.
+
+| File | Q1 | Q2 | Q3 | N50 | N50_num |
+| --- | --- | --- | --- | --- | --- |
+| Nanopore | 4,731 | 11,063 | 20,231 | 20,948 | 164,166 |
+| BGISEQ R1 | 150 | 150 | 150 | 150 | 6,071,015 |
+| BGISEQ R2 | 150 | 150 | 150 | 150 | 6,071,015 |
+| PacBio HiFi | 15,079 | 18,738 | 23,847 | 21,020 | 84,962 |
+| Illumina R1 | 151 | 151 | 151 | 151 | 22,412,089 |
+| Illumina R2 | 151 | 151 | 151 | 151 | 22,412,089 |
+
+**Quality and composition.** `Q20(%)` and `Q30(%)` are percentages of bases at or above
+those quality scores. `AvgQual` is SeqKit's reported average quality, `GC(%)` is GC
+percentage, and `sum_n` counts N bases.
+
+| File | Q20(%) | Q30(%) | AvgQual | GC(%) | sum_n |
+| --- | --- | --- | --- | --- | --- |
+| Nanopore | 60.65 | 25.82 | 11.94 | 38 | 0 |
+| BGISEQ R1 | 96.07 | 89.93 | 22.94 | 37.91 | 136,577 |
+| BGISEQ R2 | 95.08 | 88.28 | 21.66 | 38.13 | 483,461 |
+| PacBio HiFi | 98.47 | 96.28 | 27.46 | 37.69 | 0 |
+| Illumina R1 | 97.82 | 94.29 | 26.9 | 44.89 | 88,467 |
+| Illumina R2 | 97.08 | 92.99 | 25.79 | 44.63 | 55,068 |
+
+The mate counts match: BGISEQ has **12,142,029 reads per mate**, and Illumina has
+**44,824,178 reads per mate**. Your own output should be checked rather than copied
+from this reference.
+
+</details>
+
 **Question 1.** Compare `avg_len` across the four platforms. Which two are nearly
 constant, and which two vary? Why?
 
 <details>
 <summary>Answer</summary>
 
-Illumina and BGISEQ reads often have a narrow length distribution because sequencing
-uses a chosen number of cycles. Trimming and other processing can shorten some reads,
-so check the actual distributions in these files.
+In this result, both **BGISEQ mates are exactly 150 bp** and both **Illumina mates
+are exactly 151 bp**: their minimum, average, and maximum lengths are identical.
+Their read lengths are fixed here, not merely nearly constant.
 
-PacBio and Nanopore reads typically have broader length distributions. DNA fragment
-length, library preparation, size selection, instrument settings, and read processing
-all contribute. The comparison illustrates the datasets you have, not a universal
-length distribution for each platform.
+The long-read files vary:
+
+| Dataset | min_len (bp) | avg_len (bp) | max_len (bp) |
+| --- | --- | --- | --- |
+| Nanopore | 2,000 | 13,726.4 | 276,396 |
+| PacBio HiFi | 1,332 | 20,165.6 | 50,260 |
+
+Short-read length is largely set by the chosen sequencing cycles. Long-read lengths
+also reflect DNA fragment lengths, library preparation, size selection, and processing.
+The PacBio file has the longer average read in these data; the Nanopore file has the
+longest individual read.
 
 </details>
 
@@ -143,14 +212,23 @@ which platform is best?
 <details>
 <summary>Answer</summary>
 
-Use the values from your own output rather than an expected ranking. Reported base
-quality is one measure; read length, yield, and the biological question also matter.
-These runs differ in library type and sample preparation, so the ranking cannot isolate
-the effect of platform.
+The observed ranking by percentage of bases with Q30 or higher is:
 
-Week 3 makes the choice concrete: you will use the PacBio HiFi genomic reads for genome
-assembly. The Illumina RNA-seq run measures expressed transcripts and serves a different
-purpose.
+| Rank | Dataset | Q30(%) |
+| --- | --- | --- |
+| 1 | PacBio HiFi | 96.28 |
+| 2 | Illumina | 94.29 (R1), 92.99 (R2) |
+| 3 | BGISEQ | 89.93 (R1), 88.28 (R2) |
+| 4 | Nanopore | 25.82 |
+
+PacBio ranks first in this output. This is a ranking of reported base qualities in
+these files, not a universal ranking of sequencing platforms. Read length, yield, and
+the biological question also matter. The Illumina dataset is RNA-seq and the others
+are genomic, so they serve different purposes and differ in library preparation.
+
+For example, the longest Nanopore read is 276,396 bp, much longer than the longest
+PacBio read (50,260 bp), despite Nanopore's lower reported Q30 percentage. Week 3 uses
+the PacBio HiFi genomic reads for assembly.
 
 </details>
 
@@ -198,22 +276,25 @@ lengths. After extracting and sorting the lengths, `uniq -c` counts equal adjace
 values, and `head` shows the first ten length groups. The two output columns are the
 number of reads and their length in bases.
 
-**Question 3.** The short-read file gives one length repeated hundreds of thousands of
-times. Why does that make the mean a useful summary there and a misleading one for long
-reads?
+**Question 3.** The short-read file gives the same length for every read. Why does that
+make the mean a useful summary there and an incomplete one for long reads?
 
 <details>
 <summary>Answer</summary>
 
-When every value is the same, the mean describes the data perfectly.
+All 44,824,178 reads in the Illumina R1 file are 151 bp long. The length-count
+command therefore produces one row, with a count of **44,824,178** and a length of
+**151**. Each BGISEQ mate similarly contains 12,142,029 reads of 150 bp. For these
+files, the mean describes every read's length.
 
-For long reads the distribution spans orders of magnitude and is heavily skewed, so the
-mean sits far from the typical read and far from where the bases actually are. A run with
-a mean of 4 kb and an N50 of 22 kb is a good run with a lot of short junk in it. A mean of
-4 kb and an N50 of 6 kb has no long reads at all. The mean cannot tell those apart.
+The Nanopore file spans **2,000–276,396 bp**, with a mean of **13,726.4 bp**, a median
+of **11,063 bp**, and an N50 of **20,948 bp**. Its middle half of reads falls between
+Q1 = **4,731 bp** and Q3 = **20,231 bp**. The mean alone hides this broad distribution
+and the very long tail.
 
-This is why long-read reports lead with N50, and it comes back in Week 3 when contiguity
-depends on whether reads span repeats.
+PacBio also varies: **1,332–50,260 bp**, with a mean of **20,165.6 bp**, median of
+**18,738 bp**, and N50 of **21,020 bp**. Use the distribution and N50 alongside the
+mean when describing the long-read files.
 
 </details>
 
@@ -387,12 +468,18 @@ substantially. Which is larger, and what does that tell you about the run?
 <details>
 <summary>Answer</summary>
 
-The mean is larger than the median, because the distribution has a long right tail — a
-small number of very long reads pull the average up while most reads are shorter.
+Check the mean and median in your NanoPlot report. As a length cross-check, the
+instructor's SeqKit results show:
 
-N50 is larger still, because it weights by bases rather than by reads. The gap between
-median and N50 is a quick read on how much of your sequence sits in long molecules, which
-is what matters for assembly.
+| Dataset | Mean length (bp) | Median length (bp) |
+| --- | --- | --- |
+| Nanopore | 13,726.4 | 11,063 |
+| PacBio HiFi | 20,165.6 | 18,738 |
+
+The mean exceeds the median in both files, consistent with longer reads pulling the
+average upward. The maximum lengths and plots help show the tail. N50 summarizes
+where the bases lie, rather than the length of the middle read. These values come
+from SeqKit; record the values produced by your own NanoPlot run for this question.
 
 </details>
 
@@ -423,15 +510,26 @@ has longer reads? What does that trade-off mean for choosing between them?
 <details>
 <summary>Answer</summary>
 
-PacBio HiFi has substantially higher quality; nanopore typically has longer reads.
+Use your NanoPlot plots and statistics to compare the two files. The instructor's
+SeqKit output provides a reference:
 
-HiFi earns its accuracy by reading the same molecule repeatedly and taking a consensus,
-which costs length. Nanopore reads the molecule once, so length is limited only by your
-DNA.
+| Metric | PacBio HiFi | Nanopore |
+| --- | --- | --- |
+| Q30(%) | 96.28 | 25.82 |
+| SeqKit AvgQual | 27.46 | 11.94 |
+| Average length (bp) | 20,165.6 | 13,726.4 |
+| N50 (bp) | 21,020 | 20,948 |
+| Maximum length (bp) | 50,260 | 276,396 |
 
-Choose HiFi when you need per-base accuracy — assembly you intend to annotate, variant
-calling. Choose nanopore when you need to span something very long, or need the answer
-today. Many projects use both, which is why this study has both.
+**PacBio has higher reported quality and a longer average read in these data.** The
+N50 values are similar, with PacBio slightly higher. **Nanopore has the longest
+individual read.** Specify the length metric rather than saying one platform simply
+has longer reads.
+
+HiFi consensus sequencing supports high per-base accuracy. Very long Nanopore reads
+can help span long repeats. The choice depends on the analysis, and these separate
+libraries do not establish a universal platform ranking. Quality values above are
+from SeqKit, not substituted for NanoPlot's own summary.
 
 </details>
 
