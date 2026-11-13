@@ -38,22 +38,17 @@
             <nav>
             <a class="toc-level-2" href="#before-you-start">Before You Start</a>
             <a class="toc-level-3" href="#dataset-identity-matters">Dataset Identity Matters</a>
-            <a class="toc-level-2" href="#part-1-submit-both-callers-now">Part 1: Submit Both Callers, Now</a>
+            <a class="toc-level-2" href="#part-1-submit-the-caller-now">Part 1: Submit The Caller, Now</a>
             <a class="toc-level-3" href="#1-1-the-files-every-caller-expects">1.1 The Files Every Caller Expects</a>
-            <a class="toc-level-3" href="#1-2-gatk-haplotypecaller">1.2 GATK HaplotypeCaller</a>
-            <a class="toc-level-3" href="#1-3-deepvariant">1.3 DeepVariant</a>
-            <a class="toc-level-3" href="#1-4-submit-both">1.4 Submit Both</a>
-            <a class="toc-level-2" href="#part-2-read-a-vcf-while-they-run">Part 2: Read A VCF While They Run</a>
+            <a class="toc-level-3" href="#1-2-gatk-haplotypecaller-haploid">1.2 GATK HaplotypeCaller, Haploid</a>
+            <a class="toc-level-2" href="#part-2-read-a-vcf-while-it-runs">Part 2: Read A VCF While It Runs</a>
             <a class="toc-level-3" href="#2-1-header-and-records">2.1 Header And Records</a>
-            <a class="toc-level-3" href="#2-2-genotypes-under-each-model">2.2 Genotypes, Under Each Model</a>
-            <a class="toc-level-3" href="#2-3-look-at-the-mixed-sites">2.3 Look At The Mixed Sites</a>
+            <a class="toc-level-3" href="#2-2-genotypes-and-read-support">2.2 Genotypes And Read Support</a>
             <a class="toc-level-2" href="#part-3-what-the-whole-genome-says-about-your-assembly">Part 3: What The Whole Genome Says About Your Assembly</a>
-            <a class="toc-level-3" href="#3-1-normalise-then-filter">3.1 Normalise, Then Filter</a>
-            <a class="toc-level-3" href="#3-2-count-by-meaning">3.2 Count By Meaning</a>
-            <a class="toc-level-3" href="#3-3-summarize-shared-differences">3.3 Summarize Shared Differences</a>
-            <a class="toc-level-3" href="#3-4-where-the-0-1-calls-are">3.4 Where The 0/1 Calls Are</a>
-            <a class="toc-level-3" href="#3-5-one-sanity-check-from-the-lecture">3.5 One Sanity Check From The Lecture</a>
-            <a class="toc-level-2" href="#part-4-which-differences-could-affect-a-gene">Part 4: Which Differences Could Affect A Gene?</a>
+            <a class="toc-level-3" href="#3-1-filter">3.1 Filter</a>
+            <a class="toc-level-3" href="#3-2-count">3.2 Count</a>
+            <a class="toc-level-3" href="#3-3-clean-and-mixed-calls">3.3 Clean And Mixed Calls</a>
+            <a class="toc-level-2" href="#going-further-optional">Going Further (Optional)</a>
             <a class="toc-level-2" href="#takeaways">Takeaways</a>
             <a class="toc-level-2" href="#software-reference">Software Reference</a>
             </nav>
@@ -65,8 +60,8 @@
             <h1>Variant Calling</h1>
             <p><a href="../../readings/index.html#week-4-session-2">Reading materials for this lab</a></p>
           </header>
-          <blockquote>The reads and the assembly are labeled S288C but come from separate BioSamples. Calls can reflect assembly errors, biological differences between cultures, or mapping and calling artifacts. Today you investigate the evidence for those explanations.</blockquote>
-<blockquote><strong>Read Part 1 first and submit both callers immediately.</strong> They run while you do the rest of the lab.</blockquote>
+          <blockquote>Today you use a haploid model for the S288C nuclear genome and investigate places where the BGISEQ reads disagree with your HiFi assembly. The model is an analysis assumption; read support and sample identity still matter.</blockquote>
+<blockquote><strong>Read Part 1 first and submit the caller immediately.</strong> It runs while you do the rest of the lab.</blockquote>
 <hr>
 <h2 id="before-you-start">Before You Start</h2>
 <pre class="lab-code"><code class=" language-bash">srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
@@ -76,7 +71,6 @@ hostname
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=&quot;$COURSE/$USER&quot;
 export SHARED=$COURSE/shared/wk4
-export GENOME=12100000
 
 mkdir -p $MYWORK/week-04/session-02/logs &amp;&amp; cd $MYWORK/week-04/session-02
 
@@ -87,7 +81,7 @@ ln -sf $S1/sample.bam sample.bam
 ln -sf $S1/sample.bam.bai sample.bam.bai
 ls -lhL asm.fa sample.bam sample.bam.bai
 
-module load samtools bcftools htslib gatk
+module load samtools bcftools htslib gatk mosdepth
 module list</code></pre>
 <p>If Tuesday&#x27;s alignment is missing, use the staged set. Its files belong together, so take all of them:</p>
 <pre class="lab-code"><code class=" language-bash">cp $SHARED/fallback/asm.fa .
@@ -95,13 +89,15 @@ ln -sf $SHARED/fallback/sample.bam sample.bam
 ln -sf $SHARED/fallback/sample.bam.bai sample.bam.bai</code></pre>
 <hr>
 <h3 id="dataset-identity-matters">Dataset Identity Matters</h3>
-<p>The <a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477750">BGISEQ BioSample</a> and <a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477612">HiFi BioSample</a> both identify <strong>S288C</strong>, with collection dates 2021-01-21 and 2021-12-29 respectively. These are separate BioSamples; the records do not establish one shared DNA preparation or prove identical genomes. We use a haploid nuclear-genome model as a teaching assumption and interpret disagreements as candidates to investigate, rather than automatically correcting the assembly.</p>
-<h2 id="part-1-submit-both-callers-now">Part 1: Submit Both Callers, Now</h2>
+<p>The <a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477750">BGISEQ BioSample</a> and <a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477612">HiFi BioSample</a> both identify <strong>S288C</strong>, but they are separate samples, collected almost a year apart. A difference between the reads and the assembly could be an assembly error, a real difference between the two cultures, or a mapping artifact. Treat every call as a candidate to investigate, not as a correction to make.</p>
+<h2 id="part-1-submit-the-caller-now">Part 1: Submit The Caller, Now</h2>
 <h3 id="1-1-the-files-every-caller-expects">1.1 The Files Every Caller Expects</h3>
 <pre class="lab-code"><code class=" language-bash">samtools faidx asm.fa
 gatk CreateSequenceDictionary -R asm.fa -O asm.dict 2&gt; logs/dict.log
 ls asm.fa.fai asm.dict</code></pre>
-<h3 id="1-2-gatk-haplotypecaller">1.2 GATK HaplotypeCaller</h3>
+<p><code>asm.fa.fai</code> lets tools jump to any position in the assembly; <code>asm.dict</code> lists each contig&#x27;s name and length for GATK.</p>
+<h3 id="1-2-gatk-haplotypecaller-haploid">1.2 GATK HaplotypeCaller, Haploid</h3>
+<p><code>--sample-ploidy 1</code> tells HaplotypeCaller that the genome has one copy of each chromosome. Without it, GATK assumes two copies, as in a human.</p>
 <pre class="lab-code"><code class=" language-bash">cat &gt; gatk.sh &lt;&lt;&#x27;EOF&#x27;
 #!/bin/bash
 #SBATCH --job-name=gatk_hc
@@ -122,165 +118,165 @@ cd $MYWORK/week-04/session-02
 mkdir -p &quot;tmp/gatk_$SLURM_JOB_ID&quot;
 
 gatk --java-options &quot;-Xmx12g -Djava.io.tmpdir=$PWD/tmp/gatk_$SLURM_JOB_ID&quot; HaplotypeCaller \
-  -R asm.fa -I sample.bam -O gatk.vcf.gz \
+  -R asm.fa -I sample.bam -O calls.vcf.gz \
+  --sample-ploidy 1 \
   --native-pair-hmm-threads ${SLURM_CPUS_PER_TASK}
-EOF</code></pre>
-<h3 id="1-3-deepvariant">1.3 DeepVariant</h3>
-<pre class="lab-code"><code class=" language-bash">cat &gt; dv.sh &lt;&lt;&#x27;EOF&#x27;
-#!/bin/bash
-#SBATCH --job-name=deepvariant
-#SBATCH --partition=batch
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=32G
-#SBATCH --time=02:00:00
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=logs/%x_%j.err
+EOF
 
-module load deepvariant
-set -euo pipefail
-export COURSE=/cluster/tufts/c27sp1bio0196
-export MYWORK=&quot;$COURSE/$USER&quot;
-cd $MYWORK/week-04/session-02
-mkdir -p &quot;tmp/dv_$SLURM_JOB_ID&quot;
-
-run_deepvariant \
-    --model_type=WGS \
-    --ref=asm.fa \
-    --reads=sample.bam \
-    --output_vcf=dv.vcf.gz \
-    --num_shards=${SLURM_CPUS_PER_TASK} \
-    --intermediate_results_dir=&quot;$PWD/tmp/dv_$SLURM_JOB_ID&quot;
-EOF</code></pre>
-<h3 id="1-4-submit-both">1.4 Submit Both</h3>
-<pre class="lab-code"><code class=" language-bash">bash -n gatk.sh &amp;&amp; bash -n dv.sh
+bash -n gatk.sh
 GATK_JOB=$(sbatch --parsable gatk.sh)
-DV_JOB=$(sbatch --parsable dv.sh)
-printf &#x27;%s\n%s\n&#x27; &quot;$GATK_JOB&quot; &quot;$DV_JOB&quot; &gt; caller_job_ids.txt
-squeue -j &quot;$GATK_JOB,$DV_JOB&quot;</code></pre>
+echo &quot;$GATK_JOB&quot; &gt; caller_job_id.txt
+squeue -j &quot;$GATK_JOB&quot;</code></pre>
 <blockquote>Check back at Part 3.</blockquote>
-<p><strong>Question 1.</strong> Both scripts use diploid genotype output to let us inspect mixed read evidence. Why might that be useful for an assumed haploid nuclear genome, and what does it not prove?</p>
+<p><strong>Question 1.</strong> What does <code>--sample-ploidy 1</code> change about how HaplotypeCaller reports a site, and what does it not change?</p>
 <details>
 <summary>Answer</summary>
-<p>A diploid model can report mixed evidence as 0/1. In a haploid nuclear genome, that is a reason to investigate mismapped repeats, contamination, mixed cells or an incorrect ploidy assumption; it is not proof of any single cause.</p>
-<p>GATK can use <code>--sample-ploidy 1</code>. DeepVariant 1.6 and later also support <code>--haploid_contigs</code> for named contigs; this exercise deliberately leaves that option unset. Those names must match this assembly, not generic human chromosome names. DeepVariant adjusts genotype probabilities for listed haploid contigs during postprocessing, so it is incorrect to describe it as supporting only diploid output.</p>
-<p>A haploid setting changes the genotype model. It does not remove contradictory reads or establish which sequence is biologically correct.</p>
+<p>A haploid genotype has one allele number: <code>0</code> means reference, <code>1</code> the first alternative, and <code>2</code> a second alternative if the record has one. In this lab we select sites with exactly one alternative allele, so a non-reference genotype is <code>1</code>. Ploidy changes the genotype model and can change call confidence and which variants are reported. It does not change the reads: disagreement among them remains visible in the allele depths.</p>
 </details>
-<p><strong>Checkpoint 1.</strong> Both jobs are queued and their IDs saved.</p>
+<p><strong>Checkpoint 1.</strong> The job is queued and its ID saved.</p>
 <hr>
-<h2 id="part-2-read-a-vcf-while-they-run">Part 2: Read A VCF While They Run</h2>
-<p>Call 500 kb of the largest contig interactively, once with each ploidy:</p>
+<h2 id="part-2-read-a-vcf-while-it-runs">Part 2: Read A VCF While It Runs</h2>
+<p>Call 500 kb of the largest contig interactively, with the same haploid setting:</p>
 <pre class="lab-code"><code class=" language-bash">LARGEST=$(sort -k2,2nr asm.fa.fai | head -1 | cut -f1)
 echo &quot;$LARGEST&quot;
+gatk HaplotypeCaller -R asm.fa -I sample.bam -L ${LARGEST}:1-500000 \
+  --sample-ploidy 1 -O peek.vcf.gz 2&gt; logs/peek.log
 
-gatk HaplotypeCaller -R asm.fa -I sample.bam -L ${LARGEST}:1-500000 \
-  -O peek_p2.vcf.gz 2&gt; logs/peek_p2.log
-gatk HaplotypeCaller -R asm.fa -I sample.bam -L ${LARGEST}:1-500000 \
-  --sample-ploidy 1 -O peek_p1.vcf.gz 2&gt; logs/peek_p1.log</code></pre>
+bcftools view -m 2 -M 2 -v snps peek.vcf.gz -Oz -o peek.snps.vcf.gz</code></pre>
+<p>We focus on <strong>biallelic SNPs</strong>: one reference base and one alternative base. <code>-m 2 -M 2</code> keeps records with exactly two alleles in total; <code>-v snps</code> keeps SNPs. This makes the two-number allele-depth calculation below unambiguous.</p>
+<p>If this interval has no SNPs, use the worked allele-depth examples below and return to the whole-genome calls in Part 3. An empty interval alone does not mean the caller failed. An instructor-prepared peek file from the same reference and haploid model can also be used to save class time.</p>
 <h3 id="2-1-header-and-records">2.1 Header And Records</h3>
-<pre class="lab-code"><code class=" language-bash">bcftools view -h peek_p2.vcf.gz | grep -E &#x27;^##(contig|FORMAT)&#x27; | cut -c1-80 | head -8
-bcftools view -H peek_p2.vcf.gz | head -3 | cut -c1-150</code></pre>
-<p>The <code>##contig</code> lines repeat your assembly&#x27;s names and lengths: like a BAM&#x27;s <code>@SQ</code>, they bind this VCF to one exact reference.</p>
-<h3 id="2-2-genotypes-under-each-model">2.2 Genotypes, Under Each Model</h3>
-<pre class="lab-code"><code class=" language-bash">echo &quot;diploid model:&quot;;  bcftools query -f &#x27;[%GT]\n&#x27; peek_p2.vcf.gz | sort | uniq -c
-echo &quot;haploid model:&quot;;  bcftools query -f &#x27;[%GT]\n&#x27; peek_p1.vcf.gz | sort | uniq -c</code></pre>
-<h3 id="2-3-look-at-the-mixed-sites">2.3 Look At The Mixed Sites</h3>
-<pre class="lab-code"><code class=" language-bash">bcftools query -i &#x27;GT=&quot;het&quot;&#x27; -f &#x27;%POS\t%REF\t%ALT\t%QUAL\t[%AD]\t%INFO/DP\t%INFO/MQ\n&#x27; peek_p2.vcf.gz | head</code></pre>
-<p>Columns: position, reference allele, alternative allele, QUAL, reads supporting each allele, depth, mapping quality.</p>
-<p><strong>Question 2.</strong> Look at the 0/1 calls. What do their allele depths, depth and MQ have in common, and what happens to the same positions under the haploid model?</p>
+<pre class="lab-code"><code class=" language-bash">bcftools view -h peek.snps.vcf.gz | grep -E &#x27;^##(contig|FORMAT)&#x27; | cut -c1-80 | head -8
+bcftools view -H peek.snps.vcf.gz | head -3 | cut -c1-150</code></pre>
+<p>The <code>##contig</code> lines list the assembly&#x27;s contig names and lengths, like a BAM&#x27;s <code>@SQ</code>. These help check compatibility, but matching names and lengths do not prove that two FASTA files contain identical sequences. Keep the actual reference used for calling.</p>
+<h3 id="2-2-genotypes-and-read-support">2.2 Genotypes And Read Support</h3>
+<pre class="lab-code"><code class=" language-bash">bcftools query -f &#x27;[%GT]\n&#x27; peek.snps.vcf.gz | sort | uniq -c
+bcftools query -f &#x27;%POS\t%REF\t%ALT\t%QUAL\t[%AD]\t%INFO/DP\t%INFO/MQ\n&#x27; peek.snps.vcf.gz | head</code></pre>
+<p>Columns: position, reference allele, alternative allele, QUAL, allele depths (reads supporting the reference, then the alternative), total depth, mapping quality.</p>
+<p>The <strong>alternative allele fraction</strong> is the share of reads that support the alternative allele: alternative reads / (reference reads + alternative reads). For example, <code>AD</code> of <code>2,38</code> gives 38 / 40 = 0.95. This prints it for every SNP in the biallelic subset:</p>
+<pre class="lab-code"><code class=" language-bash">bcftools query -f &#x27;%POS\t[%AD]\n&#x27; peek.snps.vcf.gz \
+  | awk -F&#x27;[\t,]&#x27; &#x27;$2+$3 &gt; 0 {printf &quot;%s\t%.2f\n&quot;, $1, $3/($2+$3)}&#x27;</code></pre>
+<p><strong>Question 2.</strong> In a haploid genome, what alternative allele fraction do you expect at a real difference between the reads and the assembly? What could a call with a fraction of only 0.3 to 0.6 mean? Look at its depth and MQ too.</p>
 <details>
 <summary>Answer</summary>
-<p>Typical patterns: allele depths far from a clean split (for example 30 reference reads against 8 alternative) and depth well above the contig&#x27;s usual level. Those are the signature of mismapping: reads from another copy of a repeat were placed here, and their differences look like a second allele.</p>
-<p>MQ depends on the kind of repeat. Where the assembly kept several partly different copies, MQ drops below 60. Where it collapsed many copies into one, as with the rDNA, every read maps uniquely to the one copy that exists, MQ stays at 60, and the excess depth is the giveaway. (Reads with MAPQ 0 are ignored by the caller, so the fully resolved Ty copies from Tuesday produce silence, not 0/1 calls.)</p>
-<p>Under the haploid model the same sites are called 1 (alternative) when the alternative reads win, or are not reported at all when the reference reads win. The evidence of mixing disappears from the output. Same reads, different model, a different and cleaner-looking answer: the lecture&#x27;s first takeaway.</p>
+<p>Close to 1 at a single-copy nuclear locus in a homogeneous haploid sample: almost all informative reads should support the same allele, apart from sequencing errors.</p>
+<p>A fraction of 0.3 to 0.6 shows mixed read support. One possible explanation is mismapping: reads from different repeat copies were placed at the same locus. Elevated depth can support that explanation. MQ may be low where several similar copies remain in the assembly, but can stay high when the assembly has collapsed them into one apparent location; it is not guaranteed to be 60.</p>
+<p>Contamination, a mixed culture, or an incorrect ploidy assumption are other possibilities. Organelle contigs also need separate interpretation. Haploid calling may omit mixed sites or report an alternative allele; the genotype alone does not describe the mixture.</p>
 </details>
-<p><strong>Question 3.</strong> Inspect a 1/1 call and its allele depths. What are two possible explanations when most well-mapped BGISEQ reads support an allele different from the HiFi assembly?</p>
-<details>
-<summary>Answer</summary>
-<p>One possibility is an assembly error; another is a real difference between the separately collected S288C cultures. Mapping and calling artifacts also remain possible. A 1/1 genotype is a model&#x27;s conclusion, not a statement that literally every read supports the alternative allele.</p>
-<p>Check the BGISEQ and HiFi alignments, depth, strand and mapping evidence, and local repeats. Concordant support in the original HiFi reads strengthens an assembly-error explanation. Do not automatically polish a HiFi assembly to the sequence of a different BioSample.</p>
-</details>
-<p><strong>Checkpoint 2.</strong> Everyone can read a VCF record and say what a 0/1 and a 1/1 call mean in this genome.</p>
+<p><strong>Checkpoint 2.</strong> Everyone can read a VCF record and calculate an alternative allele fraction.</p>
 <hr>
 <h2 id="part-3-what-the-whole-genome-says-about-your-assembly">Part 3: What The Whole Genome Says About Your Assembly</h2>
-<pre class="lab-code"><code class=" language-bash">squeue -j &quot;$(paste -sd, caller_job_ids.txt)&quot;
-ls -lh gatk.vcf.gz dv.vcf.gz</code></pre>
-<p>If either job is still running, use the staged calls, which were made on the staged set: <code>cp $SHARED/fallback/{gatk,dv}.vcf.gz* .</code> (and use the staged <code>asm.fa</code> too).</p>
-<h3 id="3-1-normalise-then-filter">3.1 Normalise, Then Filter</h3>
-<pre class="lab-code"><code class=" language-bash">for v in gatk dv; do
-  bcftools norm -f asm.fa -m -any $v.vcf.gz -Oz -o $v.norm.vcf.gz 2&gt; logs/$v.norm.log
-done
-
-# GATK leaves FILTER empty: apply the lecture&#x27;s hard filters. DeepVariant already filters.
-bcftools filter -s hardfail -e &#x27;QD&lt;2 || FS&gt;60 || MQ&lt;40 || SOR&gt;3&#x27; gatk.norm.vcf.gz \
-  | bcftools view -f PASS -Oz -o gatk.pass.vcf.gz
-bcftools view -f PASS dv.norm.vcf.gz -Oz -o dv.pass.vcf.gz
-for v in gatk dv; do bcftools index -f $v.pass.vcf.gz; done</code></pre>
-<h3 id="3-2-count-by-meaning">3.2 Count By Meaning</h3>
-<pre class="lab-code"><code class=" language-bash">for v in gatk dv; do
-  printf &quot;%-5s  1/1 SNVs %5d   1/1 indels %5d   0/1 %5d\n&quot; $v \
-    $(bcftools view -H -i &#x27;GT=&quot;AA&quot;&#x27; -v snps   $v.pass.vcf.gz | wc -l) \
-    $(bcftools view -H -i &#x27;GT=&quot;AA&quot;&#x27; -v indels $v.pass.vcf.gz | wc -l) \
-    $(bcftools view -H -i &#x27;GT=&quot;het&quot;&#x27;          $v.pass.vcf.gz | wc -l)
+<pre class="lab-code"><code class=" language-bash">sacct -j &quot;$(cat caller_job_id.txt)&quot; --format=JobID,State,ExitCode
+ls -lh calls.vcf.gz calls.vcf.gz.tbi</code></pre>
+<p>Use your own output only after the job reports <code>COMPLETED</code> with exit code <code>0:0</code>. A file can exist while it is still being written.</p>
+<p>If the job is still queued, running, or failed, use the matched staged example in a <strong>separate directory</strong>. The staged VCF must have been generated with the same haploid setting. These commands preserve your running job&#x27;s reference and outputs:</p>
+<pre class="lab-code"><code class=" language-bash">mkdir -p &quot;$MYWORK/week-04/session-02/example&quot;
+cd &quot;$MYWORK/week-04/session-02/example&quot;
+cp &quot;$SHARED/fallback/asm.fa&quot; .
+ln -sf &quot;$SHARED/fallback/sample.bam&quot; sample.bam
+ln -sf &quot;$SHARED/fallback/sample.bam.bai&quot; sample.bam.bai
+cp &quot;$SHARED/fallback/calls.vcf.gz&quot; .</code></pre>
+<p>Continue the remaining commands in whichever directory you selected. The BAM, FASTA, and VCF must come from the same analysis. Record whether you used your own results or the staged example.</p>
+<h3 id="3-1-filter">3.1 Filter</h3>
+<p>HaplotypeCaller already uses a calling-confidence threshold. Its <code>FILTER</code> value <code>.</code> means that site filters have not been applied, not that every candidate passed.</p>
+<p>First select biallelic SNPs from the full callset:</p>
+<pre class="lab-code"><code class=" language-bash">bcftools view -m 2 -M 2 -v snps calls.vcf.gz -Oz -o calls.snps.vcf.gz</code></pre>
+<p>The following are <strong>illustrative SNP hard filters</strong> for this exercise, not validated yeast-specific cutoffs. Indels need separate assessment and are outside the core exercise. A passing SNP still needs interpretation.</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Filter</th>
+<th>Removes calls with</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>QD&lt;2</code></td>
+<td>low quality for the number of reads covering the site</td>
+</tr>
+<tr>
+<td><code>FS&gt;60</code>, <code>SOR&gt;3</code></td>
+<td>evidence that comes mostly from reads on one strand</td>
+</tr>
+<tr>
+<td><code>MQ&lt;40</code></td>
+<td>reads that the aligner could not place confidently</td>
+</tr>
+</tbody>
+</table></div>
+<pre class="lab-code"><code class=" language-bash">bcftools filter -s hardfail -e &#x27;QD&lt;2 || FS&gt;60 || MQ&lt;40 || SOR&gt;3&#x27; calls.snps.vcf.gz \
+  | bcftools view -f PASS -Oz -o calls.pass.snps.vcf.gz
+bcftools index -f calls.pass.snps.vcf.gz</code></pre>
+<h3 id="3-2-count">3.2 Count</h3>
+<pre class="lab-code"><code class=" language-bash">for f in calls.snps.vcf.gz calls.pass.snps.vcf.gz; do
+  echo &quot;$f&quot;
+  bcftools view -H &quot;$f&quot; | wc -l
 done</code></pre>
-<h3 id="3-3-summarize-shared-differences">3.3 Summarize Shared Differences</h3>
-<p>Collect homozygous-alternative calls both callers share, then summarize shared SNVs:</p>
-<pre class="lab-code"><code class=" language-bash">bcftools isec -n=2 -w1 -i &#x27;GT=&quot;AA&quot;&#x27; -i &#x27;GT=&quot;AA&quot;&#x27; gatk.pass.vcf.gz dv.pass.vcf.gz -Oz -o candidate_differences.vcf.gz
-N=$(bcftools view -H -v snps candidate_differences.vcf.gz | wc -l)
-L=$(awk &#x27;{s+=$2} END {print s}&#x27; asm.fa.fai)
-awk -v n=&quot;$N&quot; -v g=&quot;$L&quot; &#x27;BEGIN {if(n&gt;0) printf &quot;%d shared SNVs in %d assembly bases; disagreement score %.1f\n&quot;, n,g,-10*log(n/g)/log(10); else print &quot;No shared SNVs detected; no finite score estimated&quot;}&#x27;</code></pre>
-<p>This is a whole-assembly <strong>SNV disagreement score</strong>, not a validated assembly QV. It excludes indels, misses differences outside callable regions, and can include biological differences between the BioSamples. Counting an indel as one error would also confuse variant events with incorrect bases. The two callers use the same reads, so agreement between callers does not make the evidence independent.</p>
-<p><strong>Question 4.</strong> Compare this disagreement score with the Merqury QV from Homework 3. Why must you check sample matching, callable regions and what each method counts before interpreting their agreement or difference?</p>
+<h3 id="3-3-clean-and-mixed-calls">3.3 Clean And Mixed Calls</h3>
+<p>For this summary, label SNPs with alternative allele fraction <strong>0.8 or more</strong> &quot;clean&quot; and the rest &quot;mixed&quot;. These are teaching labels for read support; &quot;clean&quot; does not prove that a call is true or that the assembly is wrong.</p>
+<p>Save the group for each SNP so the depth and contig summaries use the same groups:</p>
+<pre class="lab-code"><code class=" language-bash">bcftools query -f &#x27;%CHROM\t%POS\t%INFO/DP\t[%AD]\n&#x27; calls.pass.snps.vcf.gz \
+  | awk -F&#x27;[\t,]&#x27; &#x27;BEGIN {OFS=&quot;\t&quot;; print &quot;contig&quot;, &quot;position&quot;, &quot;depth&quot;, &quot;group&quot;}
+    $4+$5 &gt; 0 {
+      g = ($5/($4+$5) &gt;= 0.8) ? &quot;clean&quot; : &quot;mixed&quot;
+      print $1, $2, $3, g
+    }&#x27; &gt; call_groups.tsv
+head call_groups.tsv
+
+awk -F&#x27;\t&#x27; &#x27;BEGIN {n[&quot;clean&quot;]=0; n[&quot;mixed&quot;]=0}
+  NR&gt;1 {n[$4]++; d[$4]+=$3}
+  END {for (g in n) {
+    if (n[g]&gt;0) printf &quot;%s calls: %d, mean depth %.0f\n&quot;, g, n[g], d[g]/n[g]
+    else printf &quot;%s calls: 0, mean depth not available\n&quot;, g
+  }}&#x27; call_groups.tsv</code></pre>
+<p>Calculate a coverage baseline from the <strong>matching BAM in your current directory</strong>. This also works when you switched to the staged example:</p>
+<pre class="lab-code"><code class=" language-bash">mosdepth -t 4 --fast-mode call_depth sample.bam
+awk &#x27;$1==&quot;total&quot; {print &quot;genome-wide mean depth:&quot;, $4}&#x27; call_depth.mosdepth.summary.txt</code></pre>
+<p>VCF depth and mosdepth use different read-selection rules, so treat this as context, not an exact numerical equality. Also consider the typical depth of the relevant nuclear contig rather than comparing every contig with one genome-wide mean.</p>
+<p>Now count <strong>only mixed SNPs</strong> by contig:</p>
+<pre class="lab-code"><code class=" language-bash">awk -F&#x27;\t&#x27; &#x27;NR&gt;1 &amp;&amp; $4==&quot;mixed&quot; {print $1}&#x27; call_groups.tsv \
+  | sort | uniq -c | sort -rn | head</code></pre>
+<p>If there are no mixed SNPs, the last command prints nothing. Record zero; do not infer a depth or a clustering pattern for a group that is absent.</p>
+<p><strong>Question 3.</strong> If mixed SNPs are present, how does their mean depth compare with the clean SNPs and the coverage baseline? Are the mixed SNPs concentrated on a few contigs? What explanations fit those observations? If there are none, what can you conclude?</p>
 <details>
 <summary>Answer</summary>
-<p>Merqury evaluates assembly k-mer support; this exercise counts shared called SNVs. They have different detection limits and denominators. Both use the BGISEQ library, so they also share its coverage biases and any genuine differences from the HiFi culture. Agreement can be informative but is not independent confirmation of an assembly-error rate. Neither number proves that every unsupported base is an error.</p>
+<p>High depth and concentration in repeat-rich regions would support reads from multiple copies piling onto one assembled locus. High-copy organelle or plasmid contigs need their own baseline. Mixed support at ordinary nuclear depth could instead motivate checks of sample mixture, ploidy, or alignment problems.</p>
+<p>Report the pattern you actually observe. If the mixed group is absent, say that no SNPs in this filtered subset met that definition. Haploid calling and filtering can remove sites with mixed evidence, so zero does not prove that the genome has no repeats, mixtures, or mapping problems.</p>
 </details>
-<h3 id="3-4-where-the-0-1-calls-are">3.4 Where The 0/1 Calls Are</h3>
-<pre class="lab-code"><code class=" language-bash">bcftools query -i &#x27;GT=&quot;het&quot;&#x27; -f &#x27;%CHROM\n&#x27; gatk.pass.vcf.gz | sort | uniq -c | sort -rn | head
-bcftools query -i &#x27;GT=&quot;het&quot;&#x27; -f &#x27;%INFO/DP\n&#x27; gatk.pass.vcf.gz | sort -n | \
-  awk &#x27;{a[NR]=$1} END {print &quot;median depth at 0/1 calls:&quot;, a[int((NR+1)/2)]}&#x27;
-awk &#x27;$1==&quot;total&quot; {print &quot;genome-wide mean depth:&quot;, $4}&#x27; ../session-01/all.mosdepth.summary.txt</code></pre>
-<p><strong>Question 5.</strong> Compare depth at the 0/1 calls with the genome-wide depth, and look at which contigs hold most of them. Do these observations support a mismapping explanation, and what alternatives remain?</p>
+<p><strong>Question 4.</strong> A clean call has normal depth, good MQ and nearly all reads supporting the alternative allele. Give two explanations, and say what evidence would tell them apart.</p>
 <details>
 <summary>Answer</summary>
-<p>Enrichment at unusually high depth or in repeated regions supports a mismapping or collapsed-repeat explanation. Compare allele depths and mapping quality as well as the contig distribution; the pattern must be observed, not assumed.</p>
-<p>Under the haploid nuclear-genome assumption, 0/1 is unexpected, but that assumption alone does not distinguish repeat mapping from contamination, mixed cultures or different ploidy. MAPQ filters can hide some repeat-associated problems; absence of calls there does not validate the assembly.</p>
+<p>It may be an error in the HiFi assembly, or a real difference between the two separately collected S288C cultures. Consistent, well-mapped original HiFi support for the alternative allele would favor an assembly error; HiFi support for the reference would favor a difference between cultures. Check for mapping artifacts and mixed evidence before treating either pattern as proof. Do not change the assembly on the BGISEQ evidence alone.</p>
 </details>
-<h3 id="3-5-one-sanity-check-from-the-lecture">3.5 One Sanity Check From The Lecture</h3>
-<pre class="lab-code"><code class=" language-bash">bcftools stats gatk.pass.vcf.gz | awk &#x27;$1==&quot;TSTV&quot; {print &quot;Ti/Tv:&quot;, $5}&#x27;</code></pre>
-<p><strong>Question 6.</strong> That is the transition/transversion ratio of these calls. Why is it not a measure of mutation here, and what would a value near 0.5 tell you?</p>
-<details>
-<summary>Answer</summary>
-<p>This is the Ti/Tv of called differences between the reads and assembly. It may mix biological differences with assembly and mapping errors, so it cannot be read directly as a mutation process or an assembly-error spectrum.</p>
-<p>For equally likely single-base substitutions, there are twice as many possible transversions as transitions, giving 0.5. A value near 0.5 is compatible with such a simple noise model, but is not proof that the calls are artifacts. Examine call types, sequence context, mapping evidence and sample provenance.</p>
-</details>
-<p><strong>Checkpoint 3.</strong> Everyone has counts, a disagreement score and an explanation for where the 0/1 calls sit.</p>
+<p><strong>Checkpoint 3.</strong> Counts before and after SNP filtering are recorded, with an interpretation of the observed support groups, including an absent group if applicable.</p>
 <hr>
-<h2 id="part-4-which-differences-could-affect-a-gene">Part 4: Which Differences Could Affect A Gene?</h2>
-<p>The Week 3 annotation was predicted on this assembly, errors included. First check that it really is the same sequence:</p>
-<pre class="lab-code"><code class=" language-bash">cmp -s asm.fa $MYWORK/week-03/session-02/asm.fa &amp;&amp; echo &quot;same assembly&quot; || echo &quot;DIFFERENT: use the staged set&quot;</code></pre>
-<p>Annotate the shared candidate differences against your BRAKER3 gene models. VEP needs to know which transcripts code for protein, and BRAKER3 does not say, so add that attribute while preparing the file:</p>
-<pre class="lab-code"><code class=" language-bash">grep -v &#x27;^#&#x27; $MYWORK/week-03/session-02/braker/braker.gff3 \
-  | awk -F&#x27;\t&#x27; &#x27;BEGIN {OFS=&quot;\t&quot;} $3==&quot;mRNA&quot; || $3==&quot;transcript&quot; {sub(/;$/, &quot;&quot;, $9); $9 = $9 &quot;;biotype=protein_coding&quot;} {print}&#x27; \
-  | sort -k1,1 -k4,4n -k5,5n | bgzip -c &gt; braker.gff3.gz
-tabix -p gff braker.gff3.gz
-
-module load vep
-vep \
-  -i candidate_differences.vcf.gz --gff braker.gff3.gz --fasta asm.fa \
-  --tab --fields &quot;Location,Allele,Feature,Consequence&quot; \
-  -o errors.vep.tsv --force_overwrite --no_stats 2&gt; logs/vep.log
-
-grep -v &#x27;^#&#x27; errors.vep.tsv | cut -f4 | tr &#x27;,&#x27; &#x27;\n&#x27; | sort | uniq -c | sort -rn</code></pre>
-<p>Staged-set users: replace the BRAKER path with <code>$SHARED/fallback/braker.gff3</code>.</p>
-<p><strong>Question 7.</strong> A candidate difference is labeled <code>frameshift_variant</code>. What would it mean if further evidence confirmed an assembly error, and what if it were a real difference between the two cultures?</p>
-<details>
-<summary>Answer</summary>
-<p>If independent evidence confirms an assembly indel error, the gene model may have been predicted around the wrong sequence and could need rebuilding after correction. If it is a true difference between cultures, the consequence describes a difference relative to this assembly&#x27;s gene model, not proof that the assembly is wrong.</p>
-<p>Check the transcript and protein evidence, the original HiFi reads and the local alignment before changing the assembly. A predicted frameshift is a consequence annotation, not an instruction to replace the reference allele.</p>
-</details>
-<p><strong>Checkpoint 4.</strong> Everyone can trace one candidate difference to a gene model and state what evidence is needed to classify it.</p>
+<h2 id="going-further-optional">Going Further (Optional)</h2>
+<p>For those who finish early:</p>
+<ul>
+<li><strong>A second caller.</strong> DeepVariant also supports haploid calling through <code>--haploid_contigs</code>, which takes the names of this assembly&#x27;s contigs. Comparing two callers requires normalising both VCFs first (<code>bcftools norm -f asm.fa -m -any</code>) and then intersecting them (<code>bcftools isec</code>).</li>
+<li><strong>Which calls touch a gene?</strong> Annotate the filtered calls against your Week 3 BRAKER3 gene models. VEP needs to know which transcripts code for protein, and BRAKER3 does not say, so add that attribute while preparing the file:</li>
+</ul>
+<p>First select the annotation and the exact FASTA it describes. For your own Week 3 annotation:</p>
+<pre class="lab-code"><code class=" language-bash">ANNOTATION_ASM=&quot;$MYWORK/week-03/session-02/asm.fa&quot;
+GFF=&quot;$MYWORK/week-03/session-02/braker/braker.gff3&quot;</code></pre>
+<p>If you used the staged callset, use these assignments instead:</p>
+<pre class="lab-code"><code class=" language-bash">ANNOTATION_ASM=&quot;$SHARED/fallback/asm.fa&quot;
+GFF=&quot;$SHARED/fallback/braker.gff3&quot;</code></pre>
+<p>The following block runs annotation only if the annotation FASTA matches the calling reference and the GFF exists:</p>
+<pre class="lab-code"><code class=" language-bash">if [ -s &quot;$GFF&quot; ] &amp;&amp; cmp -s asm.fa &quot;$ANNOTATION_ASM&quot;; then
+  samtools faidx asm.fa
+  grep -v &#x27;^#&#x27; &quot;$GFF&quot; \
+    | awk -F&#x27;\t&#x27; &#x27;BEGIN {OFS=&quot;\t&quot;} $3==&quot;mRNA&quot; || $3==&quot;transcript&quot; {sub(/;$/, &quot;&quot;, $9); $9 = $9 &quot;;biotype=protein_coding&quot;} {print}&#x27; \
+    | sort -k1,1 -k4,4n -k5,5n | bgzip -c &gt; braker.gff3.gz
+  tabix -f -p gff braker.gff3.gz
+  module load vep
+  vep \
+    -i calls.pass.snps.vcf.gz --gff braker.gff3.gz --fasta asm.fa \
+    --tab --fields &quot;Location,Allele,Feature,Consequence&quot; \
+    -o calls.vep.tsv --force_overwrite --no_stats 2&gt; vep.log
+  grep -v &#x27;^#&#x27; calls.vep.tsv | cut -f4 | tr &#x27;,&#x27; &#x27;\n&#x27; | sort | uniq -c | sort -rn
+else
+  echo &quot;Stop: the annotation is missing or its FASTA differs from the calling reference.&quot;
+fi</code></pre>
+<p>The core subset contains SNPs, so expect consequences such as synonymous or missense changes. Exploring indel consequences such as frameshifts requires a separately assessed indel callset. A consequence label is not proof that the assembly is wrong.</p>
 <hr>
 <h2 id="takeaways">Takeaways</h2>
 <div class="table-wrap"><table>
@@ -294,45 +290,33 @@ grep -v &#x27;^#&#x27; errors.vep.tsv | cut -f4 | tr &#x27;,&#x27; &#x27;\n&#x27
 <td><code>samtools faidx</code>, <code>gatk CreateSequenceDictionary</code></td>
 </tr>
 <tr>
-<td>Call variants</td>
-<td><code>gatk HaplotypeCaller</code>, DeepVariant in a container</td>
+<td>Call variants, haploid</td>
+<td><code>gatk HaplotypeCaller --sample-ploidy 1</code></td>
 </tr>
 <tr>
-<td>Change the ploidy model</td>
-<td><code>--sample-ploidy 1</code></td>
+<td>Read genotypes and allele depths</td>
+<td><code>bcftools query -f &#x27;[%GT]\t[%AD]\n&#x27;</code></td>
 </tr>
 <tr>
-<td>Normalise before comparing</td>
-<td><code>bcftools norm -f asm.fa -m -any</code></td>
+<td>Apply SNP filters</td>
+<td><code>bcftools filter</code>, then <code>bcftools view -f PASS</code></td>
 </tr>
 <tr>
-<td>Hard filters</td>
-<td>`bcftools filter -s hardfail -e &#x27;QD&lt;2 \</td>
-<td>\</td>
-<td>FS&gt;60 \</td>
-<td>\</td>
-<td>MQ&lt;40 \</td>
-<td>\</td>
-<td>SOR&gt;3&#x27;`</td>
-</tr>
-<tr>
-<td>Calls two callers share</td>
-<td><code>bcftools isec -n=2 -w1</code></td>
-</tr>
-<tr>
-<td>Consequences on your gene models</td>
-<td><code>vep --gff genes.gff3.gz --fasta asm.fa</code></td>
+<td>Select biallelic SNPs</td>
+<td><code>bcftools view -m 2 -M 2 -v snps</code></td>
 </tr>
 </tbody>
 </table></div>
 <p><strong>Three things to carry forward:</strong></p>
 <ol>
-<li>A genotype is a model-based interpretation of read evidence. Inspect the reads and check the ploidy assumption.</li>
-<li>Separate BioSamples can differ biologically. Shared calls and Merqury QV do not by themselves establish a true assembly-error rate.</li>
-<li>A verified assembly error can affect downstream gene models; a consequence label alone does not verify that error.</li>
+<li>A genotype is a model&#x27;s interpretation of the reads. Set the ploidy to match the organism.</li>
+<li>A real difference at a single-copy haploid nuclear locus should have alternative support close to 1. Mixed support needs investigation; its absence from a filtered callset does not rule out mapping problems.</li>
+<li>A clean call is a candidate: it can be an assembly error or a real difference between samples, and additional evidence, such as well-mapped original HiFi reads, helps distinguish those explanations.</li>
 </ol>
 <h2 id="software-reference">Software Reference</h2>
 <ul>
+<li><a href="https://gatk.broadinstitute.org/hc/en-us/articles/5358864757787-HaplotypeCaller">GATK HaplotypeCaller</a></li>
+<li><a href="https://gatk.broadinstitute.org/hc/en-us/articles/360035531112--How-to-Filter-variants-either-with-VQSR-or-by-hard-filtering">GATK hard-filtering guidance</a></li>
 <li><a href="https://github.com/google/deepvariant/blob/r1.6/docs/deepvariant-haploid-support.md">DeepVariant haploid support</a></li>
 </ul>
           <nav class="lab-pager" aria-label="Lab sequence">
