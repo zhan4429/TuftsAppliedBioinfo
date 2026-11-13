@@ -410,6 +410,12 @@ BUSCO and QUAST are off by default in pipeline version 2.0.1. The flags
 `--busco` and `--quast` turn them on; do not add `true` after either flag.
 `--busco_lineage fungi_odb10` selects the fungal lineage for BUSCO.
 
+The script sets `NXF_SYNTAX_PARSER=v1` so these flags are read as boolean
+values. With the newer `v2` parser, the same flags can be read as text and
+fail validation with “Value is [string] but should be [boolean]”. Keep this
+setting inside the batch script, before `nextflow run`. See the
+[Nextflow parser guidance](https://docs.seqera.io/nextflow/strict-syntax/#using-legacy-parameter-declarations).
+
 ```bash
 cat > run_genomeassembler.sh <<'EOF'
 #!/bin/bash
@@ -424,6 +430,7 @@ cat > run_genomeassembler.sh <<'EOF'
 #SBATCH --error=logs/%x_%j.err
 
 module load nextflow singularity
+export NXF_SYNTAX_PARSER=v1
 
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
