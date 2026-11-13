@@ -300,8 +300,7 @@ awk -F&#x27;\t&#x27; &#x27;NR&gt;1&#x27; $SHARED/reference_functional.tsv | wc -
 </tr>
 <tr>
 <td>Spliced alignment</td>
-<td>`hisat2 -x idx -1 R1 -2 R2 \</td>
-<td>samtools sort -o out.bam`</td>
+<td><code>hisat2 -x idx -1 R1 -2 R2 | samtools sort -o out.bam</code></td>
 </tr>
 <tr>
 <td>Same sequence?</td>

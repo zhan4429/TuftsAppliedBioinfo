@@ -393,7 +393,13 @@ def inline_markdown(text: str) -> str:
 def render_table(rows: list[str]) -> str:
     split_rows = []
     for row in rows:
-        cells = [cell.strip().replace(r"\|", "|") for cell in row.strip().strip("|").split("|")]
+        # Escaped shell pipes belong to the cell, not the table structure.
+        parts = re.split(r"(?<!\\)\|", row.strip())
+        if parts and not parts[0]:
+            parts = parts[1:]
+        if parts and not parts[-1]:
+            parts = parts[:-1]
+        cells = [cell.strip().replace(r"\|", "|") for cell in parts]
         split_rows.append(cells)
     if len(split_rows) < 2:
         return "\n".join(rows)

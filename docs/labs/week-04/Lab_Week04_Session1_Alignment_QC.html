@@ -279,10 +279,7 @@ paste all.bed q20.bed hq20.bed | awk &#x27;$4 &gt; 10 &amp;&amp; $8 &lt; 0.5*$4 
 </tr>
 <tr>
 <td>Align, mark duplicates, index</td>
-<td>`bwa-mem2 mem -R … \</td>
-<td>samtools fixmate -m \</td>
-<td>samtools sort \</td>
-<td>samtools markdup`</td>
+<td><code>bwa-mem2 mem -R … | samtools fixmate -m | samtools sort | samtools markdup</code></td>
 </tr>
 <tr>
 <td>Long reads</td>
