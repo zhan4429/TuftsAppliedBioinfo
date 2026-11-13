@@ -39,7 +39,7 @@ prove identical genomes. We use a haploid nuclear-genome model as a teaching
 assumption and interpret disagreements as candidates to investigate, rather than
 automatically correcting the assembly.
 
-Gather the three inputs: your Week 3 assembly, the BGISEQ genomic reads from Week 1, and the 30× HiFi subsample from Lab 3A.
+Gather the three inputs: your Week 3 assembly, the BGISEQ genomic reads from Week 1, and the full HiFi input linked in Lab 3A.
 
 ```bash
 cp $MYWORK/week-03/session-01/asm.p_ctg.fa asm.fa
@@ -47,7 +47,7 @@ md5sum asm.fa > asm.md5
 
 DNB1=$(ls $FQ/*SRR17374239*_1.fastq.gz 2>/dev/null)
 DNB2=$(ls $FQ/*SRR17374239*_2.fastq.gz 2>/dev/null)
-ln -sf $MYWORK/week-03/session-01/hifi_30x.fastq.gz hifi.fq.gz
+ln -sf $MYWORK/week-03/session-01/hifi.fastq.gz hifi.fq.gz
 
 ls -lhL asm.fa "$DNB1" "$DNB2" hifi.fq.gz      # -L follows the link, so a missing file shows up
 ```

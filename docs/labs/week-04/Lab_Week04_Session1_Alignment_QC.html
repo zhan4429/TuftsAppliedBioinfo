@@ -83,13 +83,13 @@ module list</code></pre>
 <p>Every tool is an environment module; <code>module avail &lt;tool&gt;</code> shows the versions installed.</p>
 <h3 id="dataset-identity-matters">Dataset Identity Matters</h3>
 <p>The <a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477750">BGISEQ BioSample</a> and <a href="https://www.ebi.ac.uk/ena/browser/api/xml/SAMN24477612">HiFi BioSample</a> both identify <strong>S288C</strong>, with collection dates 2021-01-21 and 2021-12-29 respectively. These are separate BioSamples; the records do not establish one shared DNA preparation or prove identical genomes. We use a haploid nuclear-genome model as a teaching assumption and interpret disagreements as candidates to investigate, rather than automatically correcting the assembly.</p>
-<p>Gather the three inputs: your Week 3 assembly, the BGISEQ genomic reads from Week 1, and the 30× HiFi subsample from Lab 3A.</p>
+<p>Gather the three inputs: your Week 3 assembly, the BGISEQ genomic reads from Week 1, and the full HiFi input linked in Lab 3A.</p>
 <pre class="lab-code"><code class=" language-bash">cp $MYWORK/week-03/session-01/asm.p_ctg.fa asm.fa
 md5sum asm.fa &gt; asm.md5
 
 DNB1=$(ls $FQ/*SRR17374239*_1.fastq.gz 2&gt;/dev/null)
 DNB2=$(ls $FQ/*SRR17374239*_2.fastq.gz 2&gt;/dev/null)
-ln -sf $MYWORK/week-03/session-01/hifi_30x.fastq.gz hifi.fq.gz
+ln -sf $MYWORK/week-03/session-01/hifi.fastq.gz hifi.fq.gz
 
 ls -lhL asm.fa &quot;$DNB1&quot; &quot;$DNB2&quot; hifi.fq.gz      # -L follows the link, so a missing file shows up</code></pre>
 <p>Fallbacks for anything missing:</p>

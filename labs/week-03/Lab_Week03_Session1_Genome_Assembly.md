@@ -2,7 +2,7 @@
 
 Applied Bioinformatics - Tufts University Department of Biology
 
-> **Read Part 1 first and submit the assembly immediately.** It runs while you do the rest of the lab. Do not read the whole handout before starting.
+> **Submit both batch jobs in class:** the direct assembly in Part 1, then the pipeline in Part 5. They can run after you leave. Work on the read statistics and RNA-seq preparation while they run; complete the assembly checks and comparison after both jobs finish.
 
 ---
 
@@ -51,39 +51,30 @@ ls -lh $HIFI
 ### 1.1 Load The Tools
 
 ```bash
-module load hifiasm seqkit compleasm rasusa
+module load hifiasm seqkit compleasm
 module list
 ```
 
 Every tool in this course is an environment module. `module avail <tool>` shows the versions installed; write down the ones you used.
 
-### 1.2 Subsample First
+### 1.2 Use All HiFi Reads
 
-Your HiFi run is roughly 379× coverage. HiFi assembly is comfortable at 20–30×, and extra
-depth only makes hifiasm slower and hungrier for memory.
+Use all the cleaned HiFi reads selected in `$HIFI`. This run contains about 4.58
+billion bases for a 12.1 Mb genome, or roughly 379× coverage. Subsampling can reduce
+runtime and memory use, but it is not required for this lab: the batch job can run
+after class.
+
+Create a link with a short, stable name. This points to the original file without
+copying the sequencing data:
 
 ```bash
-rasusa reads --coverage 30 --genome-size $GENOME \
-  $HIFI -o hifi_30x.fastq.gz
-
-seqkit stats -a $HIFI hifi_30x.fastq.gz
+ln -sf "$HIFI" hifi.fastq.gz
+ls -lhL hifi.fastq.gz
 ```
 
-**Question 1a.** Why subsample rather than assemble everything? What would 379× buy you?
-
-<details>
-<summary>Answer</summary>
-
-Nothing useful. Above about 30×, HiFi assembly quality plateaus — the reads are already
-long and accurate, so extra copies of the same information do not resolve anything new.
-
-What it costs is real: runtime and memory scale with input, so 379× turns a quick
-assembly into a much longer one for an identical result.
-
-Knowing when more data stops helping is a genuinely useful instinct, and it is the same
-reasoning as the coverage arithmetic in Week 2.
-
-</details>
+Both assembly routes will use this same input. More coverage does not guarantee a
+better assembly or resolve every repeat; you will evaluate the results rather than
+assuming that extra reads make them correct.
 
 ### 1.3 Submit It
 
@@ -96,7 +87,7 @@ cat > assemble.sh <<'EOF'
 #SBATCH --partition=batch
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=48G
-#SBATCH --time=02:00:00
+#SBATCH --time=12:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
@@ -104,7 +95,7 @@ cat > assemble.sh <<'EOF'
 module load hifiasm
 set -euo pipefail
 
-hifiasm -o asm -t ${SLURM_CPUS_PER_TASK} hifi_30x.fastq.gz
+hifiasm -i -o asm -t ${SLURM_CPUS_PER_TASK} hifi.fastq.gz
 
 # hifiasm writes GFA; convert the primary contigs to FASTA
 awk '/^S/{print ">"$2"\n"$3}' asm.bp.p_ctg.gfa | fold > asm.p_ctg.fa
@@ -119,9 +110,13 @@ squeue --me
 
 Two lines in that script are worth understanding. `module load hifiasm` sits inside the script even though you loaded it interactively: `sbatch` passes on the environment of the shell you submit from, so without it the job would work from one shell and fail from a fresh login. And because the heredoc delimiter is quoted, the script is written exactly as shown, so awk receives `"\n"` and prints a real newline between each contig name and its sequence.
 
+`-i` tells hifiasm to ignore earlier `.bin` cache files with the same output prefix.
+This ensures that an earlier trial with fewer reads is not reused for the full-read
+assembly. It recomputes the assembly without requiring you to delete those files.
+
 > Check back at Part 3.
 
-**Question 1b.** Why does the script use `${SLURM_CPUS_PER_TASK}` instead of writing `-t 16`?
+**Question 1.** Why does the script use `${SLURM_CPUS_PER_TASK}` instead of writing `-t 16`?
 
 <details>
 <summary>Answer</summary>
@@ -159,11 +154,15 @@ seqkit stats -T $HIFI | awk -v g=$GENOME 'NR>1 {s+=$5} END {printf "coverage: %.
 <details>
 <summary>Answer</summary>
 
-HiFi at 20–30× comfortably assembles a small eukaryote; 15× is workable. That is remarkably low, and it is because HiFi reads are *both* long and accurate — each read is close to trustworthy on its own.
+The roughly 379× average depth is ample for attempting this small yeast assembly.
+It does not establish that every region has the same coverage or that the result
+will be complete and correct.
 
-Noisy long reads need far more depth, because consensus across many reads is what removes the error. Illumina needs more still for assembly and cannot span repeats at any depth.
-
-Depth and read length buy different things. This is the Week 2 point again.
+Coverage requirements depend on read accuracy and length, repeats, heterozygosity,
+and the assembler. HiFi reads combine long sequences with high per-base accuracy.
+Noisier reads need more consensus support, while short reads may be unable to bridge
+long repeats even at high depth. Coverage and read length solve different problems;
+there is no universal 30× cutoff above which additional data can never help.
 
 </details>
 
@@ -198,11 +197,16 @@ squeue --me
 tail -5 logs/hifiasm_*.out
 ```
 
-**Checkpoint 2.** Read statistics recorded. Assembly should be running or finished.
+**Checkpoint 2.** Read statistics recorded and the assembly job checked. It may still be queued or running.
 
 ---
 
 ## Part 3: Look At What Came Out
+
+Run this part after the direct assembly job finishes. If it is still queued or
+running during class, finish Part 4 and confirm that you submitted Part 5, then
+return here after class.
+Do not replace the running job's outputs with a staged assembly.
 
 ### 3.1 Contiguity
 
@@ -351,7 +355,7 @@ sequence-based predictions and protein evidence.
 
 ### 4.2 Before Session 2
 
-After the assembly job finishes, check that the assembly and both RNA-seq files exist:
+Check the RNA-seq paths during class. After the assembly job finishes, also check that the assembly exists; complete that check after class if the job is still running:
 
 ```bash
 ls -lh "$MYWORK/week-03/session-01/asm.p_ctg.fa"
@@ -365,13 +369,19 @@ Keep the Week 1 `results/fastq` files. Cleaning a completed Nextflow run's inter
 If the RNA files are missing, check the Week 1 download or ask for the staged copies
 in `$SHARED/fallback_rna/`. The staged assembly is in `$SHARED/fallback_assembly/`.
 
-**Checkpoint 4.** Assembly available, both RNA-seq mate files located, and their paths recorded for Session 2.
+**Checkpoint 4.** Both RNA-seq mate files located and their paths recorded. Verify the completed assembly before Session 2.
 
 ---
 
-## Part 5: After Class: The Same Assembly As A Pipeline
+## Part 5: Submit The Same Assembly As A Pipeline
 
-In class you ran each step yourself: subsample, assemble, convert the graph, measure. nf-core/genomeassembler packages the same kind of work as one pipeline. It runs `fastplong` on the reads, assembles them with `hifiasm`, measures the result with QUAST and BUSCO, and writes a report. Run it on the same 30× reads and compare its answer with yours.
+Submit this second batch job once during class, immediately after Part 1. It can run
+alongside the direct assembly because it writes into its own `genomeassembler/`
+directory. You do not need the direct assembly to finish before submitting it.
+
+nf-core/genomeassembler runs `fastplong` on the reads, assembles them with `hifiasm`,
+measures the result with QUAST and BUSCO, and writes a report. Give it the same full
+HiFi input as the direct assembly, then compare the two results after class.
 
 Session 2 uses the assembly you made by hand, so Thursday does not depend on this run.
 
@@ -385,12 +395,12 @@ cd $MYWORK/week-03/session-01/genomeassembler
 
 cat > samplesheet.csv <<EOF
 sample,hifireads,hifi_fastplong_args
-yeast_hifi,$MYWORK/week-03/session-01/hifi_30x.fastq.gz,--mean_qual 10 --length_required 1000 --unqualified_percent_limit 100
+yeast_hifi,$MYWORK/week-03/session-01/hifi.fastq.gz,--mean_qual 10 --length_required 1000 --unqualified_percent_limit 100
 EOF
 cat samplesheet.csv
 ```
 
-The pipeline reads one row per sample. `hifireads` points to the same 30× file you assembled in class. `hifi_fastplong_args` gives `fastplong` the settings you chose in Week 2; without that column, the pipeline would run `fastplong` with its defaults.
+The pipeline reads one row per sample. `hifireads` points to the same full HiFi file used by the direct assembly job. `hifi_fastplong_args` gives `fastplong` the settings you chose in Week 2; without that column, the pipeline would run `fastplong` with its defaults.
 
 This heredoc is not quoted, unlike the job scripts. Here you want `$MYWORK` replaced by your real path as the file is written, because the pipeline needs full paths. Check that `cat` shows a path starting with `/cluster`.
 
@@ -440,9 +450,32 @@ This job is small on purpose. In Week 1, `-profile singularity` ran every step i
 
 `--busco_lineage fungi_odb10` requests an OrthoDB 10 lineage. Compare its actual lineage ID and marker count with the compleasm summary from Section 3.3. Matching command text does not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes `work/` automatically when a run succeeds, so there is no clean-up step this time. If the run fails, `work/` stays: read `logs/genomeassembler_*.err` and `.nextflow.log`, fix the problem, and resubmit the same script, and `-resume` reuses the steps that finished.
 
-### 5.3 Compare The Two Assemblies
+Return to the main lab directory before continuing with Parts 2–4:
 
-When the job has finished:
+```bash
+cd "$MYWORK/week-03/session-01"
+```
+
+**Checkpoint 5.** Both batch jobs are submitted and both job IDs are recorded.
+Neither job needs to finish before you leave class.
+
+---
+
+## After Class: Compare The Two Assemblies
+
+Work on a compute node. If this is a new login, repeat the environment setup in
+Before You Start and load the tools from Section 1.1.
+
+Wait until both jobs have finished successfully. Check their states with `sacct`,
+replacing the example IDs with your direct-assembly and pipeline job IDs:
+
+```bash
+sacct -j 12345,67890 --format=JobID,JobName,State,ExitCode
+```
+
+If a job failed, inspect its logs and resolve the failure before comparing results.
+Complete Part 3 on your direct assembly if you have not already done so, then inspect
+the pipeline outputs:
 
 ```bash
 cd $MYWORK/week-03/session-01/genomeassembler
@@ -477,7 +510,9 @@ A large disagreement would be worth chasing. Two routes to the same assembly sho
 
 The pipeline ran `fastplong` on the reads again, mapped the reads back to the assembly for QUAST, ran BUSCO, wrote a report, and recorded every command and software version. Each step got a job sized for that step, and an interrupted run can resume where it stopped.
 
-You did things it did not. You chose the coverage and subsampled with `rasusa`; the pipeline assembles whatever reads it is given. You looked at the assembly graph, not just the FASTA. And you know what each number means, which is the only reason you can check the pipeline's answer at all.
+You inspected the input reads, calculated their coverage, and examined the assembly
+graph as well as the FASTA. Both routes received the same full input, but your
+interpretation of the metrics is still needed to judge either result.
 
 A pipeline makes a method repeatable. It does not make it understood.
 
@@ -490,7 +525,7 @@ A pipeline makes a method repeatable. It does not make it understood.
 Assemble HiFi reads, then turn the graph into a FASTA:
 
 ```bash
-hifiasm -o asm -t 16 reads.fastq.gz
+hifiasm -i -o asm -t 16 reads.fastq.gz
 awk '/^S/{print ">"$2"\n"$3}' asm.bp.p_ctg.gfa | fold > asm.p_ctg.fa
 ```
 
