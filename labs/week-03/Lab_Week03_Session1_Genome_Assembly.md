@@ -406,25 +406,9 @@ This heredoc is not quoted, unlike the job scripts. Here you want `$MYWORK` repl
 
 ### 5.2 Submit The Pipeline
 
-Create a small parameter file in the same `genomeassembler/` directory:
-
-```bash
-cat > genomeassembler_params.json <<'EOF'
-{
-  "busco": true,
-  "quast": true,
-  "busco_lineage": "fungi_odb10"
-}
-EOF
-cat genomeassembler_params.json
-```
-
-BUSCO and QUAST are off by default in pipeline version 2.0.1. These settings turn
-them on. JSON preserves the unquoted `true` values as booleans; `"true"` would be
-text. With newer Nextflow parameter parsing, `--busco true` and even a bare
-`--busco` can arrive as strings and fail the pipeline's validation. Use
-`-params-file` for these boolean settings, following the
-[Nextflow parameter-file guidance](https://training.nextflow.io/latest/nfcore_use/02_configure_execution/).
+BUSCO and QUAST are off by default in pipeline version 2.0.1. The flags
+`--busco` and `--quast` turn them on; do not add `true` after either flag.
+`--busco_lineage fungi_odb10` selects the fungal lineage for BUSCO.
 
 ```bash
 cat > run_genomeassembler.sh <<'EOF'
@@ -451,9 +435,11 @@ mkdir -p "$NXF_SINGULARITY_CACHEDIR"
 nextflow run nf-core/genomeassembler \
   -r 2.0.1 \
   -profile tufts \
-  -params-file genomeassembler_params.json \
   --input samplesheet.csv \
   --outdir results \
+  --busco \
+  --quast \
+  --busco_lineage fungi_odb10 \
   -resume
 EOF
 
@@ -470,7 +456,7 @@ failed. Keep `-resume` for subsequent submissions after fixing a failed run.
 
 This job is small on purpose. In Week 1, `-profile singularity` ran every step inside one large job. `-profile tufts` loads the Tufts cluster settings instead, so Nextflow submits each step as its own SLURM job, with the CPUs and memory that step asks for. The job you submitted only runs Nextflow, which hands out the work and waits. Once it starts, `squeue --me` also lists the jobs it submits; their names begin with `nf-`.
 
-`"busco_lineage": "fungi_odb10"` in the JSON file requests an OrthoDB 10 lineage. Compare its actual lineage ID and marker count with the compleasm summary from Section 3.3. Matching parameter values do not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes `work/` automatically when a run succeeds, so there is no clean-up step this time. If the run fails, `work/` stays: read `logs/genomeassembler_*.err` and `.nextflow.log`, fix the problem, and resubmit the same script, and `-resume` reuses the steps that finished.
+`--busco_lineage fungi_odb10` requests an OrthoDB 10 lineage. Compare its actual lineage ID and marker count with the compleasm summary from Section 3.3. Matching parameter values do not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes `work/` automatically when a run succeeds, so there is no clean-up step this time. If the run fails, `work/` stays: read `logs/genomeassembler_*.err` and `.nextflow.log`, fix the problem, and resubmit the same script, and `-resume` reuses the steps that finished.
 
 Return to the main lab directory before continuing with Parts 2–4:
 

@@ -320,16 +320,7 @@ cat samplesheet.csv</code></pre>
 <p>The pipeline reads one row per sample. <code>hifireads</code> points to the same full HiFi file used by the direct assembly job. <code>hifi_fastplong_args</code> gives <code>fastplong</code> the settings you chose in Week 2; without that column, the pipeline would run <code>fastplong</code> with its defaults.</p>
 <p>This heredoc is not quoted, unlike the job scripts. Here you want <code>$MYWORK</code> replaced by your real path as the file is written, because the pipeline needs full paths. Check that <code>cat</code> shows a path starting with <code>/cluster</code>.</p>
 <h3 id="5-2-submit-the-pipeline">5.2 Submit The Pipeline</h3>
-<p>Create a small parameter file in the same <code>genomeassembler/</code> directory:</p>
-<pre class="lab-code"><code class=" language-bash">cat &gt; genomeassembler_params.json &lt;&lt;&#x27;EOF&#x27;
-{
-  &quot;busco&quot;: true,
-  &quot;quast&quot;: true,
-  &quot;busco_lineage&quot;: &quot;fungi_odb10&quot;
-}
-EOF
-cat genomeassembler_params.json</code></pre>
-<p>BUSCO and QUAST are off by default in pipeline version 2.0.1. These settings turn them on. JSON preserves the unquoted <code>true</code> values as booleans; <code>&quot;true&quot;</code> would be text. With newer Nextflow parameter parsing, <code>--busco true</code> and even a bare <code>--busco</code> can arrive as strings and fail the pipeline&#x27;s validation. Use <code>-params-file</code> for these boolean settings, following the <a href="https://training.nextflow.io/latest/nfcore_use/02_configure_execution/">Nextflow parameter-file guidance</a>.</p>
+<p>BUSCO and QUAST are off by default in pipeline version 2.0.1. The flags <code>--busco</code> and <code>--quast</code> turn them on; do not add <code>true</code> after either flag. <code>--busco_lineage fungi_odb10</code> selects the fungal lineage for BUSCO.</p>
 <pre class="lab-code"><code class=" language-bash">cat &gt; run_genomeassembler.sh &lt;&lt;&#x27;EOF&#x27;
 #!/bin/bash
 #SBATCH --job-name=genomeassembler
@@ -354,9 +345,11 @@ mkdir -p &quot;$NXF_SINGULARITY_CACHEDIR&quot;
 nextflow run nf-core/genomeassembler \
   -r 2.0.1 \
   -profile tufts \
-  -params-file genomeassembler_params.json \
   --input samplesheet.csv \
   --outdir results \
+  --busco \
+  --quast \
+  --busco_lineage fungi_odb10 \
   -resume
 EOF
 
@@ -366,7 +359,7 @@ squeue --me</code></pre>
 <p><strong>Job ID: ______________</strong></p>
 <p>On a first run, Nextflow may warn that <code>-resume</code> is ignored because there is no previous execution to resume. That warning does not mean parameter validation failed. Keep <code>-resume</code> for subsequent submissions after fixing a failed run.</p>
 <p>This job is small on purpose. In Week 1, <code>-profile singularity</code> ran every step inside one large job. <code>-profile tufts</code> loads the Tufts cluster settings instead, so Nextflow submits each step as its own SLURM job, with the CPUs and memory that step asks for. The job you submitted only runs Nextflow, which hands out the work and waits. Once it starts, <code>squeue --me</code> also lists the jobs it submits; their names begin with <code>nf-</code>.</p>
-<p><code>&quot;busco_lineage&quot;: &quot;fungi_odb10&quot;</code> in the JSON file requests an OrthoDB 10 lineage. Compare its actual lineage ID and marker count with the compleasm summary from Section 3.3. Matching parameter values do not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes <code>work/</code> automatically when a run succeeds, so there is no clean-up step this time. If the run fails, <code>work/</code> stays: read <code>logs/genomeassembler_*.err</code> and <code>.nextflow.log</code>, fix the problem, and resubmit the same script, and <code>-resume</code> reuses the steps that finished.</p>
+<p><code>--busco_lineage fungi_odb10</code> requests an OrthoDB 10 lineage. Compare its actual lineage ID and marker count with the compleasm summary from Section 3.3. Matching parameter values do not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes <code>work/</code> automatically when a run succeeds, so there is no clean-up step this time. If the run fails, <code>work/</code> stays: read <code>logs/genomeassembler_*.err</code> and <code>.nextflow.log</code>, fix the problem, and resubmit the same script, and <code>-resume</code> reuses the steps that finished.</p>
 <p>Return to the main lab directory before continuing with Parts 2–4:</p>
 <pre class="lab-code"><code class=" language-bash">cd &quot;$MYWORK/week-03/session-01&quot;</code></pre>
 <p><strong>Checkpoint 5.</strong> Both batch jobs are submitted and both job IDs are recorded. Neither job needs to finish before you leave class.</p>
