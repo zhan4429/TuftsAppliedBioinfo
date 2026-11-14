@@ -219,25 +219,84 @@ Fill in:
 
 | Metric | Your value | Expected |
 |---|---|---|
-| Number of contigs | | tens, not thousands |
-| Total length | | close to `$GENOME` |
+| Number of contigs | | about a hundred, not thousands |
+| Total length | | several Mb larger than `$GENOME` (Section 3.2 explains why) |
 | Largest contig | | megabases |
-| N50 | | megabases |
+| N50 | | hundreds of kilobases or more |
 
 **Question 4.** Compare total assembly length against the expected genome size. What does it mean if yours is substantially *larger*?
 
 <details>
 <summary>Answer</summary>
 
-Usually unresolved heterozygosity. hifiasm is a phasing assembler — for a diploid it tries to keep haplotypes apart rather than collapsing them. If the two haplotypes are divergent enough, both end up in the primary assembly and total length inflates toward 2×.
+S288C is haploid, so there are no haplotypes to keep apart. The extra length comes from DNA present in many copies per cell. The mitochondrial genome is an 86 kb circle with many copies in every cell, and the rDNA on chromosome XII is about 150 tandem copies of a 9.1 kb unit, much longer than any read. The assembler cannot place reads from either uniquely, so it outputs many overlapping copies of them as separate contigs. Section 3.2 shows how to recognise them.
 
-`asm.bp.hap1.p_ctg.gfa` and `hap2` are the separated haplotypes; `asm.bp.p_ctg.gfa` is the primary set. Which you want depends on your question — and for a haploid organism this should not arise at all.
+In a diploid, a larger assembly can also mean unresolved heterozygosity: hifiasm keeps the two haplotypes apart, and if both end up in the primary assembly the total inflates toward 2×. `asm.bp.hap1.p_ctg.gfa` and `hap2` hold the separated haplotypes.
 
 Substantially *smaller* than expected means you lost sequence: too little coverage, or repeats collapsed.
 
 </details>
 
-### 3.2 Look At The Graph, Not Just The FASTA
+### 3.2 What Is The Extra Length?
+
+hifiasm writes each contig's read depth as an `rd:i:` tag in the GFA, and `seqkit fx2tab` gives each contig's length and GC. This builds one table with name, length, GC and depth, sorted by length:
+
+```bash
+awk -F'\t' '/^S/ {for (i = 4; i <= NF; i++) if ($i ~ /^rd:i:/) print $2 "\t" substr($i, 6)}' \
+  asm.bp.p_ctg.gfa > depth.tsv
+seqkit fx2tab -n -l -g asm.p_ctg.fa > gc.tsv
+awk -F'\t' 'BEGIN {OFS = "\t"} NR == FNR {d[$1] = $2; next} {print $1, $2, $3, d[$1]}' \
+  depth.tsv gc.tsv | sort -k2,2nr > contigs.tsv
+head -25 contigs.tsv
+```
+
+Now sort the contigs into groups. Two facts separate them. Mitochondrial DNA is far more AT-rich than the nuclear genome, about 17% GC against 38%. And the chromosomes share one typical depth, taken here as the median depth of the long contigs:
+
+```bash
+M=$(awk '$3 >= 25 && $2 >= 200000 && $4 > 0 {print $4}' contigs.tsv | sort -n \
+    | awk '{a[NR] = $1} END {print a[int((NR + 1) / 2)]}')
+echo "typical depth: $M"
+
+awk -v m=$M '{
+    if ($3 < 25) g = "mitochondrial (GC < 25%)"
+    else if ($4 < 0.5 * m) g = "repeat copies (depth < 0.5x)"
+    else g = "nuclear"
+    n[g]++; s[g] += $2 }
+  END {for (g in n) printf "%-30s %4d contigs  %6.2f Mb\n", g, n[g], s[g]/1e6}' contigs.tsv
+```
+
+The low-depth contigs all have about the same GC, near 44%. Unrelated pieces of a genome never agree that closely; copies of one repeated sequence do. hifiasm often reports their depth as 0, because it cannot assign reads to them uniquely. To test the largest one, take 30 bases from it and measure the gaps between their copies. A tandem repeat gives the same gap every time:
+
+```bash
+R=$(awk -v m=$M '$3 >= 25 && $4 < 0.5 * m {print $1; exit}' contigs.tsv)
+seqkit grep -p $R asm.p_ctg.fa > repeat.fa
+K=$(seqkit subseq -r 1001:1030 repeat.fa | seqkit seq -s)
+seqkit locate --only-positive-strand -p $K repeat.fa \
+  | awk 'NR > 1 {if (p) print $5 - p; p = $5}' | sort | uniq -c
+```
+
+**Question 5.** What gap did you find, and which repeat in the yeast genome has a unit of that length? Why does the assembler output the mitochondrial genome and this repeat as many contigs instead of one each?
+
+<details>
+<summary>Answer</summary>
+
+A gap of about 9.1 kb, repeated many times: the rDNA unit. Chromosome XII carries about 150 tandem copies of it, roughly 1.4 Mb in total.
+
+Both are high-copy and repetitive. The rDNA array is far longer than any read, and the mitochondrial genome is a circle present in many copies per cell. Reads from them cannot be placed uniquely, so the assembler cannot build one path through either and outputs many overlapping copies instead. Nothing went wrong with the chromosomes: the nuclear group should total close to `$GENOME`.
+
+</details>
+
+Session 2 annotates genes, so it needs the nuclear genome only. Keep the contigs with nuclear GC and at least half the typical depth:
+
+```bash
+awk -v m=$M '$3 >= 25 && $4 >= 0.5 * m {print $1}' contigs.tsv > nuclear.ids
+seqkit grep -f nuclear.ids asm.p_ctg.fa > asm.nuc.fa
+seqkit stats -a asm.nuc.fa
+```
+
+Expect close to `$GENOME`, in roughly one contig per chromosome; *S. cerevisiae* has 16. The rDNA array is dropped too. That is normal for a reference: the published S288C genome also keeps only a couple of rDNA copies.
+
+### 3.3 Look At The Graph, Not Just The FASTA
 
 ```bash
 grep -c '^S' asm.bp.p_ctg.gfa      # segments
@@ -253,7 +312,7 @@ Bandage image asm.bp.p_ctg.gfa asm_graph.png --height 1200 2>/dev/null \
   || echo "Bandage not installed — view the GFA in Bandage on your laptop instead"
 ```
 
-**Question 5.** Many links relative to segments means what?
+**Question 6.** Many links relative to segments means what?
 
 <details>
 <summary>Answer</summary>
@@ -264,18 +323,21 @@ A clean assembly is mostly long segments with few links. A tangle is many short 
 
 </details>
 
-### 3.3 Completeness
+### 3.4 Completeness
 
 ```bash
 compleasm run -a asm.p_ctg.fa -o compleasm -l fungi_odb10 -t 8
-cat compleasm/summary.txt
+compleasm run -a asm.nuc.fa -o compleasm_nuc -l fungi_odb10 -t 8
+cat compleasm/summary.txt compleasm_nuc/summary.txt
 ```
+
+The two summaries should match: the contigs you removed carry no nuclear marker genes. A marker missing from `asm.nuc.fa` would mean the filter dropped part of a chromosome.
 
 Record the compleasm version and the **actual lineage ID and marker count** in its summary, not just the requested command. Some releases can translate an `odb10` request to an `odb12` lineage. If you use the staged cache with `-L "$SHARED/mb_downloads"`, check which lineage version it contains. The installed module and cache versions need to be confirmed on Pax before comparing scores.
 
 Record `S` (single), `D` (duplicated), `F` (fragmented), `M` (missing).
 
-**Question 6.** Your `D` is elevated — say 15% rather than under 2%. What does that suggest, and is it a problem?
+**Question 7.** Your `D` is elevated — say 15% rather than under 2%. What does that suggest, and is it a problem?
 
 <details>
 <summary>Answer</summary>
@@ -284,11 +346,11 @@ Unresolved haplotypes. Each locus appears twice, so each single-copy marker is f
 
 Whether it is a problem depends on your goal. For a haplotype-resolved assembly it is the intended result. For a reference you plan to annotate and map against, it is a problem — you would purge duplicates or use one haplotype set.
 
-This is the same signal as an inflated total length in §3.1, seen through a different instrument. Two metrics agreeing is how you become confident in a diagnosis.
+In a haploid strain like S288C there are no haplotypes, so a high `D` would instead mean that real nuclear sequence was kept twice, for example from a culture that was not uniform. Duplication also inflates the total length in §3.1, which is why §3.2 checks what the extra length is before choosing an explanation. Two metrics agreeing is how you become confident in a diagnosis.
 
 </details>
 
-### 3.4 The Three Questions
+### 3.5 The Three Questions
 
 You have now measured two of the three dimensions from the lecture:
 
@@ -296,9 +358,9 @@ You have now measured two of the three dimensions from the lecture:
 |---|---|---|
 | **Contiguity** — how few pieces? | contigs, N50 | |
 | **Completeness** — is the content there? | compleasm S% | |
-| **Correctness** — are the bases right? | Merqury QV | *(homework)* |
+| **Correctness** — are the bases right? | Merqury QV | *(not measured today)* |
 
-**Question 7.** Why can you not measure correctness right now, and what would you need?
+**Question 8.** Why can you not measure correctness right now, and what would you need?
 
 <details>
 <summary>Answer</summary>
@@ -307,7 +369,7 @@ Merqury evaluates assembly k-mers against a database of accurate genomic read k-
 
 Use BGISEQ genomic run **SRR17374239**, rather than Illumina RNA-seq. RNA-seq does not uniformly cover intergenic DNA, so it cannot provide a whole-genome k-mer reference.
 
-The BGISEQ and HiFi BioSamples both say **S288C**, but they have different identifiers and collection dates. They are not documented as the same DNA preparation. A biological difference between the cultures can also produce unsupported assembly k-mers. Report that limitation when interpreting the Homework 3 QV; it is not a proven assembly-error rate.
+The BGISEQ and HiFi BioSamples both say **S288C**, but they have different identifiers and collection dates. They are not documented as the same DNA preparation. A biological difference between the cultures can also produce unsupported assembly k-mers. A QV computed from these reads would need that limitation reported; it would not be a proven assembly-error rate.
 
 </details>
 
@@ -339,7 +401,7 @@ explicitly.
 identifies it as paired-end Illumina RNA-seq from *Saccharomyces cerevisiae*. You do
 not need a second fetchngs job or a new configuration file.
 
-**Question 8.** Why does RNA-seq help annotate a genome, and what can it not tell you?
+**Question 9.** Why does RNA-seq help annotate a genome, and what can it not tell you?
 
 <details>
 <summary>Answer</summary>
@@ -355,10 +417,10 @@ sequence-based predictions and protein evidence.
 
 ### 4.2 Before Session 2
 
-Check the RNA-seq paths during class. After the assembly job finishes, also check that the assembly exists; complete that check after class if the job is still running:
+Check the RNA-seq paths during class. After the assembly job finishes, also check that the nuclear assembly from §3.2 exists; complete that check after class if the job is still running:
 
 ```bash
-ls -lh "$MYWORK/week-03/session-01/asm.p_ctg.fa"
+ls -lh "$MYWORK/week-03/session-01/asm.nuc.fa"
 ls -lh "$RNA_R1" "$RNA_R2"
 ```
 
@@ -463,7 +525,7 @@ failed. Keep `-resume` for subsequent submissions after fixing a failed run.
 
 This job is small on purpose. In Week 1, `-profile singularity` ran every step inside one large job. `-profile tufts` loads the Tufts cluster settings instead, so Nextflow submits each step as its own SLURM job, with the CPUs and memory that step asks for. The job you submitted only runs Nextflow, which hands out the work and waits. Once it starts, `squeue --me` also lists the jobs it submits; their names begin with `nf-`.
 
-`--busco_lineage fungi_odb10` requests an OrthoDB 10 lineage. Compare its actual lineage ID and marker count with the compleasm summary from Section 3.3. Matching parameter values do not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes `work/` automatically when a run succeeds, so there is no clean-up step this time. If the run fails, `work/` stays: read `logs/genomeassembler_*.err` and `.nextflow.log`, fix the problem, and resubmit the same script, and `-resume` reuses the steps that finished.
+`--busco_lineage fungi_odb10` requests an OrthoDB 10 lineage. Compare its actual lineage ID and marker count with the compleasm summary from Section 3.4. Matching parameter values do not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes `work/` automatically when a run succeeds, so there is no clean-up step this time. If the run fails, `work/` stays: read `logs/genomeassembler_*.err` and `.nextflow.log`, fix the problem, and resubmit the same script, and `-resume` reuses the steps that finished.
 
 Return to the main lab directory before continuing with Parts 2–4:
 
@@ -503,14 +565,14 @@ cat results/yeast_hifi/QC/BUSCO/short_summary.*.txt
 
 The last lines of the log should say the pipeline completed successfully. Open `results/report/report.html` through OnDemand Files for the pipeline's summary. `results/pipeline_info/` records what ran, which software versions were used, and how long each step took.
 
-**Question 9.** Compare QUAST's number of contigs, total length and N50 with your §3.1 values, and BUSCO's `S` and `D` with compleasm's from §3.3. Should they be identical?
+**Question 10.** Compare QUAST's number of contigs, total length and N50 with your §3.1 values for `asm.p_ctg.fa`, and BUSCO's `S` and `D` with compleasm's from §3.4. Should they be identical?
 
 <details>
 <summary>Answer</summary>
 
 Close, but not necessarily identical, and each difference has a reason you can check.
 
-The pipeline runs QUAST in its large-genome mode, which skips contigs shorter than 3,000 bp. `seqkit stats` counted every sequence, so QUAST can report fewer contigs and a slightly smaller total. The pipeline also ran `hifiasm` from its own container, which may be a different version from the cluster module: compare the version in `results/pipeline_info/nf_core_genomeassembler_software_versions.yml` with `hifiasm --version`.
+The pipeline does not remove mitochondrial or rDNA contigs, so compare it with `asm.p_ctg.fa`, not `asm.nuc.fa`. It runs QUAST in its large-genome mode, which skips contigs shorter than 3,000 bp. `seqkit stats` counted every sequence, so QUAST can report fewer contigs and a slightly smaller total. The pipeline also ran `hifiasm` from its own container, which may be a different version from the cluster module: compare the version in `results/pipeline_info/nf_core_genomeassembler_software_versions.yml` with `hifiasm --version`.
 
 First compare the actual lineage release and number of marker genes in both summaries. Only if those agree are you comparing the same marker set with different software. If they differ, a score difference mixes software and database effects and cannot be attributed to the assembly or method alone.
 
@@ -518,7 +580,7 @@ A large disagreement would be worth chasing. Two routes to the same assembly sho
 
 </details>
 
-**Question 10.** What did the pipeline do that you did not do by hand, and what did you do that the pipeline did not?
+**Question 11.** What did the pipeline do that you did not do by hand, and what did you do that the pipeline did not?
 
 <details>
 <summary>Answer</summary>
@@ -544,6 +606,13 @@ hifiasm -i -o asm -t 16 reads.fastq.gz
 awk '/^S/{print ">"$2"\n"$3}' asm.bp.p_ctg.gfa | fold > asm.p_ctg.fa
 ```
 
+Sort the contigs by GC and depth, and keep the nuclear ones for annotation:
+
+```bash
+awk -v m=$M '$3 >= 25 && $4 >= 0.5 * m {print $1}' contigs.tsv > nuclear.ids
+seqkit grep -f nuclear.ids asm.p_ctg.fa > asm.nuc.fa
+```
+
 Measure the three dimensions:
 
 ```bash
@@ -559,8 +628,9 @@ Three things to carry forward:
 
 1. Repeats are a common cause of assembly breaks. Read length, coverage and sequence
    quality all affect whether a repeat can be resolved.
-2. Excess assembly length and duplicated markers can support an unresolved-haplotype
-   explanation, but also check true duplication, contamination and the ploidy assumption.
+2. Excess assembly length has several possible causes: high-copy DNA such as the
+   mitochondrial genome and rDNA, unresolved haplotypes in a diploid, true duplication or
+   contamination. Depth and GC tell them apart; check before you choose an explanation.
 3. Contiguity, completeness and correctness are three independent questions. You measured
    two today; the third needs a second technology.
 
