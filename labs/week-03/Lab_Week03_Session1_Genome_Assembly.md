@@ -19,7 +19,7 @@ export SHARED=$COURSE/shared/wk3
 export FETCH=$MYWORK/week-01/session-02/fetch
 export GENOME=12100000        # expected genome size in bases
 
-mkdir -p $MYWORK/week-03/session-01 && cd $MYWORK/week-03/session-01
+mkdir -p $MYWORK/week-03/session-01/hifiasm && cd $MYWORK/week-03/session-01/hifiasm
 
 # the PacBio HiFi reads you cleaned with fastplong in Week 2
 export HIFI=$(ls $MYWORK/week-02/session-02/trimmed/*SRR18210286*.filt.fq.gz 2>/dev/null)
@@ -27,6 +27,8 @@ ls -lh "$HIFI"
 ```
 
 These are the same paths as Weeks 1 and 2: your work under `$MYWORK`, shared course files under `$COURSE/shared`. If the allocation announced in class differs, change `COURSE` to match.
+
+Today's folder, `$MYWORK/week-03/session-01`, holds one subfolder per assembly route: `hifiasm/` for the direct assembly in Part 1, and `genomeassembler/` for the pipeline in Part 2. Keeping them apart means neither run can overwrite the other's files. You are now in `hifiasm/`.
 
 nf-core/genomeassembler runs the same two steps in the same order: `fastplong` on the reads, then `hifiasm`.
 
@@ -94,6 +96,10 @@ cat > assemble.sh <<'EOF'
 # load what the job needs inside the script, so it never depends on the shell that submitted it
 module load hifiasm
 set -euo pipefail
+
+export COURSE=/cluster/tufts/c27sp1bio0196
+export MYWORK="$COURSE/$USER"
+cd "$MYWORK/week-03/session-01/hifiasm"
 
 hifiasm -i -o asm -t ${SLURM_CPUS_PER_TASK} hifi.fastq.gz
 
@@ -183,7 +189,7 @@ cd $MYWORK/week-03/session-01/genomeassembler
 
 cat > samplesheet.csv <<EOF
 sample,hifireads,hifi_fastplong_args
-yeast_hifi,$MYWORK/week-03/session-01/hifi.fastq.gz,--mean_qual 10 --length_required 1000 --unqualified_percent_limit 100
+yeast_hifi,$MYWORK/week-03/session-01/hifiasm/hifi.fastq.gz,--mean_qual 10 --length_required 1000 --unqualified_percent_limit 100
 EOF
 cat samplesheet.csv
 ```
@@ -251,10 +257,10 @@ This job is small on purpose. In Week 1, `-profile singularity` ran every step i
 
 `--busco_lineage fungi_odb10` requests an OrthoDB 10 lineage. In Part 4 you will compare its actual lineage ID and marker count with the compleasm summary from Section 3.4. Matching parameter values do not establish that both tools used the same dataset. If they differ, report that difference and defer a direct score comparison until both can be run against the same lineage release. The Tufts profile deletes `work/` automatically when a run succeeds, so there is no clean-up step this time. If the run fails, `work/` stays: read `logs/genomeassembler_*.err` and `.nextflow.log`, fix the problem, and resubmit the same script, and `-resume` reuses the steps that finished.
 
-Return to the main lab directory:
+Return to the direct-assembly folder:
 
 ```bash
-cd "$MYWORK/week-03/session-01"
+cd "$MYWORK/week-03/session-01/hifiasm"
 ```
 
 **Checkpoint 2.** Both batch jobs are submitted and both job IDs are recorded.
@@ -280,7 +286,11 @@ If a job failed, inspect its logs and resolve the failure before continuing.
 
 ## Part 3: Look At What Came Out
 
-Start with the direct assembly, in `$MYWORK/week-03/session-01`.
+Start with the direct assembly, in its own folder:
+
+```bash
+cd $MYWORK/week-03/session-01/hifiasm
+```
 
 ### 3.1 Contiguity
 

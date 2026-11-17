@@ -16,7 +16,7 @@ hostname
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
 export SHARED="$COURSE/shared/wk3"
-export ASM=$MYWORK/week-03/session-01/asm.nuc.fa
+export ASM=$MYWORK/week-03/session-01/hifiasm/asm.nuc.fa
 export RNA="$MYWORK/week-01/session-02/fetch/results/fastq"
 
 mkdir -p $MYWORK/week-03/session-02 && cd $MYWORK/week-03/session-02
