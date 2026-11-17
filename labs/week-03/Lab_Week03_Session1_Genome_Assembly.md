@@ -28,7 +28,7 @@ ls -lh "$HIFI"
 
 These are the same paths as Weeks 1 and 2: your work under `$MYWORK`, shared course files under `$COURSE/shared`. If the allocation announced in class differs, change `COURSE` to match.
 
-Today's folder, `$MYWORK/week-03/session-01`, holds one subfolder per assembly route: `hifiasm/` for the direct assembly in Part 1, and `genomeassembler/` for the pipeline in Part 2. Keeping them apart means neither run can overwrite the other's files. You are now in `hifiasm/`.
+Today's folder, `$MYWORK/week-03/session-01`, holds one subfolder per assembly route: `hifiasm/` for the direct assembly in Part 1, and `genomeassembler/` for the pipeline in Part 2. Keeping them apart means neither run can overwrite the other's files. The HiFi reads both routes use sit beside them, as `hifi.fastq.gz`. You are now in `hifiasm/`.
 
 nf-core/genomeassembler runs the same two steps in the same order: `fastplong` on the reads, then `hifiasm`.
 
@@ -66,12 +66,12 @@ billion bases for a 12.1 Mb genome, or roughly 379× coverage. Subsampling can r
 runtime and memory use, but it is not required for this lab: the batch job can run
 after class.
 
-Create a link with a short, stable name. This points to the original file without
-copying the sequencing data:
+Create a link with a short, stable name in `session-01`, where both routes can find it.
+The link points to the original file without copying the sequencing data:
 
 ```bash
-ln -sf "$HIFI" hifi.fastq.gz
-ls -lhL hifi.fastq.gz
+ln -sf "$HIFI" $MYWORK/week-03/session-01/hifi.fastq.gz
+ls -lhL $MYWORK/week-03/session-01/hifi.fastq.gz
 ```
 
 Both assembly routes will use this same input. More coverage does not guarantee a
@@ -80,8 +80,12 @@ assuming that extra reads make them correct.
 
 ### 1.3 Submit It
 
+Write the script, its logs and its outputs in `hifiasm/`. SLURM creates the log files
+relative to the folder you run `sbatch` from, so change into `hifiasm/` first:
+
 ```bash
-mkdir -p logs
+mkdir -p $MYWORK/week-03/session-01/hifiasm/logs
+cd $MYWORK/week-03/session-01/hifiasm
 
 cat > assemble.sh <<'EOF'
 #!/bin/bash
@@ -101,7 +105,7 @@ export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
 cd "$MYWORK/week-03/session-01/hifiasm"
 
-hifiasm -i -o asm -t ${SLURM_CPUS_PER_TASK} hifi.fastq.gz
+hifiasm -i -o asm -t ${SLURM_CPUS_PER_TASK} $MYWORK/week-03/session-01/hifi.fastq.gz
 
 # hifiasm writes GFA; convert the primary contigs to FASTA
 awk '/^S/{print ">"$2"\n"$3}' asm.bp.p_ctg.gfa | fold > asm.p_ctg.fa
@@ -189,7 +193,7 @@ cd $MYWORK/week-03/session-01/genomeassembler
 
 cat > samplesheet.csv <<EOF
 sample,hifireads,hifi_fastplong_args
-yeast_hifi,$MYWORK/week-03/session-01/hifiasm/hifi.fastq.gz,--mean_qual 10 --length_required 1000 --unqualified_percent_limit 100
+yeast_hifi,$MYWORK/week-03/session-01/hifi.fastq.gz,--mean_qual 10 --length_required 1000 --unqualified_percent_limit 100
 EOF
 cat samplesheet.csv
 ```
