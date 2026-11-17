@@ -16,7 +16,7 @@ hostname
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
 export SHARED="$COURSE/shared/wk3"
-export ASM=$MYWORK/week-03/session-01/asm.p_ctg.fa
+export ASM=$MYWORK/week-03/session-01/asm.nuc.fa
 export RNA="$MYWORK/week-01/session-02/fetch/results/fastq"
 
 mkdir -p $MYWORK/week-03/session-02 && cd $MYWORK/week-03/session-02
@@ -27,9 +27,23 @@ ls -lh $RNA
 Fallbacks if either is missing:
 
 ```bash
-export ASM=$SHARED/fallback_assembly/asm.p_ctg.fa
+export ASM=$SHARED/fallback_assembly/asm.nuc.fa
 export RNA="$SHARED/fallback_rna"
 ```
+
+The two inputs:
+
+- `$ASM` is the nuclear assembly you made in Lab 3A Section 3.2: the chromosomes, without
+  the extra mitochondrial and rDNA copies. Annotating the full assembly would only add
+  duplicate rDNA and mitochondrial genes.
+- `$RNA` holds the Illumina RNA-seq run **SRR27956204** that you downloaded in Week 1 and
+  inspected in Week 2. [Its ENA record](https://www.ebi.ac.uk/ena/browser/view/SRR27956204)
+  identifies it as paired-end RNA-seq from *Saccharomyces cerevisiae*. Reuse those files;
+  you do not need another download.
+
+Keep the Week 1 `results/fastq` files. Cleaning a finished Nextflow run's `work/`
+directory, as taught in Week 1, is different from deleting its published `results/`;
+this lab still needs these reads.
 
 ```bash
 module load hisat2 samtools
@@ -41,6 +55,20 @@ module list
 ## Part 1: Make The Evidence, Then Submit The Annotation
 
 Structural annotation of a eukaryote is a **project, not a step**. A full BRAKER3 run on this genome takes hours, so it has to start early. It uses RNA-seq alignments as evidence, though, so align first; on a 12 Mb genome that is quick.
+
+**Question 1.** Why does RNA-seq help annotate a genome, and what can it not tell you?
+
+<details>
+<summary>Answer</summary>
+
+RNA-seq reads provide evidence for transcribed regions. Reads that span splice
+junctions help locate exon boundaries and introns.
+
+A gene that was not expressed in the sampled condition may have no RNA-seq support.
+Absence of coverage does not establish absence of a gene, so annotation also uses
+sequence-based predictions and protein evidence.
+
+</details>
 
 ### 1.1 Index The Assembly And Align The RNA-seq
 
@@ -66,7 +94,7 @@ samtools index rna.sorted.bam
 cat rna_summary.txt
 ```
 
-**Question 1.** What overall alignment rate did you get? What would a low rate mean here, and what does a *spliced* aligner do that `bwa` would not?
+**Question 2.** What overall alignment rate did you get? What would a low rate mean here, and what does a *spliced* aligner do that `bwa` would not?
 
 <details>
 <summary>Answer</summary>
@@ -127,7 +155,7 @@ squeue --me
 
 Two choices in that script are deliberate. There is no repeat-masking step: yeast genomes carry few repeats, so we accept that risk here, but for a plant or animal you would mask first or BRAKER would annotate transposons as genes. And the species name includes your job ID, because AUGUSTUS refuses to overwrite a model that already exists. The result will be in `braker/braker.gff3` for your homework.
 
-**Question 2.** Most *S. cerevisiae* genes have no intron. Why can this BRAKER3 annotation still take much longer than a simple bacterial gene prediction?
+**Question 3.** Most *S. cerevisiae* genes have no intron. Why can this BRAKER3 annotation still take much longer than a simple bacterial gene prediction?
 
 <details>
 <summary>Answer</summary>
@@ -155,7 +183,7 @@ samtools view rna.sorted.bam | awk '$6 ~ /N/ {print $6}' | grep -o '[0-9]*N' | s
 
 The first command counts spliced reads. The second lists the most common intron lengths. Both look only at column 6, the CIGAR string: searching the whole line would also count `N` bases in the read sequences.
 
-**Question 3.** Those `N` operations are introns your data observed directly. Why is that different in kind from a gene finder predicting an intron?
+**Question 4.** Those `N` operations are introns your data observed directly. Why is that different in kind from a gene finder predicting an intron?
 
 <details>
 <summary>Answer</summary>
@@ -175,7 +203,7 @@ samtools depth -a rna.sorted.bam | \
   awk '{t++; if($3>0) c++} END {printf "bases with any RNA coverage: %.1f%%\n", 100*c/t}'
 ```
 
-**Question 4.** Only a fraction of the genome is covered. Is that a problem?
+**Question 5.** Only a fraction of the genome is covered. Is that a problem?
 
 <details>
 <summary>Answer</summary>
@@ -202,12 +230,12 @@ grep -m 3 '^>' $ASM $REF_ASM
 md5sum $ASM $REF_ASM
 ```
 
-**Question 5.** The contig names may look identical. Do the checksums agree? What would go wrong if you compared `reference.gff3` with a BAM made against your own assembly?
+**Question 6.** The contig names may look identical. Do the checksums agree? What would go wrong if you compared `reference.gff3` with a BAM made against your own assembly?
 
 <details>
 <summary>Answer</summary>
 
-hifiasm names contigs by order (`ptg000001l`, `ptg000002l`, …), so two different assemblies share names. Unless you used the fallback assembly, the checksums differ: these are different sequences, and position 50,000 on one `ptg000001l` is not position 50,000 on the other.
+hifiasm names contigs by order (`ptg000001l`, `ptg000002l`, …), so two different assemblies share names. The checksums differ, even if you used the staged `asm.nuc.fa`: the reference annotation was made on the full staged assembly. These are different sequences, and position 50,000 on one `ptg000001l` is not position 50,000 on the other.
 
 Nothing would fail. `samtools bedcov` would happily report coverage over regions that do not correspond to the genes, giving plausible numbers and a wrong answer. This is the lecture's "seqid must match the FASTA" problem in its sharpest form: matching names are not enough; the sequence has to be the same.
 
@@ -243,7 +271,7 @@ awk -F'\t' '$3=="mRNA" || $3=="transcript"' reference.gff3 | wc -l
 awk -F'\t' '$3=="exon" {s+=$5-$4+1} END {print "exonic bases:", s}' reference.gff3
 ```
 
-**Question 6.** Compare the gene and transcript-feature counts you obtained. Are they equal, or is one larger? What must you check before interpreting the difference as alternative splicing?
+**Question 7.** Compare the gene and transcript-feature counts you obtained. Are they equal, or is one larger? What must you check before interpreting the difference as alternative splicing?
 
 <details>
 <summary>Answer</summary>
@@ -266,7 +294,7 @@ samtools bedcov genes.bed ref.sorted.bam | \
   awk '{n++; if($4>0) e++} END {printf "genes with RNA-seq support: %d / %d (%.1f%%)\n", e, n, 100*e/n}'
 ```
 
-**Question 7.** You get some percentage below 100. Give two different explanations, and say how you would distinguish them.
+**Question 8.** You get some percentage below 100. Give two different explanations, and say how you would distinguish them.
 
 <details>
 <summary>Answer</summary>
@@ -307,7 +335,7 @@ samtools view ref.sorted.bam "$REGION" | awk '{
 
 An annotated intron runs from one base after an exon ends to one base before the next exon starts. Most yeast genes have no intron, so if the junction list is empty, that agrees with a one-exon model: change `head -1` to `sed -n 2p`, `3p` and so on to try the next genes.
 
-**Question 8.** Find a gene where reads cross at least one intron. Do the observed introns match the gaps between annotated exons? Describe one agreement or disagreement.
+**Question 9.** Find a gene where reads cross at least one intron. Do the observed introns match the gaps between annotated exons? Describe one agreement or disagreement.
 
 <details>
 <summary>Answer</summary>
@@ -340,7 +368,7 @@ awk -F'\t' 'NR>1 && tolower($2) ~ /hypothetical|unknown|uncharacterized/' $SHARE
 awk -F'\t' 'NR>1' $SHARED/reference_functional.tsv | wc -l
 ```
 
-**Question 9.** Report the number and fraction of rows labeled hypothetical, unknown or uncharacterized in this file. Does that label by itself mean that the gene model is wrong?
+**Question 10.** Report the number and fraction of rows labeled hypothetical, unknown or uncharacterized in this file. Does that label by itself mean that the gene model is wrong?
 
 <details>
 <summary>Answer</summary>
@@ -353,7 +381,7 @@ Assess structural support with alignments and protein evidence, and functional s
 
 </details>
 
-**Question 10.** Your structural annotation truncated a gene because of a frameshift in the assembly. What does the functional step do?
+**Question 11.** Your structural annotation truncated a gene because of a frameshift in the assembly. What does the functional step do?
 
 <details>
 <summary>Answer</summary>
