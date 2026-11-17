@@ -296,6 +296,22 @@ Start with the direct assembly, in its own folder:
 cd $MYWORK/week-03/session-01/hifiasm
 ```
 
+hifiasm writes many files. Most are intermediate stages or files for diploid genomes; only
+two are the assembly you will use:
+
+| File | What it is | Use it? |
+|---|---|---|
+| `asm.bp.p_ctg.gfa` | The **primary contigs**: the assembly itself, as a graph. Each `S` line holds one contig's sequence and its read depth (`rd:i:`). | **Yes.** The source of everything below; §3.2 reads the depths from it, and §3.3 counts its links |
+| `asm.p_ctg.fa` | The same primary contigs as FASTA, made by the `awk` line at the end of `assemble.sh` | **Yes.** What you measure, filter and annotate |
+| `asm.bp.p_ctg.noseq.gfa` | The primary graph without the sequences: small, so it opens quickly in a graph viewer such as Bandage | Optional |
+| `asm.bp.p_ctg.lowQ.bed` | Regions of the primary contigs that hifiasm flags as low quality | Optional: places to be skeptical |
+| `asm.bp.hap1.p_ctg.gfa`, `asm.bp.hap2.p_ctg.gfa` | Contigs split into two haplotypes, for diploid genomes | No. S288C is haploid, so `hap2` should be empty or nearly so |
+| `asm.bp.p_utg.gfa`, `asm.bp.r_utg.gfa` | Unitig graphs: earlier, less-joined stages built on the way to the contigs | No, except to debug the assembly |
+| `asm.ec.bin`, `asm.ovlp.source.bin`, `asm.ovlp.reverse.bin` | Saved error-corrected reads and read overlaps, so a rerun can skip those steps | No. They are large; delete them once the assembly is final. `assemble.sh` uses `-i`, which tells hifiasm to ignore them and start afresh |
+
+Every graph also has its own `.noseq.gfa` and `.lowQ.bed` companion. The rule is simple:
+**use the primary contigs, `p_ctg`**, and ignore the rest unless you have a reason.
+
 ### 3.1 Contiguity
 
 ```bash
@@ -479,6 +495,27 @@ cat results/yeast_hifi/QC/BUSCO/short_summary.*.txt
 ```
 
 The last lines of the log should say the pipeline completed successfully. Open `results/report/report.html` through OnDemand Files for the pipeline's summary. `results/pipeline_info/` records what ran, which software versions were used, and how long each step took.
+
+The pipeline sorts its outputs by sample, then by stage. These are the parts this run
+produces, inside `results/`:
+
+| Path | What it is | Use it? |
+|---|---|---|
+| `yeast_hifi/assembly/hifiasm/yeast_hifi.asm.bp.p_ctg.fa.gz` | The primary contigs as compressed FASTA: the pipeline's equivalent of your `asm.p_ctg.fa` | **Yes.** This is the pipeline's assembly |
+| `yeast_hifi/assembly/hifiasm/yeast_hifi.asm.bp.p_ctg.gfa` | The same primary contigs as a graph, with read depths | Yes, for the depth and GC table of §3.2 |
+| `yeast_hifi/assembly/hifiasm/yeast_hifi.asm.bp.p_utg.gfa`, `.r_utg.gfa` | Unitig graphs: intermediate stages, as in your own run | No |
+| `yeast_hifi/assembly/hifiasm/gfa2_fasta/` | FASTA versions the pipeline made from hifiasm's graphs | Only to check against the file above |
+| `yeast_hifi/reads/fastplong/hifi/` | The cleaned HiFi reads, with fastplong's JSON and HTML reports | To check how much was removed |
+| `yeast_hifi/QC/QUAST/yeast_hifi_assembly/report.txt` | Contiguity: number of contigs, total length, N50 | **Yes.** Compare with §3.1 |
+| `yeast_hifi/QC/BUSCO/short_summary.*.txt` | Completeness: the `S`, `D`, `F` and `M` scores | **Yes.** Compare with §3.4 |
+| `report/report.html` | One page that collects the QUAST and BUSCO results | Yes, for a quick overview |
+| `pipeline_info/` | What ran, with which software versions, and how long each step took | Yes, when you write up methods |
+
+Two things do not belong to the results. `work/`, beside `results/`, holds Nextflow's
+temporary files for each step; delete it once you are sure the run is final, as in Week 1.
+And the pipeline does not remove the mitochondrial and rDNA contigs: to annotate its
+assembly, you would make a nuclear-only version with the §3.2 steps, exactly as for your
+own.
 
 **Question 7.** Compare QUAST's number of contigs, total length and N50 with your §3.1 values for `asm.p_ctg.fa`, and BUSCO's `S` and `D` with compleasm's from §3.4. Should they be identical?
 
