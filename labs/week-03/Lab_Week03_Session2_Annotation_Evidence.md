@@ -70,6 +70,37 @@ sequence-based predictions and protein evidence.
 
 </details>
 
+**Why RNA-seq and proteins?** A gene finder working from DNA alone has only sequence
+patterns to go on: start and stop codons, the short motifs at splice sites, and the codon
+usage typical of genes. That is enough to guess where genes are, not to be sure. BRAKER3
+therefore adds two independent kinds of evidence, and this lab gives it one of each
+(Figure 1):
+
+- **RNA-seq from this yeast** (`rna.sorted.bam`). Cells copy their active genes into
+  RNA, so reads pile up on the exons of the genes that were switched on when the cells
+  were harvested, and a read split across an intron marks both ends of that intron to
+  the exact base. RNA-seq is the most precise evidence for a gene's structure, but it
+  says nothing about genes that were switched off.
+- **Proteins from many fungi** (`$SHARED/orthodb_fungi.fa`, from the OrthoDB
+  database). A gene's protein usually stays similar across related species even after
+  its DNA has changed, because changes that break a protein tend to be lost. So when a
+  fungal protein aligns to your genome, it points to a gene there, whether or not that
+  gene was expressed in your sample. Protein evidence is less exact at the edges:
+  related proteins differ in length, and the alignment has to estimate where each exon
+  starts and stops.
+
+Each covers the other's blind spot. RNA-seq gives exact structure for the genes it sees;
+proteins find conserved genes that RNA-seq missed. Genes supported by both are the ones
+BRAKER3 trusts most.
+
+![Two kinds of gene evidence on the same stretch of genome. Gene A is switched on: RNA-seq reads stack on its three exons and split reads mark its two introns. Gene B is switched off: it has no reads, but fungal protein alignments cover it. Both genes appear in the final gene models.](assets/annotation-evidence/rna-and-protein-evidence.png)
+
+*Figure 1. Gene A was switched on, so RNA-seq reads cover its exons and split reads
+mark its introns exactly. Gene B was switched off and has no reads, but proteins from
+many fungi still align to it. The gene models combine both. Most* S. cerevisiae *genes
+have a single exon; the figure shows introns because that is where the two kinds of
+evidence differ most.*
+
 ### 1.1 Index The Assembly And Align The RNA-seq
 
 Use the Illumina RNA-seq run **SRR27956204**, already downloaded in Week 1 and
@@ -123,7 +154,7 @@ cat > annotate.sh <<'EOF'
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-module load braker3
+module load braker3/3.1.3
 set -euo pipefail
 
 export COURSE=/cluster/tufts/c27sp1bio0196
@@ -131,16 +162,12 @@ export MYWORK="$COURSE/$USER"
 export SHARED="$COURSE/shared/wk3"
 cd $MYWORK/week-03/session-02
 
-# AUGUSTUS saves its trained model in its config directory, and the module's copy is read-only
-[ -d augustus_config ] || cp -r "${AUGUSTUS_CONFIG_PATH:?the braker3 module did not set AUGUSTUS_CONFIG_PATH}" augustus_config
-
 braker.pl \
     --genome=asm.fa \
     --bam=rna.sorted.bam \
     --prot_seq=$SHARED/orthodb_fungi.fa \
     --fungus \
     --species=wk3_${USER}_${SLURM_JOB_ID} \
-    --AUGUSTUS_CONFIG_PATH=$PWD/augustus_config \
     --workingdir=$PWD/braker \
     --threads=${SLURM_CPUS_PER_TASK} \
     --gff3
@@ -151,9 +178,29 @@ sbatch annotate.sh
 squeue --me
 ```
 
-**Job ID: ______________**
+**What each option tells BRAKER3:**
 
-Two choices in that script are deliberate. There is no repeat-masking step: yeast genomes carry few repeats, so we accept that risk here, but for a plant or animal you would mask first or BRAKER would annotate transposons as genes. And the species name includes your job ID, because AUGUSTUS refuses to overwrite a model that already exists. The result will be in `braker/braker.gff3` for your homework.
+| Option | Meaning |
+|---|---|
+| `--genome=asm.fa` | The sequence to annotate. It must be the same assembly the RNA-seq was aligned to, which is why you copied `$ASM`. |
+| `--bam=rna.sorted.bam` | The RNA-seq evidence: your sorted alignments from Section 1.1. BRAKER3 builds transcripts from them and reads the introns from the split reads. |
+| `--prot_seq=$SHARED/orthodb_fungi.fa` | The protein evidence: fungal proteins from OrthoDB, which BRAKER3 aligns to the genome. |
+| `--fungus` | Use GeneMark's model for fungal introns, which looks for the branch-point signal that fungal introns carry near their end. |
+| `--species=wk3_${USER}_${SLURM_JOB_ID}` | The name for the gene model AUGUSTUS trains on this genome. It must be new, because AUGUSTUS will not overwrite an existing model; the job ID makes every run's name unique. |
+| `--workingdir=$PWD/braker` | The folder for all results and intermediate files. |
+| `--threads=${SLURM_CPUS_PER_TASK}` | How many CPUs to use: the 16 requested from SLURM. |
+| `--gff3` | Also write the final genes as GFF3 (`braker.gff3`), alongside the default GTF. |
+
+Figure 2 shows where each option acts. BRAKER3 runs two gene finders, GeneMark-ETP and
+AUGUSTUS, which both use your evidence; a third tool, TSEBRA, then keeps the
+best-supported version of each gene.
+
+![BRAKER3 workflow. Inputs on the left: the genome (--genome), RNA-seq alignments (--bam) and fungal proteins (--prot_seq). Step 1, GeneMark-ETP (--fungus), uses the evidence to find strongly supported genes and trains step 2, AUGUSTUS (--species). Step 3, TSEBRA, combines both gene sets. Outputs in the braker folder (--workingdir, --gff3): braker.gff3, braker.gtf, braker.aa, braker.codingseq and braker.log.](assets/annotation-evidence/braker3-workflow.png)
+
+*Figure 2. What BRAKER3 does with your three inputs, with each `annotate.sh` option
+shown at the step it controls.*
+
+One choice in that script is deliberate: there is no repeat-masking step. Yeast genomes carry few repeats, so we accept that risk here, but for a plant or animal you would mask repeats first, or BRAKER3 would annotate transposons as genes. The results will be in `braker/`; the gene models are in `braker/braker.gff3`.
 
 **Question 3.** Most *S. cerevisiae* genes have no intron. Why can this BRAKER3 annotation still take much longer than a simple bacterial gene prediction?
 
