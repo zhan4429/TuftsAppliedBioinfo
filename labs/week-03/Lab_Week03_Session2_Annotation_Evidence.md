@@ -4,6 +4,8 @@ Applied Bioinformatics - Tufts University Department of Biology
 
 > You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.
 
+> **In class:** align the RNA-seq and submit BRAKER3 (Part 1). BRAKER3 runs for hours, so everything after that is done after class: Part 2 needs only your RNA-seq alignments, and Part 3 needs BRAKER3 to have finished.
+
 ---
 
 ## Before You Start
@@ -215,7 +217,22 @@ Intron-rich plant and animal genomes add further complexity, but that architectu
 
 </details>
 
-**Checkpoint 1.** Everyone has a sorted, indexed RNA-seq BAM and a BRAKER3 job in the queue.
+**Checkpoint 1.** Everyone has a sorted, indexed RNA-seq BAM and a BRAKER3 job in the queue. That is all for class time.
+
+---
+
+## After Class
+
+Everything from here on is done after class. Work on a compute node. If this is a new login, repeat the setup in Before You Start, including `module load hisat2 samtools`.
+
+Part 2 needs only your RNA-seq alignments, so you can start it while BRAKER3 is still running. Part 3 needs BRAKER3 to have finished. Check its state with `sacct`, replacing the example ID with your BRAKER3 job ID:
+
+```bash
+cd $MYWORK/week-03/session-02
+sacct -j 12345 --format=JobID,JobName,State,ExitCode,Elapsed
+```
+
+`COMPLETED` with exit code `0:0` means `braker/braker.gff3` is ready. If the job failed, read the end of `logs/braker3_<job ID>.err`; if you cannot fix it, use the staged annotation described at the start of Part 3.
 
 ---
 
@@ -243,10 +260,9 @@ The corollary matters: **absence of RNA-seq coverage is not evidence that there 
 
 ## Part 3: Judge Your Gene Models Against The Evidence
 
-Do this part once your BRAKER3 job has finished; if it is still running at the end of class, finish it afterwards. Your gene models and your RNA-seq alignments were both made on the same `asm.fa`, so their coordinates match. Point two variables at them:
+Your BRAKER3 job must have finished before this part. Your gene models and your RNA-seq alignments were both made on the same `asm.fa`, so their coordinates match. Point two variables at them:
 
 ```bash
-squeue --me
 cd $MYWORK/week-03/session-02
 GFF=braker/braker.gff3
 BAM=rna.sorted.bam
