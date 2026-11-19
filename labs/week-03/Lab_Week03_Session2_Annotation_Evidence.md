@@ -154,11 +154,12 @@ RNA=$MYWORK/week-01/session-02/fetch/results/fastq
 [ -s "$RNA/SRX23612877_SRR27956204_1.fastq.gz" ] || RNA=$SHARED/fallback_rna
 R1=$RNA/SRX23612877_SRR27956204_1.fastq.gz
 R2=$RNA/SRX23612877_SRR27956204_2.fastq.gz
-T=${SLURM_CPUS_PER_TASK}
 
 # Step 1: align every RNA-seq pair to the assembly
-hisat2-build -p $T asm.fa asm_idx > logs/hisat2_build.log 2>&1
-hisat2 -p $T -x asm_idx -1 $R1 -2 $R2 --summary-file rna_summary.txt \
+hisat2-build -p ${SLURM_CPUS_PER_TASK} asm.fa asm_idx \
+  > logs/hisat2_build.log 2>&1
+hisat2 -p ${SLURM_CPUS_PER_TASK} -x asm_idx -1 $R1 -2 $R2 \
+  --summary-file rna_summary.txt \
   | samtools sort -@ 4 -T sort_tmp -o rna.sorted.bam -
 samtools index rna.sorted.bam
 
