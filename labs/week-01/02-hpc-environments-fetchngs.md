@@ -44,8 +44,12 @@ Request an interactive shell on a compute node:
 ```bash
 srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=2 \
   --mem=8G --time=01:30:00 --pty bash
-
 hostname
+```
+
+When `hostname` shows a compute node, not a login node, continue in that shell:
+
+```bash
 echo "Interactive job ID: $SLURM_JOB_ID"
 ```
 
@@ -255,6 +259,12 @@ large-file checks:
 ```bash
 srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=6 \
   --mem=18G --time=01:30:00 --pty bash
+hostname
+```
+
+When `hostname` shows a compute node, not a login node, continue in that shell:
+
+```bash
 cd "$MYWORK/week-01/session-02/fetch"
 module load seqkit
 

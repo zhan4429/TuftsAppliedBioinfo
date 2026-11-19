@@ -13,16 +13,20 @@
 srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
   --mem=32G --time=03:00:00 --pty bash
 hostname
+```
 
-export COURSE=/cluster/tufts/c27sp1bio0196
+When `hostname` shows a compute node, not a login node, continue in that shell:
+
+```bash
+export COURSE=/cluster/tufts/yzhang85/bioinfo_course/appliedBio
 export MYWORK="$COURSE/$USER"
-export SHARED=$COURSE/shared/wk10
+export SHARED=/cluster/tufts/bio_appbio/shared/wk10
 export D=$SHARED/shotgun
 export DB=$SHARED/k2_standard_08gb
 
 mkdir -p $MYWORK/week-10/session-02/bracken && cd $MYWORK/week-10/session-02
 
-module load kraken2 bracken r
+module load kraken2 bracken R
 module list
 # the R scripts below need four packages; each should print TRUE
 Rscript -e 'for (p in c("vegan", "ALDEx2", "ANCOMBC", "TreeSummarizedExperiment")) cat(p, requireNamespace(p, quietly = TRUE), "\n")'

@@ -12,7 +12,11 @@ trimming. Focus on what changed and whether preprocessing improved the reads.
 srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=4 \
   --mem=16G --time=03:00:00 --pty bash
 hostname
+```
 
+When `hostname` shows a compute node, not a login node, continue in that shell:
+
+```bash
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK=$COURSE/$USER
 export READS=$MYWORK/week-01/session-02/fetch/results/fastq

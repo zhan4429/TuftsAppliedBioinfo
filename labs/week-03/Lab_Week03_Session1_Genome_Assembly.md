@@ -12,7 +12,11 @@ Applied Bioinformatics - Tufts University Department of Biology
 srun --partition=batch --nodes=1 --ntasks=1 --cpus-per-task=8 \
   --mem=32G --time=03:00:00 --pty bash
 hostname                      # must NOT say login-p0x
+```
 
+When `hostname` shows a compute node, not a login node, continue in that shell:
+
+```bash
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
 export SHARED=$COURSE/shared/wk3
