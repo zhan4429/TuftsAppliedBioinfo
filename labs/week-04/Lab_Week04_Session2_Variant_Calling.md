@@ -181,6 +181,12 @@ describe the mixture.
 
 </details>
 
+Figure 1 shows the three situations behind an alternative allele fraction in a haploid genome.
+
+![Three pileups at one site in a haploid genome. Real difference: all 10 reads carry the new base, AD 0,10, fraction 1.0, normal depth, a clean call. Sequencing error: 1 of 10 reads carries a wrong base, AD 9,1, fraction 0.1, usually not called. Reads from a repeat: 20 reads, half of them from another copy carrying a different base, AD 10,10, fraction 0.5 at double depth, a mixed call.](assets/variant-calling/allele-fraction-pileups.png)
+
+*Figure 1. In a haploid genome, a real difference is carried by nearly every read. A fraction near 0.5, especially at unusually high depth, points to reads from more than one copy of a sequence piling onto one place.*
+
 **Checkpoint 2.** Everyone can read a VCF record and calculate an alternative allele fraction.
 
 ---
@@ -251,7 +257,7 @@ done
 ### 3.3 Clean And Mixed Calls
 
 For this summary, label SNPs with alternative allele fraction **0.8 or more**
-"clean" and the rest "mixed". These are teaching labels for read support; "clean"
+"clean" and the rest "mixed" (Figure 1). These are teaching labels for read support; "clean"
 does not prove that a call is true or that the assembly is wrong.
 
 Save the group for each SNP so the depth and contig summaries use the same groups:

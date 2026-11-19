@@ -181,6 +181,12 @@ The `@SQ` lines carry your contig names and lengths. A BAM made against the publ
 samtools view peek.sam | head -2 | cut -f1-9
 ```
 
+Figure 1 shows how to read those nine columns, using one read pair as the example, and what the numbers in FLAG and CIGAR encode.
+
+![One read pair aligned to a contig: read 1 on the forward strand starting at position 1,001 and read 2 on the reverse strand ending at 1,400, a 400 bp fragment. Below, read 1's SAM record column by column: QNAME read_17, FLAG 99, RNAME ptg000001l, POS 1001, MAPQ 60, CIGAR 150M, RNEXT equals sign, PNEXT 1251, TLEN 400. A FLAG box breaks 99 into 1 paired, 2 properly paired, 32 mate on reverse strand and 64 first read, and 147 into 1, 2, 16 and 128. A CIGAR box shows 150M, 30S120M and 70M2D80M as bars.](assets/alignment-qc/sam-record.png)
+
+*Figure 1. A SAM record describes one read: where it aligned, how confidently, and how its bases line up. FLAG packs several yes/no facts into one number, and `samtools flags` decodes any of them.*
+
 **Question 3.** Pick the first record. What are its flag, contig, position, MAPQ and CIGAR, and where is its mate?
 
 <details>
@@ -335,6 +341,12 @@ A HiFi read is longer than a Ty element, so it reaches unique sequence on both s
 That is also why the assembly resolved these copies at all: hifiasm built it from the same long reads. The repeats that defeat short-read alignment are the same ones that defeat short-read assembly. The lecture's threshold argument, from Week 3, seen from the alignment side.
 
 </details>
+
+Figure 2 puts Questions 5, 8 and 9 together.
+
+![Two copies of a repeat, such as a Ty element, in an assembly, separated by unique sequence. A 150 bp read from inside copy 1 fits copy 2 equally well, so it gets MAPQ 0. A 150 bp read that reaches unique sequence fits only one place and gets MAPQ 60. A 15 to 20 kb HiFi read spans the whole repeat and unique sequence on both sides, so only copy 1 matches and it gets MAPQ 60.](assets/alignment-qc/repeats-short-vs-long-reads.png)
+
+*Figure 2. A read can only be placed confidently if it contains sequence that occurs once. Short reads inside a repeat fit every copy; long reads span the repeat and anchor in unique sequence on both sides.*
 
 **Checkpoint 4.** `sample.bam` and its index exist. Session 2 calls variants on it.
 
