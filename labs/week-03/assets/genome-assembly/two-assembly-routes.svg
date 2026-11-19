@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="792pt" height="417.6pt" viewBox="0 0 792 417.6" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-18T19:31:43.127507</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 417.6 
+L 792 417.6 
+L 792 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 55.82016 267.247296 
+L 202.84704 267.247296 
+Q 220.86504 267.247296 220.86504 260.148096 
+L 220.86504 185.180544 
+Q 220.86504 178.081344 202.84704 178.081344 
+L 55.82016 178.081344 
+Q 37.80216 178.081344 37.80216 185.180544 
+L 37.80216 260.148096 
+Q 37.80216 267.247296 55.82016 267.247296 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #f3f6f8; stroke: #203348; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 290.05416 194.835456 
+L 473.11704 194.835456 
+Q 491.13504 194.835456 491.13504 187.736256 
+L 491.13504 115.608384 
+Q 491.13504 108.509184 473.11704 108.509184 
+L 290.05416 108.509184 
+Q 272.03616 108.509184 272.03616 115.608384 
+L 272.03616 187.736256 
+Q 272.03616 194.835456 290.05416 194.835456 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #e9f4f1; stroke: #18796f; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 290.05416 345.338496 
+L 473.11704 345.338496 
+Q 491.13504 345.338496 491.13504 338.239296 
+L 491.13504 254.752704 
+Q 491.13504 247.653504 473.11704 247.653504 
+L 290.05416 247.653504 
+Q 272.03616 247.653504 272.03616 254.752704 
+L 272.03616 338.239296 
+Q 272.03616 345.338496 290.05416 345.338496 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #eef4fb; stroke: #316caa; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 563.92776 194.835456 
+L 732.57624 194.835456 
+Q 750.59424 194.835456 750.59424 187.736256 
+L 750.59424 115.608384 
+Q 750.59424 108.509184 732.57624 108.509184 
+L 563.92776 108.509184 
+Q 545.90976 108.509184 545.90976 115.608384 
+L 545.90976 187.736256 
+Q 545.90976 194.835456 563.92776 194.835456 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #e9f4f1; stroke: #18796f; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 563.92776 345.338496 
+L 732.57624 345.338496 
+Q 750.59424 345.338496 750.59424 338.239296 
+L 750.59424 254.752704 
+Q 750.59424 247.653504 732.57624 247.653504 
+L 563.92776 247.653504 
+Q 545.90976 247.653504 545.90976 254.752704 
+L 545.90976 338.239296 
+Q 545.90976 345.338496 563.92776 345.338496 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #eef4fb; stroke: #316caa; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 217.245252 209.901705 
+Q 244.649255 182.908352 270.858486 157.091867 
+" clip-path="url(#p88c8e8cb83)" style="fill: none; stroke: #18796f; stroke-width: 1.5; stroke-linecap: round"/>
+    <path d="M 264.478692 159.165086 
+L 270.858486 157.091867 
+L 268.689185 163.439633 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #18796f; stroke: #18796f; stroke-width: 1.5; stroke-linecap: round"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 217.245252 238.266615 
+Q 244.649255 265.259968 270.858486 291.076453 
+" clip-path="url(#p88c8e8cb83)" style="fill: none; stroke: #316caa; stroke-width: 1.5; stroke-linecap: round"/>
+    <path d="M 268.689185 284.728687 
+L 270.858486 291.076453 
+L 264.478692 289.003234 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #316caa; stroke: #316caa; stroke-width: 1.5; stroke-linecap: round"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 495.299811 151.67232 
+Q 520.32635 151.67232 543.675838 151.67232 
+" clip-path="url(#p88c8e8cb83)" style="fill: none; stroke: #18796f; stroke-width: 1.5; stroke-linecap: round"/>
+    <path d="M 537.675838 148.67232 
+L 543.675838 151.67232 
+L 537.675838 154.67232 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #18796f; stroke: #18796f; stroke-width: 1.5; stroke-linecap: round"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 495.299811 296.496 
+Q 520.32635 296.496 543.675838 296.496 
+" clip-path="url(#p88c8e8cb83)" style="fill: none; stroke: #316caa; stroke-width: 1.5; stroke-linecap: round"/>
+    <path d="M 537.675838 293.496 
+L 543.675838 296.496 
+L 537.675838 299.496 
+z
+" clip-path="url(#p88c8e8cb83)" style="fill: #316caa; stroke: #316caa; stroke-width: 1.5; stroke-linecap: round"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #203348" x="129.3336" y="211.478456" transform="rotate(-0 129.3336 211.478456)">Same HiFi reads</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(95.699694 234.257745)">hifi.fastq.gz</text>
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(79.327467 251.471808)">selected in Part 1</text>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #18796f" x="381.5856" y="140.997598" transform="rotate(-0 381.5856 140.997598)">Part 1: direct</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(337.226147 163.811872)">hifiasm module</text>
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(332.744741 178.797809)">your batch script</text>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #316caa" x="381.5856" y="283.776709" transform="rotate(-0 381.5856 283.776709)">Part 2: pipeline</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(325.271538 309.793233)">fastplong → hifiasm</text>
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(317.633022 327.007296)">Nextflow + containers</text>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #18796f" x="648.252" y="140.997598" transform="rotate(-0 648.252 140.997598)">Measure by hand</text>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(597.301609 162.697809)">SeqKit: contiguity</text>
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(571.269383 178.797809)">compleasm: completeness</text>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #316caa" x="648.252" y="283.776709" transform="rotate(-0 648.252 283.776709)">Read the reports</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(596.563992 309.793233)">QUAST: contiguity</text>
+    <text style="font-size: 11.5px; font-family: 'DejaVu Sans'; fill: #203348" transform="translate(584.211375 325.893233)">BUSCO: completeness</text>
+   </g>
+  </g>
+  <g id="text_11">
+   <text style="font-weight: 700; font-size: 22px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #203348" x="35.64" y="29.232" transform="rotate(-0 35.64 29.232)">One HiFi input, two ways to run the assembly</text>
+  </g>
+  <g id="text_12">
+   <text style="font-size: 12.5px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #5e6d7b" x="35.64" y="56.376" transform="rotate(-0 35.64 56.376)">Submit both jobs in class; inspect and compare the results after class.</text>
+  </g>
+  <g id="text_13">
+   <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #203348" x="35.64" y="394.632" transform="rotate(-0 35.64 394.632)">Both routes use hifiasm. Similar output is reproducibility evidence, not proof of accuracy.</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p88c8e8cb83">
+   <rect x="35.64" y="83.52" width="720.72" height="283.968"/>
+  </clipPath>
+ </defs>
+</svg>

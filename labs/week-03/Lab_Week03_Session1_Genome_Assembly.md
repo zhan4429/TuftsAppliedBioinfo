@@ -177,6 +177,10 @@ directly:
 | Completeness | compleasm, after class | BUSCO |
 | Record of what ran | your notes | `pipeline_info/` and an HTML report |
 
+![Two assembly routes share the same HiFi input. The direct batch job runs the hifiasm module, followed by SeqKit and compleasm checks. The pipeline runs fastplong and containerised hifiasm, followed by QUAST and BUSCO reports.](assets/genome-assembly/two-assembly-routes.png)
+
+*Figure 1. The same input and assembler, with two ways to organise the work. Compare the primary assemblies and the corresponding metrics after both jobs finish. Similar results show that the method is repeatable; they do not independently establish that the assembly is correct. [Enlarge the diagram](assets/genome-assembly/two-assembly-routes.svg).*
+
 Two things decide what runs. The samplesheet says which reads you have: a `hifireads`
 column means HiFi data. The command-line options switch on the extra steps: here
 `--quast` and `--busco`. Polishing and scaffolding stay off because you do not ask for
@@ -328,6 +332,16 @@ Fill in:
 | Largest contig | | megabases |
 | N50 | | hundreds of kilobases or more |
 
+N50 describes how the assembled bases are distributed among contigs. Sort the
+contigs from longest to shortest, then add their lengths until you reach at least
+half of the total assembly length. The length of the contig that reaches that
+point is **N50**; the number of contigs you added is **L50**, reported as `N50_num`
+by SeqKit. Figure 2 uses a small worked example, not the yeast result.
+
+![Worked N50 example with contig lengths of 5, 3, 2, 1 and 1 Mb. The total is 12 Mb and half is 6 Mb. The longest contig contributes 5 Mb; adding the next reaches 8 Mb, so N50 is 3 Mb and L50 is two contigs.](assets/genome-assembly/n50-worked-example.png)
+
+*Figure 2. N50 is a contig length, not half the genome size or the average contig length. It measures contiguity; completeness and correctness need other checks. Definition: [NCBI assembly metrics](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/reference-docs/data-reports/genome-assembly/). [Enlarge the example](assets/genome-assembly/n50-worked-example.svg).*
+
 **Question 2.** Compare total assembly length against the expected genome size. What does it mean if yours is substantially *larger*?
 
 <details>
@@ -342,6 +356,16 @@ Substantially *smaller* than expected means you lost sequence: too little covera
 </details>
 
 ### 3.2 What Is The Extra Length?
+
+Figure 3 shows a diagnostic observation from the instructor's full-read assembly.
+The 109 contigs shorter than 100 kb contribute 4.20 Mb and have a much lower
+combined GC percentage than the longer contigs. Even the longer group totals
+13.30 Mb, so a length cutoff alone does not explain or resolve the whole excess.
+The next steps add contig-level GC and depth to investigate the sequence groups.
+
+![Measured size and GC of the instructor's assembly. The 17.50 Mb total comprises 25 contigs at least 100 kb long, totalling 13.30 Mb with 38.84 percent GC, and 109 shorter contigs totalling 4.20 Mb with an estimated 25.2 percent GC. A reference line marks the lab's expected 12.1 Mb genome size.](assets/genome-assembly/observed-assembly-size-gc.png)
+
+*Figure 3. Observed SeqKit results from hifiasm 0.25.0-r726. The short-contig GC is estimated by subtracting the longer group's GC bases from the total, using the rounded percentages. These are length groups, not confirmed nuclear or mitochondrial assignments; the 100 kb split is a diagnostic comparison, not a rule for removing contigs. [Enlarge the chart](assets/genome-assembly/observed-assembly-size-gc.svg).*
 
 hifiasm writes each contig's read depth as an `rd:i:` tag in the GFA, and `seqkit fx2tab` gives each contig's length and GC. This builds one table with name, length, GC and depth, sorted by length:
 
