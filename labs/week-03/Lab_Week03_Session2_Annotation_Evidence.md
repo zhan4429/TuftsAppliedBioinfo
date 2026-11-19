@@ -4,7 +4,7 @@ Applied Bioinformatics - Tufts University Department of Biology
 
 > You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.
 
-> **In class:** align the RNA-seq and submit BRAKER3 (Part 1). BRAKER3 runs for hours, so everything after that is done after class: Part 2 needs only your RNA-seq alignments, and Part 3 needs BRAKER3 to have finished.
+> **In class:** submit one job that aligns the RNA-seq and then runs BRAKER3 (Part 1). It runs for hours, so everything after that is done after class: Part 2 needs only the alignment, which the job finishes first, and Part 3 needs BRAKER3 to have finished.
 
 ---
 
@@ -48,15 +48,15 @@ directory, as taught in Week 1, is different from deleting its published `result
 this lab still needs these reads.
 
 ```bash
-module load hisat2 samtools
+module load samtools
 module list
 ```
 
 ---
 
-## Part 1: Make The Evidence, Then Submit The Annotation
+## Part 1: Submit The Evidence And The Annotation As One Job
 
-Structural annotation of a eukaryote is a **project, not a step**. A full BRAKER3 run on this genome takes hours, so it has to start early. It uses RNA-seq alignments as evidence, though, so align first; on a 12 Mb genome that is quick.
+Structural annotation of a eukaryote is a **project, not a step**. A full BRAKER3 run on this genome takes hours, so it has to start early. It uses RNA-seq alignments as evidence, so one job does both: it aligns the RNA-seq first, then runs BRAKER3.
 
 **Question 1.** Why does RNA-seq help annotate a genome, and what can it not tell you?
 
@@ -103,49 +103,30 @@ many fungi still align to it. The gene models combine both. Most* S. cerevisiae 
 have a single exon; the figure shows introns because that is where the two kinds of
 evidence differ most.*
 
-### 1.1 Index The Assembly And Align The RNA-seq
+### 1.1 Check The Inputs
 
 Use the Illumina RNA-seq run **SRR27956204**, already downloaded in Week 1 and
 examined in Week 2. The same folder also contains paired-end BGISEQ genomic reads,
 so a general `*_1.fastq.gz` search could select the wrong experiment. Use the exact
-RNA-seq filenames below. If you use staged copies, check their names and adjust
-`R1` and `R2` if needed.
+RNA-seq filenames below.
 
 ```bash
 mkdir -p logs
-hisat2-build -p 8 $ASM asm_idx 2> logs/hisat2_build.log
+cp $ASM asm.fa
 
 R1="$RNA/SRX23612877_SRR27956204_1.fastq.gz"
 R2="$RNA/SRX23612877_SRR27956204_2.fastq.gz"
-ls -lh "$R1" "$R2"
-
-# the first 4 million pairs are plenty of evidence for a 12 Mb genome
-hisat2 -p 8 -u 4000000 -x asm_idx -1 $R1 -2 $R2 --summary-file rna_summary.txt \
-  | samtools sort -@ 4 -o rna.sorted.bam -
-samtools index rna.sorted.bam
-
-cat rna_summary.txt
+ls -lh asm.fa "$R1" "$R2"
+ls -lh $SHARED/orthodb_fungi.fa      # protein evidence, staged
 ```
 
-**Question 2.** What overall alignment rate did you get? What would a low rate mean here, and what does a *spliced* aligner do that `bwa` would not?
+All four files should exist before you submit. The job in Section 1.2 finds the same two RNA-seq files itself, and uses the staged copies in `$SHARED/fallback_rna` if yours are missing. If the staged files have different names, change the `R1` and `R2` lines in the script to match.
 
-<details>
-<summary>Answer</summary>
+### 1.2 Submit One Job: Align, Then Annotate
 
-For RNA-seq against its own genome, expect 80–95%. Substantially lower means the RNA came from a different organism or strain, the assembly is poor, or there is heavy contamination.
-
-HISAT2 is **splice-aware**: it can place one read across an intron, producing a CIGAR string containing `N`. A DNA aligner like `bwa` would either soft-clip the read at the junction or fail to place it — and you would lose exactly the reads that tell you where introns are.
-
-</details>
-
-### 1.2 Submit BRAKER3
-
-BRAKER3 annotates the same sequence the BAM was aligned to, so give it a copy of that assembly:
+BRAKER3 annotates the same sequence the RNA-seq was aligned to, so the job aligns to `asm.fa`, the copy you just made, and then gives BRAKER3 that same file:
 
 ```bash
-cp $ASM asm.fa
-ls -lh $SHARED/orthodb_fungi.fa      # protein evidence, staged
-
 cat > annotate.sh <<'EOF'
 #!/bin/bash
 #SBATCH --job-name=braker3
@@ -156,7 +137,7 @@ cat > annotate.sh <<'EOF'
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-module load braker3/3.1.3
+module load hisat2 samtools braker3/3.1.3
 set -euo pipefail
 
 export COURSE=/cluster/tufts/c27sp1bio0196
@@ -164,6 +145,20 @@ export MYWORK="$COURSE/$USER"
 export SHARED="$COURSE/shared/wk3"
 cd $MYWORK/week-03/session-02
 
+# the Week 1 RNA-seq, or the staged copies if yours are missing
+RNA=$MYWORK/week-01/session-02/fetch/results/fastq
+[ -s "$RNA/SRX23612877_SRR27956204_1.fastq.gz" ] || RNA=$SHARED/fallback_rna
+R1=$RNA/SRX23612877_SRR27956204_1.fastq.gz
+R2=$RNA/SRX23612877_SRR27956204_2.fastq.gz
+T=${SLURM_CPUS_PER_TASK}
+
+# Step 1: align every RNA-seq pair to the assembly
+hisat2-build -p $T asm.fa asm_idx > logs/hisat2_build.log 2>&1
+hisat2 -p $T -x asm_idx -1 $R1 -2 $R2 --summary-file rna_summary.txt \
+  | samtools sort -@ 4 -T sort_tmp -o rna.sorted.bam -
+samtools index rna.sorted.bam
+
+# Step 2: annotate, with the RNA-seq and protein evidence
 braker.pl \
     --genome=asm.fa \
     --bam=rna.sorted.bam \
@@ -180,12 +175,16 @@ sbatch annotate.sh
 squeue --me
 ```
 
+**Step 1** is the alignment. `hisat2-build` indexes `asm.fa`, `hisat2` aligns every read pair, `samtools sort` writes them as a sorted BAM, and `samtools index` indexes it. `rna_summary.txt` records how well the reads aligned. All the reads are used: a 12 Mb genome needs far fewer for its well-expressed genes, but more reads give weakly expressed genes evidence too, and inside the job they cost only time.
+
+**Step 2** is BRAKER3, given the BAM that step 1 just made. `set -euo pipefail` stops the job at the first error, so BRAKER3 never runs on a missing or half-written BAM.
+
 **What each option tells BRAKER3:**
 
 | Option | Meaning |
 |---|---|
 | `--genome=asm.fa` | The sequence to annotate. It must be the same assembly the RNA-seq was aligned to, which is why you copied `$ASM`. |
-| `--bam=rna.sorted.bam` | The RNA-seq evidence: your sorted alignments from Section 1.1. BRAKER3 builds transcripts from them and reads the introns from the split reads. |
+| `--bam=rna.sorted.bam` | The RNA-seq evidence: the sorted alignments from step 1 of the same job. BRAKER3 builds transcripts from them and reads the introns from the split reads. |
 | `--prot_seq=$SHARED/orthodb_fungi.fa` | The protein evidence: fungal proteins from OrthoDB, which BRAKER3 aligns to the genome. |
 | `--fungus` | Use GeneMark's model for fungal introns, which looks for the branch-point signal that fungal introns carry near their end. |
 | `--species=wk3_${USER}_${SLURM_JOB_ID}` | The name for the gene model AUGUSTUS trains on this genome. It must be new, because AUGUSTUS will not overwrite an existing model; the job ID makes every run's name unique. |
@@ -204,7 +203,7 @@ shown at the step it controls.*
 
 One choice in that script is deliberate: there is no repeat-masking step. Yeast genomes carry few repeats, so we accept that risk here, but for a plant or animal you would mask repeats first, or BRAKER3 would annotate transposons as genes. The results will be in `braker/`; the gene models are in `braker/braker.gff3`.
 
-**Question 3.** Most *S. cerevisiae* genes have no intron. Why can this BRAKER3 annotation still take much longer than a simple bacterial gene prediction?
+**Question 2.** Most *S. cerevisiae* genes have no intron. Why can this BRAKER3 annotation still take much longer than a simple bacterial gene prediction?
 
 <details>
 <summary>Answer</summary>
@@ -217,15 +216,15 @@ Intron-rich plant and animal genomes add further complexity, but that architectu
 
 </details>
 
-**Checkpoint 1.** Everyone has a sorted, indexed RNA-seq BAM and a BRAKER3 job in the queue. That is all for class time.
+**Checkpoint 1.** Everyone has one job in the queue that aligns the RNA-seq and then runs BRAKER3. That is all for class time.
 
 ---
 
 ## After Class
 
-Everything from here on is done after class. Work on a compute node. If this is a new login, repeat the setup in Before You Start, including `module load hisat2 samtools`.
+Everything from here on is done after class. Work on a compute node. If this is a new login, repeat the setup in Before You Start, including `module load samtools`.
 
-Part 2 needs only your RNA-seq alignments, so you can start it while BRAKER3 is still running. Part 3 needs BRAKER3 to have finished. Check its state with `sacct`, replacing the example ID with your BRAKER3 job ID:
+Part 2 needs only the RNA-seq alignment, which the job finishes first: you can start it as soon as `rna.sorted.bam.bai` exists, even while BRAKER3 is still running. Part 3 needs BRAKER3 to have finished. Check the job's state with `sacct`, replacing the example ID with your `annotate.sh` job ID:
 
 ```bash
 cd $MYWORK/week-03/session-02
@@ -238,7 +237,27 @@ sacct -j 12345 --format=JobID,JobName,State,ExitCode,Elapsed
 
 ## Part 2: Read The Evidence
 
-### 2.1 Coverage Over The Assembly
+### 2.1 Alignment Rate And Coverage
+
+Step 1 of your job wrote the alignment and its summary. Check that both are there:
+
+```bash
+ls -lh rna.sorted.bam rna.sorted.bam.bai
+cat rna_summary.txt
+```
+
+**Question 3.** What overall alignment rate did you get? What would a low rate mean here, and what does a *spliced* aligner do that `bwa` would not?
+
+<details>
+<summary>Answer</summary>
+
+For RNA-seq against its own genome, expect 80–95%. Substantially lower means the RNA came from a different organism or strain, the assembly is poor, or there is heavy contamination.
+
+HISAT2 is **splice-aware**: it can place one read across an intron, producing a CIGAR string containing `N`. A DNA aligner like `bwa` would either soft-clip the read at the junction or fail to place it — and you would lose exactly the reads that tell you where introns are.
+
+</details>
+
+Now measure how much of the assembly the RNA-seq covers:
 
 ```bash
 samtools depth -a rna.sorted.bam | \
