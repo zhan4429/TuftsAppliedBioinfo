@@ -39,17 +39,17 @@ prove identical genomes. We use a haploid nuclear-genome model as a teaching
 assumption and interpret disagreements as candidates to investigate, rather than
 automatically correcting the assembly.
 
-Gather the three inputs: your Week 3 assembly, the BGISEQ genomic reads from Week 1, and the full HiFi input linked in Lab 3A.
+Gather the three inputs: your Week 3 assembly, the BGISEQ genomic reads from Week 1, and the first 30,000 HiFi reads linked in Lab 3A. That is about 600 Mb, roughly 50× coverage: plenty for comparing coverage, and small enough to align in minutes.
 
 ```bash
-cp $MYWORK/week-03/session-01/asm.p_ctg.fa asm.fa
+cp $MYWORK/week-03/session-01/hifiasm/asm.p_ctg.fa asm.fa
 md5sum asm.fa > asm.md5
 
 DNB1=$(ls $FQ/*SRR17374239*_1.fastq.gz 2>/dev/null)
 DNB2=$(ls $FQ/*SRR17374239*_2.fastq.gz 2>/dev/null)
-ln -sf $MYWORK/week-03/session-01/hifi.fastq.gz hifi.fq.gz
+seqkit head -n 30000 $MYWORK/week-03/session-01/hifi.fastq.gz -o hifi.fq.gz
 
-ls -lhL asm.fa "$DNB1" "$DNB2" hifi.fq.gz      # -L follows the link, so a missing file shows up
+ls -lhL asm.fa "$DNB1" "$DNB2" hifi.fq.gz      # all four should exist
 ```
 
 Fallbacks for anything missing:
@@ -290,7 +290,7 @@ paste all.mosdepth.summary.txt q20.mosdepth.summary.txt | grep -v _region | \
 - **The 2-micron plasmid** (about 6 kb), if hifiasm assembled it: dozens of copies per cell.
 - **rDNA**: about 150 tandem copies of a 9 kb unit, which the assembly collapses into one or a few. Every copy's reads pile onto the few that were assembled.
 
-The first two are real copy number; the third is a collapsed repeat. Depth alone does not tell them apart. Contig length, GC (the mitochondrial genome is very AT-rich) and Homework 3's GC-against-depth table do.
+The first two are real copy number; the third is a collapsed repeat. Depth alone does not tell them apart. Contig length, GC (the mitochondrial genome is very AT-rich) and the GC-and-depth table from Lab 3A Section 3.2 do.
 
 </details>
 

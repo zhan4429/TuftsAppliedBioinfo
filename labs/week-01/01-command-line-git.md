@@ -75,8 +75,11 @@ ls -lha
 
 <details>
 <summary>Answer</summary>
+
 At Tufts HPC, your home directory is `/cluster/home/your_utln`.
+
 </details>
+
 ### 1.2 Make a Working Directory
 
 ```bash

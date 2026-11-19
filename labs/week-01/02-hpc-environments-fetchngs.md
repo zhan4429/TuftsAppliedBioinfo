@@ -297,19 +297,25 @@ module load nextflow
 nextflow log
 ```
 
-Find your successful run, marked `OK`, and copy its **run name** from the `RUN NAME`
-column. This is a Nextflow name, not your SLURM job ID. Replace `RUN_NAME` below with
-that name. Preview the cleanup first:
+`nextflow log` lists every run started in this folder, with its **run name** and its
+status. Your successful run is marked `OK`. If you resubmitted after a failure, the
+earlier run is listed too, marked `ERR`. Run names are Nextflow names, not SLURM job IDs.
+
+Preview the cleanup first:
 
 ```bash
-nextflow clean RUN_NAME -n -keep-logs
+nextflow clean -n -keep-logs $(nextflow log -quiet)
 ```
 
-`-n` lists what would be removed without deleting anything. Check that the listed files
-belong to the completed run's `work/` directories. Then remove those temporary files:
+`nextflow log -quiet` prints just the run names, and `$( )` passes all of them to
+`nextflow clean`. Name every run, not only the successful one: a run resubmitted with
+`-resume` reuses the finished steps of the earlier run, so the two runs share those
+steps' folders, and Nextflow removes a shared folder only when every run that uses it is
+named. `-n` lists what would be removed without deleting anything. Check that the listed
+folders are inside `work/`. Then remove those temporary files:
 
 ```bash
-nextflow clean RUN_NAME -f -keep-logs
+nextflow clean -f -keep-logs $(nextflow log -quiet)
 du -sh work results
 ```
 
