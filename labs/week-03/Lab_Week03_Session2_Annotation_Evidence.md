@@ -4,7 +4,7 @@ Applied Bioinformatics - Tufts University Department of Biology
 
 > You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.
 
-> **In class:** submit one job that aligns the RNA-seq and then runs BRAKER3 (Part 1). It runs for hours, so everything after that is done after class: Part 2 needs only the alignment, which the job finishes first, and Part 3 needs BRAKER3 to have finished.
+> **In class:** submit one job that aligns the RNA-seq, runs BRAKER3, then extracts the proteins and assigns their functions (Part 1). It runs for hours, so everything after that is done after class: Part 2 needs only the alignment, which the job finishes first, and Part 3 needs the whole job to have finished.
 
 ---
 
@@ -173,6 +173,17 @@ braker.pl \
     --workingdir=$PWD/braker \
     --threads=${SLURM_CPUS_PER_TASK} \
     --gff3
+
+# Step 3: coding and protein sequences of every transcript
+module load gffread
+gffread -g asm.fa -x cds.fasta -y protein.fasta braker/braker.gff3
+
+# Step 4: assign functions from orthologs with eggNOG-mapper
+module load eggnog-mapper
+mkdir -p eggnog
+emapper.py -i protein.fasta -o braker --output_dir eggnog \
+    --data_dir /cluster/tufts/biocontainers/datasets/eggnog \
+    --cpu ${SLURM_CPUS_PER_TASK} --override
 EOF
 
 bash -n annotate.sh
@@ -183,6 +194,10 @@ squeue --me
 **Step 1** is the alignment. `hisat2-build` indexes `asm.fa`, `hisat2` aligns every read pair, `samtools sort` writes them as a sorted BAM, and `samtools index` indexes it. `rna_summary.txt` records how well the reads aligned. All the reads are used: a 12 Mb genome needs far fewer for its well-expressed genes, but more reads give weakly expressed genes evidence too, and inside the job they cost only time.
 
 **Step 2** is BRAKER3, given the BAM that step 1 just made. `set -euo pipefail` stops the job at the first error, so BRAKER3 never runs on a missing or half-written BAM.
+
+**Step 3** turns the gene models into sequences. `gffread` joins each transcript's coding exons from `asm.fa`, reverse-complements genes on the minus strand, and translates them: `-x` writes the coding sequences to `cds.fasta`, and `-y` their proteins to `protein.fasta`.
+
+**Step 4** compares every protein with eggNOG's database of orthologous groups and copies names, descriptions and GO terms from each protein's closest characterised relatives, into `eggnog/braker.emapper.annotations`. The database is shared by everyone, already downloaded to `/cluster/tufts/biocontainers/datasets/eggnog`. Each step loads its own modules just before it runs, so BRAKER3 never finds another tool's copy of a program it uses itself, and `--override` lets a resubmitted job replace earlier results.
 
 **What each option tells BRAKER3:**
 
@@ -221,7 +236,7 @@ Intron-rich plant and animal genomes add further complexity, but that architectu
 
 </details>
 
-**Checkpoint 1.** Everyone has one job in the queue that aligns the RNA-seq and then runs BRAKER3. That is all for class time.
+**Checkpoint 1.** Everyone has one job in the queue that aligns the RNA-seq, runs BRAKER3 and annotates the proteins. That is all for class time.
 
 ---
 
@@ -229,14 +244,14 @@ Intron-rich plant and animal genomes add further complexity, but that architectu
 
 Everything from here on is done after class. Work on a compute node. If this is a new login, repeat the setup in Before You Start, including `module load samtools`.
 
-Part 2 needs only the RNA-seq alignment, which the job finishes first: you can start it as soon as `rna.sorted.bam.bai` exists, even while BRAKER3 is still running. Part 3 needs BRAKER3 to have finished. Check the job's state with `sacct`, replacing the example ID with your `annotate.sh` job ID:
+Part 2 needs only the RNA-seq alignment, which the job finishes first: you can start it as soon as `rna.sorted.bam.bai` exists, even while BRAKER3 is still running. Part 3 needs the whole job to have finished. Check the job's state with `sacct`, replacing the example ID with your `annotate.sh` job ID:
 
 ```bash
 cd $MYWORK/week-03/session-02
 sacct -j 12345 --format=JobID,JobName,State,ExitCode,Elapsed
 ```
 
-`COMPLETED` with exit code `0:0` means `braker/braker.gff3` is ready. If the job failed, read the end of `logs/braker3_<job ID>.err`; if you cannot fix it, use the staged annotation described at the start of Part 3.
+`COMPLETED` with exit code `0:0` means `braker/braker.gff3`, `protein.fasta` and the eggNOG results in `eggnog/` are ready. If the job failed, read the end of `logs/braker3_<job ID>.err`; if you cannot fix it, use the staged annotation described at the start of Part 3.
 
 ---
 
@@ -291,21 +306,24 @@ The lesson that still holds is at the level of genes: **a gene with no reads may
 
 ## Part 3: Your Gene Models And Their Proteins
 
-Your BRAKER3 job must have finished before this part. Point one variable at the gene models and another at the assembly they were made on:
+Your whole job must have finished before this part. Point variables at what it made:
 
 ```bash
 cd $MYWORK/week-03/session-02
 GFF=braker/braker.gff3
-FA=asm.fa
-ls -lh $GFF $FA
+CDS=cds.fasta
+PROT=protein.fasta
+EGG=eggnog/braker.emapper.annotations
+ls -lh $GFF $CDS $PROT $EGG
 ```
 
-If your BRAKER3 job failed, use the staged annotation instead. It was made on the staged assembly, so use that assembly with it; the copy lets the tools write an index file beside it:
+If your job failed, use the staged set instead. Its files were all made from the same staged annotation and belong together:
 
 ```bash
 GFF=$SHARED/fallback_annotation/braker.gff3
-cp $SHARED/fallback_assembly/asm.nuc.fa fallback_asm.fa
-FA=fallback_asm.fa
+CDS=$SHARED/fallback_annotation/cds.fasta
+PROT=$SHARED/fallback_annotation/protein.fasta
+EGG=$SHARED/fallback_annotation/braker.emapper.annotations
 ```
 
 ### 3.1 Look At Your Annotation
@@ -335,24 +353,20 @@ BRAKER3 can give one gene more than one transcript when the evidence supports al
 
 **Checkpoint 2.** Everyone has gene and transcript counts for their annotation.
 
-### 3.2 Extract The CDS And Protein Sequences
+### 3.2 The CDS And Protein Sequences
 
-The GFF3 records *where* each gene's coding exons are; the sequences themselves are in the assembly. `gffread` joins each transcript's coding exons, reverse-complements genes on the minus strand, and translates them:
+The GFF3 records *where* each gene's coding exons are; the sequences themselves are in the assembly. Step 3 of your job joined them with `gffread`. Both files hold one sequence per transcript, named by its transcript ID:
 
 ```bash
-module load gffread
-gffread -g $FA -x cds.fasta -y protein.fasta $GFF
-grep -c '>' cds.fasta protein.fasta
-head -4 protein.fasta
+grep -c '>' $CDS $PROT
+head -4 $PROT
 ```
-
-`-g` names the assembly the gene models were made on, `-x` writes the coding sequences, and `-y` writes their translations. Both files hold one sequence per transcript, named by its transcript ID.
 
 Now look for proteins with a stop codon in the middle. `gffread` leaves out each protein's final stop codon and writes any other stop as `.`, so a `.` anywhere in a protein is an internal stop:
 
 ```bash
 awk '/^>/ {if (s ~ /\./) n++; s = ""; next} {s = s $0}
-     END {if (s ~ /\./) n++; print n + 0, "proteins with an internal stop codon"}' protein.fasta
+     END {if (s ~ /\./) n++; print n + 0, "proteins with an internal stop codon"}' $PROT
 ```
 
 **Question 6.** How many sequences does each file hold, and how does that compare with your transcript count from Section 3.1? How many proteins have an internal stop codon, and what could cause one?
@@ -362,7 +376,7 @@ awk '/^>/ {if (s ~ /\./) n++; s = ""; next} {s = s $0}
 
 Each file should hold one sequence per transcript, so both counts should equal the transcript count from Section 3.1. A different number means some models could not be read, or the GFF3 and the assembly do not belong together.
 
-For BRAKER3's own models, expect no internal stops: its gene finders only predict open reading frames in the sequence they were given. So an internal stop here usually means `gffread` read a different assembly from the one BRAKER3 used, for example the staged annotation with your own assembly.
+For BRAKER3's own models, expect no internal stops: its gene finders only predict open reading frames in the sequence they were given, and your job gave `gffread` that same `asm.fa`. An internal stop appears when a GFF3 is translated with a different assembly from the one it was made on.
 
 For gene models made another way, such as an annotation transferred from a related genome, an internal stop also reveals a problem in the sequence: a small insertion or deletion inside a gene shifts the reading frame of everything after it. Translating gene models is the cheapest check for these frameshift errors.
 
@@ -371,6 +385,36 @@ BRAKER3 also writes these sequences itself, as `braker/braker.codingseq` and `br
 </details>
 
 **Checkpoint 3.** Everyone has `cds.fasta` and `protein.fasta`, with one sequence per transcript.
+
+### 3.3 What The Genes Might Do
+
+Step 4 of your job gave each protein the name, description and GO terms of its closest characterised relatives in eggNOG. The table has one row per protein that found a match, and its columns are named in a header line, so read them by name:
+
+```bash
+awk -F'\t' '/^#query/ {for (i = 1; i <= NF; i++) h[$i] = i; next} /^#/ {next}
+  {n++; if ($h["Preferred_name"] != "-") named++}
+  END {printf "%d proteins with an eggNOG match, %d with a gene name\n", n, named}' $EGG
+
+awk -F'\t' '/^#query/ {for (i = 1; i <= NF; i++) h[$i] = i; next} /^#/ {next}
+  {print $1 "\t" $h["Preferred_name"] "\t" $h["Description"]}' $EGG | head
+```
+
+A `-` means the field is empty. Proteins with no match at all are missing from the table, so compare its count with the protein count from Section 3.2.
+
+**Question 7.** What fraction of your proteins received a gene name? Pick one protein with a name you recognise and one with only a description: what does each label actually rest on?
+
+<details>
+<summary>Answer</summary>
+
+Every label is copied, not measured: eggNOG-mapper finds the protein's orthologs and transfers what is known about them. A name is as trustworthy as those relatives are close and well studied. *S. cerevisiae* is among the best-studied organisms there is, so expect most proteins to be named, often with the very same names as the reference annotation.
+
+A description without a name usually means the relatives are only characterised in general terms, such as a protein family or a domain. Proteins with no match, or labelled "uncharacterized", are an honest result about what is known, not a failure.
+
+A label also says nothing about whether the gene model is right. A truncated or merged model still matches its relatives and gets a confident name. Check the structure first, as in Sections 3.1 and 3.2; the function can only be as good as the gene model beneath it.
+
+</details>
+
+**Checkpoint 4.** Everyone can say how many of their proteins eggNOG-mapper named, and what those names rest on.
 
 ---
 
@@ -383,9 +427,11 @@ BRAKER3 also writes these sequences itself, as `braker/braker.codingseq` and `br
 | Coverage across the genome | `samtools depth -a rna.sorted.bam` |
 | Annotation feature counts | `grep -v '^#' braker/braker.gff3` followed by `cut -f3`, `sort` and `uniq -c` |
 | CDS and protein FASTA from a GFF3 | `gffread -g asm.fa -x cds.fasta -y protein.fasta braker.gff3` |
+| Functions from orthologs | `emapper.py -i protein.fasta -o out --data_dir EGGNOG_DB` |
 
-**Three things to carry forward:**
+**Four things to carry forward:**
 
 1. A predicted intron is a hypothesis; a spliced read is an observation. Good annotation uses both, because each covers the other's blind spot.
 2. Absence of RNA-seq coverage is not evidence of absence of a gene. It may just not have been expressed.
 3. A gene model is only useful with the assembly it was made on. Translating the models is the cheapest check that the two belong together.
+4. A function label is copied from relatives, not measured. It is only as good as those relatives and the gene model beneath it.
