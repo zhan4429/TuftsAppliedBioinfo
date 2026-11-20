@@ -71,21 +71,26 @@ rm -f hifi.fq.gz && seqkit head -n 30000 $(ls $COURSE/shared/wk3/fallback_hifi/*
 
 ### 1.1 Take Two Million Read Pairs
 
-An aligner pairs the first read of one mate file with the first read of the other, and so on. The two mate files downloaded for this run are not in the same order, so taking the first two million reads of each would pair reads that do not belong together, and the aligner would stop with "paired reads have different names". Take the first two million reads of mate 1, then fetch their mates from mate 2 by name:
+An aligner pairs the first read of one mate file with the first read of the other, and so on, and bwa-mem2 also checks that each pair shares a name. This run's two mate files are in the same order, but SRA numbered their reads as one long series, so every mate-1 read is numbered 12,142,029 higher than its mate. Check that before relying on it: subtract each mate-2 number from its mate-1 number. One offset for all two million pairs means the files are in the same order:
 
 ```bash
-seqkit head -n 2000000 "$DNB1" -o first_1.fq.gz
-seqkit seq -n -i first_1.fq.gz > first_ids.txt
-seqkit grep -f first_ids.txt "$DNB2" -o first_2.fq.gz
-seqkit pair -1 first_1.fq.gz -2 first_2.fq.gz -O paired
-mv paired/first_1.fq.gz dnb_1.fq.gz && mv paired/first_2.fq.gz dnb_2.fq.gz
-rm -r first_1.fq.gz first_2.fq.gz first_ids.txt paired
+paste <(seqkit head -n 2000000 "$DNB1" | seqkit seq -n -i) \
+      <(seqkit head -n 2000000 "$DNB2" | seqkit seq -n -i) | \
+  awk -F'\t' '{split($1, a, "."); split($2, b, "."); d[a[2] - b[2]]++}
+       END {for (k in d) print "offset", k, "in", d[k], "pairs"}'
+```
+
+Then take the first two million reads of each file and renumber both from 1, so each pair shares a name:
+
+```bash
+seqkit head -n 2000000 "$DNB1" | seqkit replace -p '.+' -r 'SRR17374239.{nr}' -o dnb_1.fq.gz
+seqkit head -n 2000000 "$DNB2" | seqkit replace -p '.+' -r 'SRR17374239.{nr}' -o dnb_2.fq.gz
 
 seqkit stats -T dnb_1.fq.gz dnb_2.fq.gz | \
   awk -v g=$GENOME 'NR>1 {s+=$5} END {printf "coverage: %.0fx\n", s/g}'
 ```
 
-`seqkit grep -f` finds reads by name, and `seqkit pair` writes both files in the same order, leaving out any read whose mate is missing. The two files then hold the same number of reads, and each read's mate sits at the same position in the other file, which is what the aligner assumes.
+`seqkit replace` rewrites each read's name as the run accession plus its position in the file, `{nr}`, so the first read of both files is `SRR17374239.1`, and so on. Only the names change; the sequences and qualities are untouched.
 
 **Question 1.** Week 1 fetched two short-read runs from this project. Why align the BGISEQ run and not the Illumina one?
 
@@ -131,9 +136,9 @@ cd $MYWORK/week-04/session-01
 T=${SLURM_CPUS_PER_TASK}
 mkdir -p "tmp/$SLURM_JOB_ID"
 
-# stop now if the two read files are not in the same order (Section 1.1 pairs them by name)
+# stop now if the mates' names do not match (Section 1.1 renumbers them)
 if ! cmp -s <(seqkit seq -n -i dnb_1.fq.gz) <(seqkit seq -n -i dnb_2.fq.gz); then
-    echo "ERROR: dnb_1.fq.gz and dnb_2.fq.gz are not in the same order. Redo Section 1.1, then resubmit." >&2
+    echo "ERROR: dnb_1.fq.gz and dnb_2.fq.gz do not have matching read names. Redo Section 1.1, then resubmit." >&2
     exit 1
 fi
 
