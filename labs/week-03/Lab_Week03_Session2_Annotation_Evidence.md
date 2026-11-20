@@ -4,7 +4,7 @@ Applied Bioinformatics - Tufts University Department of Biology
 
 > You assembled a genome on Tuesday. Today you put genes on it — and, more importantly, you find out how much you should believe them.
 
-> **In class:** submit one job that aligns the RNA-seq, runs BRAKER3, then extracts the proteins and assigns their functions (Part 1). It runs for hours, so everything after that is done after class: Part 2 needs only the alignment, which the job finishes first, and Part 3 needs the whole job to have finished.
+> **In class:** submit one job that aligns the RNA-seq, runs BRAKER3, then extracts the proteins, assigns their functions and writes them into annotated files (Part 1). It runs for hours, so everything after that is done after class: Part 2 needs only the alignment, which the job finishes first, and Part 3 needs the whole job to have finished.
 
 ---
 
@@ -128,6 +128,47 @@ All four files should exist before you submit. The job in Section 1.2 finds the 
 
 ### 1.2 Submit One Job: Align, Then Annotate
 
+The job's last step adds the eggNOG-mapper results to the GFF3 with a short awk program. Write it first; Section 3.3 explains what it does:
+
+```bash
+cat > add_function.awk <<'EOF'
+# Add eggNOG-mapper results to a GFF3: Name and product on each mRNA, Name on its gene.
+# GFF3 attribute values must escape % ; = & , so they cannot break the column.
+function esc(s) { gsub(/%/, "%25", s); gsub(/;/, "%3B", s); gsub(/=/, "%3D", s); gsub(/&/, "%26", s); gsub(/,/, "%2C", s); return s }
+
+BEGIN { FS = OFS = "\t" }
+
+# first file: the eggNOG-mapper table, columns found by their header names
+FNR == NR {
+    if ($1 == "#query") { for (i = 1; i <= NF; i++) h[$i] = i; next }
+    if ($0 ~ /^#/) next
+    id = $1; name = $h["Preferred_name"]; desc = $h["Description"]; go = $h["GOs"]
+    if (name != "-" && name != "") nm[id] = name
+    if (desc != "-" && desc != "") pr[id] = desc
+    if (go != "-" && go != "") gos[id] = go
+    gene = id; sub(/\.t[0-9]+$/, "", gene)               # g1.t1 belongs to gene g1
+    if ((id in nm) && (!(gene in gnm) || id ~ /\.t1$/)) gnm[gene] = nm[id]
+    next
+}
+
+# second file: the GFF3
+/^#/ { print; next }
+{
+    if (match($9, /ID=[^;]+/)) id = substr($9, RSTART + 3, RLENGTH - 3); else id = ""
+    add = ""
+    if ($3 == "mRNA" || $3 == "transcript") {
+        if (id in nm)  add = add ";Name=" esc(nm[id])
+        if (id in pr)  add = add ";product=" esc(pr[id])
+        if (id in gos) add = add ";Ontology_term=" gos[id]   # commas separate GO terms: keep them
+    } else if ($3 == "gene" && (id in gnm)) {
+        add = ";Name=" esc(gnm[id])
+    }
+    if (add != "") { sub(/;$/, "", $9); $9 = $9 add }
+    print
+}
+EOF
+```
+
 BRAKER3 annotates the same sequence the RNA-seq was aligned to, so the job aligns to `asm.fa`, the copy you just made, and then gives BRAKER3 that same file:
 
 ```bash
@@ -185,6 +226,22 @@ mkdir -p eggnog
 emapper.py -i protein.intact.fasta -o braker --output_dir eggnog \
     --data_dir /cluster/tufts/biocontainers/datasets/eggnog \
     --cpu ${SLURM_CPUS_PER_TASK} --override
+
+# Step 5: write the functions into the sequence files and the GFF3
+module load seqkit
+awk -F'\t' '/^#query/ {for (i = 1; i <= NF; i++) h[$i] = i; next}
+  /^#/ {next}
+  {name = $h["Preferred_name"]; desc = $h["Description"]; label = ""
+   if (name != "-") label = name
+   if (desc != "-") label = label (label != "" ? " " : "") desc
+   if (label != "") print $1 "\t" label}' \
+  eggnog/braker.emapper.annotations > names.tsv
+seqkit replace -p '^(\S+).*$' -r '${1} {kv}' -k names.tsv -U \
+  protein.fasta > protein.annotated.fasta
+seqkit replace -p '^(\S+).*$' -r '${1} {kv}' -k names.tsv -U \
+  cds.fasta > cds.annotated.fasta
+awk -f add_function.awk eggnog/braker.emapper.annotations \
+  braker/braker.gff3 > braker.annotated.gff3
 EOF
 
 bash -n annotate.sh
@@ -199,6 +256,8 @@ squeue --me
 **Step 3** turns the gene models into sequences. `gffread` joins each transcript's coding exons from `asm.fa`, reverse-complements genes on the minus strand, and translates them: `-x` writes the coding sequences to `cds.fasta`, and `-y` their proteins to `protein.fasta`. gffread writes an internal stop codon as `.`, which the search tool inside eggNOG-mapper rejects, so a second run with `-V` leaves out every protein that has one, in `protein.intact.fasta`.
 
 **Step 4** compares every intact protein with eggNOG's database of orthologous groups and copies names, descriptions and GO terms from each protein's closest characterised relatives, into `eggnog/braker.emapper.annotations`. The database is shared by everyone, already downloaded to `/cluster/tufts/biocontainers/datasets/eggnog`. Each step loads its own modules just before it runs, so BRAKER3 never finds another tool's copy of a program it uses itself, and `--override` lets a resubmitted job replace earlier results.
+
+**Step 5** writes those functions where people will look for them. `names.tsv` pairs each protein ID with its name and description; `seqkit replace` adds them to the FASTA headers in `protein.annotated.fasta` and `cds.annotated.fasta`, and `add_function.awk` adds them to the gene models in `braker.annotated.gff3`.
 
 **What each option tells BRAKER3:**
 
@@ -252,7 +311,7 @@ cd $MYWORK/week-03/session-02
 sacct -j 12345 --format=JobID,JobName,State,ExitCode,Elapsed
 ```
 
-`COMPLETED` with exit code `0:0` means `braker/braker.gff3`, `protein.fasta` and the eggNOG results in `eggnog/` are ready. If the job failed, read the end of `logs/braker3_<job ID>.err`; if you cannot fix it, use the staged annotation described at the start of Part 3.
+`COMPLETED` with exit code `0:0` means `braker/braker.gff3`, `protein.fasta`, the eggNOG results in `eggnog/` and the annotated files are ready. If the job failed, read the end of `logs/braker3_<job ID>.err`; if you cannot fix it, use the staged annotation described at the start of Part 3.
 
 ---
 
@@ -316,7 +375,9 @@ CDS=cds.fasta
 PROT=protein.fasta
 INTACT=protein.intact.fasta
 EGG=eggnog/braker.emapper.annotations
-ls -lh $GFF $CDS $PROT $INTACT $EGG
+AGFF=braker.annotated.gff3
+APROT=protein.annotated.fasta
+ls -lh $GFF $CDS $PROT $INTACT $EGG $AGFF $APROT
 ```
 
 If your job failed, use the staged set instead. Its files were all made from the same staged annotation and belong together:
@@ -327,6 +388,8 @@ CDS=$SHARED/fallback_annotation/cds.fasta
 PROT=$SHARED/fallback_annotation/protein.fasta
 INTACT=$SHARED/fallback_annotation/protein.intact.fasta
 EGG=$SHARED/fallback_annotation/braker.emapper.annotations
+AGFF=$SHARED/fallback_annotation/braker.annotated.gff3
+APROT=$SHARED/fallback_annotation/protein.annotated.fasta
 ```
 
 ### 3.1 Look At Your Annotation
@@ -407,6 +470,16 @@ awk -F'\t' '/^#query/ {for (i = 1; i <= NF; i++) h[$i] = i; next} /^#/ {next}
 
 A `-` means the field is empty. Proteins with no match at all are missing from the table, so compare its count with the number of intact proteins eggNOG-mapper searched, from Section 3.2.
 
+Step 5 wrote the same information into files people can use. The protein FASTA carries each name in its header, and the GFF3 gives each mRNA a `Name`, a `product` (the description) and its GO terms as `Ontology_term`, and each gene its first transcript's `Name`:
+
+```bash
+grep '>' $APROT | head -5
+awk -F'\t' '$3 == "mRNA" && $9 ~ /Name=/' $AGFF | head -2 | cut -f9
+awk -F'\t' '$3 == "gene" && $9 ~ /Name=/' $AGFF | wc -l
+```
+
+Characters that have a meaning in GFF3, such as the commas and semicolons in many descriptions, appear escaped as `%2C`, `%3B` and so on; `add_function.awk` escapes them so they cannot break the file.
+
 **Question 7.** What fraction of your proteins received a gene name? Pick one protein with a name you recognise and one with only a description: what does each label actually rest on?
 
 <details>
@@ -420,7 +493,7 @@ A label also says nothing about whether the gene model is right. A truncated or 
 
 </details>
 
-**Checkpoint 4.** Everyone can say how many of their proteins eggNOG-mapper named, and what those names rest on.
+**Checkpoint 4.** Everyone has an annotated GFF3 and protein FASTA, and can say how many of their proteins eggNOG-mapper named and what those names rest on.
 
 ---
 
@@ -435,6 +508,8 @@ A label also says nothing about whether the gene model is right. A truncated or 
 | CDS and protein FASTA from a GFF3 | `gffread -g asm.fa -x cds.fasta -y protein.fasta braker.gff3` |
 | Proteins without internal stops | `gffread -g asm.fa -V -y protein.intact.fasta braker.gff3` |
 | Functions from orthologs | `emapper.py -i protein.intact.fasta -o out --data_dir EGGNOG_DB` |
+| Functions into FASTA headers | `seqkit replace -p '^(\S+).*$' -r '${1} {kv}' -k names.tsv -U protein.fasta` |
+| Functions into a GFF3 | `awk -f add_function.awk braker.emapper.annotations braker.gff3` |
 
 **Four things to carry forward:**
 
