@@ -71,12 +71,21 @@ rm -f hifi.fq.gz && seqkit head -n 30000 $(ls $COURSE/shared/wk3/fallback_hifi/*
 
 ### 1.1 Take Two Million Read Pairs
 
+An aligner pairs the first read of one mate file with the first read of the other, and so on. The two mate files downloaded for this run are not in the same order, so taking the first two million reads of each would pair reads that do not belong together, and the aligner would stop with "paired reads have different names". Take the first two million reads of mate 1, then fetch their mates from mate 2 by name:
+
 ```bash
-seqkit head -n 2000000 "$DNB1" -o dnb_1.fq.gz
-seqkit head -n 2000000 "$DNB2" -o dnb_2.fq.gz
+seqkit head -n 2000000 "$DNB1" -o first_1.fq.gz
+seqkit seq -n -i first_1.fq.gz > first_ids.txt
+seqkit grep -f first_ids.txt "$DNB2" -o first_2.fq.gz
+seqkit pair -1 first_1.fq.gz -2 first_2.fq.gz -O paired
+mv paired/first_1.fq.gz dnb_1.fq.gz && mv paired/first_2.fq.gz dnb_2.fq.gz
+rm -r first_1.fq.gz first_2.fq.gz first_ids.txt paired
+
 seqkit stats -T dnb_1.fq.gz dnb_2.fq.gz | \
   awk -v g=$GENOME 'NR>1 {s+=$5} END {printf "coverage: %.0fx\n", s/g}'
 ```
+
+`seqkit grep -f` finds reads by name, and `seqkit pair` writes both files in the same order, leaving out any read whose mate is missing. The two files then hold the same number of reads, and each read's mate sits at the same position in the other file, which is what the aligner assumes.
 
 **Question 1.** Week 1 fetched two short-read runs from this project. Why align the BGISEQ run and not the Illumina one?
 
@@ -116,11 +125,17 @@ cat > align.sh <<'EOF'
 
 export COURSE=/cluster/tufts/c27sp1bio0196
 export MYWORK="$COURSE/$USER"
-module load bwa-mem2 samtools minimap2
+module load bwa-mem2 samtools minimap2 seqkit
 set -euo pipefail
 cd $MYWORK/week-04/session-01
 T=${SLURM_CPUS_PER_TASK}
 mkdir -p "tmp/$SLURM_JOB_ID"
+
+# stop now if the two read files are not in the same order (Section 1.1 pairs them by name)
+if ! cmp -s <(seqkit seq -n -i dnb_1.fq.gz) <(seqkit seq -n -i dnb_2.fq.gz); then
+    echo "ERROR: dnb_1.fq.gz and dnb_2.fq.gz are not in the same order. Redo Section 1.1, then resubmit." >&2
+    exit 1
+fi
 
 # short reads: align, add mate tags, sort, mark duplicates, index
 bwa-mem2 mem -t $T -R '@RG\tID:SRR17374239\tSM:SRR17374239\tLB:lib1\tPL:DNBSEQ' \
