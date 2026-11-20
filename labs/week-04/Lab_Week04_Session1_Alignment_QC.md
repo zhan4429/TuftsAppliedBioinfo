@@ -266,11 +266,6 @@ Low-quality or low-complexity reads, assembly duplications and other ambiguous a
 
 ## Part 3: QC The Real Alignment
 
-```bash
-squeue -j "$(cat align_job_id.txt)"
-ls -lh sample.bam hifi.bam
-```
-
 ### 3.1 The Headline Numbers
 
 ```bash
