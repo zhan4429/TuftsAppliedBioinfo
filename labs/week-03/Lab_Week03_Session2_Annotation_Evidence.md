@@ -262,42 +262,50 @@ HISAT2 is **splice-aware**: it can place one read across an intron, producing a 
 
 </details>
 
-Now measure how much of the assembly the RNA-seq covers:
+Now measure how much of the assembly the RNA-seq covers, at three depths: at least one read, at least 10, and at least 100:
 
 ```bash
 samtools depth -a rna.sorted.bam | \
-  awk '{t++; if($3>0) c++} END {printf "bases with any RNA coverage: %.1f%%\n", 100*c/t}'
+  awk '{t++; if ($3 > 0) a++; if ($3 >= 10) b++; if ($3 >= 100) c++}
+       END {printf "1+ reads: %.1f%%   10+ reads: %.1f%%   100+ reads: %.1f%%\n", 100*a/t, 100*b/t, 100*c/t}'
 ```
 
-**Question 4.** Only a fraction of the genome is covered. Is that a problem?
+**Question 4.** Almost all of the genome has at least one read. Why so much, in a genome where annotated features cover only about three-quarters of the sequence? And what does the fall at 10 and 100 reads tell you?
 
 <details>
 <summary>Answer</summary>
 
-No — it is the expected result and an important one. Only transcribed regions get reads. Intergenic sequence, introns (mostly), and genes not expressed in this condition all sit at zero.
+Three things add up:
 
-The corollary matters: **absence of RNA-seq coverage is not evidence that there is no gene there.** It may mean the gene was silent in the condition that was sequenced. This is why evidence alone cannot annotate a genome.
+- **Yeast genes sit almost end to end.** Annotated features cover about 74% of the reference genome, the gaps between genes are usually a few hundred bases, and few genes have introns, so there is little silent sequence to begin with.
+- **Yeast transcribes more than its annotated genes.** The reference annotation has no untranslated regions, so the ends of every mRNA fall outside annotated features. The genome is also pervasively transcribed: noncoding, antisense and short unstable transcripts.
+- **One read is a very low bar.** The job aligned every read pair, so even rare transcripts and background reach one read: unspliced pre-mRNA, traces of genomic DNA in the RNA preparation, and reads placed at random among copies of a repeat.
+
+The fall at higher thresholds separates real expression from that background: well-expressed genes keep their coverage, while trace coverage drops away. So "any coverage" says little on its own.
+
+The lesson that still holds is at the level of genes: **a gene with no reads may simply be silent in the condition that was sequenced**, so absence of RNA-seq coverage is not evidence that there is no gene there. This is why evidence alone cannot annotate a genome.
 
 </details>
 
 ---
 
-## Part 3: Judge Your Gene Models Against The Evidence
+## Part 3: Your Gene Models And Their Proteins
 
-Your BRAKER3 job must have finished before this part. Your gene models and your RNA-seq alignments were both made on the same `asm.fa`, so their coordinates match. Point two variables at them:
+Your BRAKER3 job must have finished before this part. Point one variable at the gene models and another at the assembly they were made on:
 
 ```bash
 cd $MYWORK/week-03/session-02
 GFF=braker/braker.gff3
-BAM=rna.sorted.bam
-ls -lh $GFF $BAM
+FA=asm.fa
+ls -lh $GFF $FA
 ```
 
-If your BRAKER3 job failed, use the staged set instead. Its two files were made on the same staged assembly and belong together, so take both:
+If your BRAKER3 job failed, use the staged annotation instead. It was made on the staged assembly, so use that assembly with it; the copy lets the tools write an index file beside it:
 
 ```bash
 GFF=$SHARED/fallback_annotation/braker.gff3
-BAM=$SHARED/fallback_annotation/rna.sorted.bam
+cp $SHARED/fallback_assembly/asm.nuc.fa fallback_asm.fa
+FA=fallback_asm.fa
 ```
 
 ### 3.1 Look At Your Annotation
@@ -325,116 +333,44 @@ BRAKER3 can give one gene more than one transcript when the evidence supports al
 
 </details>
 
-### 3.2 How Many Genes Have Evidence?
+**Checkpoint 2.** Everyone has gene and transcript counts for their annotation.
+
+### 3.2 Extract The CDS And Protein Sequences
+
+The GFF3 records *where* each gene's coding exons are; the sequences themselves are in the assembly. `gffread` joins each transcript's coding exons, reverse-complements genes on the minus strand, and translates them:
 
 ```bash
-awk -F'\t' '$3=="gene"' $GFF | \
-  awk 'BEGIN{OFS="\t"} {print $1, $4-1, $5}' | sort -k1,1 -k2,2n > genes.bed
-
-samtools bedcov genes.bed $BAM | \
-  awk '{n++; if($4>0) e++} END {printf "genes with RNA-seq support: %d / %d (%.1f%%)\n", e, n, 100*e/n}'
+module load gffread
+gffread -g $FA -x cds.fasta -y protein.fasta $GFF
+grep -c '>' cds.fasta protein.fasta
+head -4 protein.fasta
 ```
 
-**Question 6.** You get some percentage below 100. Give two different explanations for genes without RNA-seq support, and say how you would tell them apart.
+`-g` names the assembly the gene models were made on, `-x` writes the coding sequences, and `-y` writes their translations. Both files hold one sequence per transcript, named by its transcript ID.
 
-<details>
-<summary>Answer</summary>
-
-1. **The gene is real but was not expressed** in the condition sequenced. BRAKER3 can still find it from the protein evidence.
-2. **The gene model is wrong**: a prediction in a repeat, or a pseudogene.
-
-To tell them apart, sequence RNA from more conditions: that raises support for real but silent genes and leaves wrong models unsupported. Unsupported models that cluster in repeats, or that no protein from another fungus matches, point to explanation 2.
-
-Keep in mind that BRAKER3 used these same reads to make its predictions, so genes with support were partly placed where the reads are. That makes this check weaker than evidence BRAKER3 never saw, such as RNA-seq from another condition.
-
-</details>
-
-### 3.3 One Gene, Read From The Command Line
-
-Take the best-covered gene, list its predicted coding exons (the `CDS` lines), and list the introns that reads actually crossed:
+Now look for proteins with a stop codon in the middle. `gffread` leaves out each protein's final stop codon and writes any other stop as `.`, so a `.` anywhere in a protein is an internal stop:
 
 ```bash
-samtools bedcov genes.bed $BAM | sort -k4,4nr | head -1 > top_gene.bed
-read CHR START END COV < top_gene.bed
-REGION="$CHR:$((START+1))-$END"
-echo "$REGION"
-
-# predicted coding exons, as start-end
-awk -F'\t' -v c=$CHR -v s=$START -v e=$END \
-  '$1==c && $3=="CDS" && $4>s && $5<=e {print $4 "-" $5}' $GFF | sort -u
-
-# introns observed in reads, as start-end, with read counts
-samtools view $BAM "$REGION" | awk '{
-  pos = $4; cig = $6
-  while (match(cig, /[0-9]+[MIDNSHP=X]/)) {
-    len = substr(cig, RSTART, RLENGTH-1); op = substr(cig, RSTART+RLENGTH-1, 1)
-    if (op == "N") print pos "-" pos+len-1
-    if (op ~ /[MDN=X]/) pos += len
-    cig = substr(cig, RSTART+RLENGTH)
-  }}' | sort | uniq -c | sort -rn | head
+awk '/^>/ {if (s ~ /\./) n++; s = ""; next} {s = s $0}
+     END {if (s ~ /\./) n++; print n + 0, "proteins with an internal stop codon"}' protein.fasta
 ```
 
-Column 6 of a BAM record is the CIGAR string, and an `N` in it marks a stretch of genome the read skipped: an intron. A predicted intron runs from one base after one coding exon ends to one base before the next starts. Most yeast genes have no intron, so if the junction list is empty, that agrees with a one-exon model: change `head -1` to `sed -n 2p`, `3p` and so on to try the next genes.
-
-**Question 7.** Find a gene where reads cross at least one intron. Do the observed introns match the gaps between the predicted coding exons? Describe one agreement or disagreement.
+**Question 6.** How many sequences does each file hold, and how does that compare with your transcript count from Section 3.1? How many proteins have an internal stop codon, and what could cause one?
 
 <details>
 <summary>Answer</summary>
 
-An intron supported by many reads at exactly the predicted coordinates is the model confirmed by observation. Disagreements worth describing:
+Each file should hold one sequence per transcript, so both counts should equal the transcript count from Section 3.1. A different number means some models could not be read, or the GFF3 and the assembly do not belong together.
 
-- **A frequent junction where no intron is predicted**: a missed intron, or a different isoform
-- **A predicted intron that no read crosses**: low expression, or a wrong model
-- **A junction a few bases from the predicted boundary**: an alternative splice site, or the model is slightly off
-- **A junction seen in one or two reads only**: weak evidence; read counts matter
-- **A junction just outside the coding exons**: an intron in an untranslated region, which the `CDS` lines do not include
+For BRAKER3's own models, expect no internal stops: its gene finders only predict open reading frames in the sequence they were given. So an internal stop here usually means `gffread` read a different assembly from the one BRAKER3 used, for example the staged annotation with your own assembly.
 
-Any of these, described accurately with the read counts, is a full answer. The skill is checking rather than trusting.
+For gene models made another way, such as an annotation transferred from a related genome, an internal stop also reveals a problem in the sequence: a small insertion or deletion inside a gene shifts the reading frame of everything after it. Translating gene models is the cheapest check for these frameshift errors.
+
+BRAKER3 also writes these sequences itself, as `braker/braker.codingseq` and `braker/braker.aa`. `gffread` works for any GFF3, and making them yourself checks that the annotation and the assembly fit together.
 
 </details>
 
-**Checkpoint 2.** Everyone has compared observed introns with predicted coding exons for at least one gene.
-
----
-
-## Part 4: Functional Annotation, And What It Is Worth
-
-Structural annotation says *where*. Functional annotation says *what it does* — and it is inference all the way down.
-
-Inspect the header first. The counting examples assume one header row and product
-descriptions in column 2; change the column if your staged file uses another layout.
-
-```bash
-head -3 $SHARED/reference_functional.tsv
-awk -F'\t' 'NR>1 && tolower($2) ~ /hypothetical|unknown|uncharacterized/' $SHARED/reference_functional.tsv | wc -l
-awk -F'\t' 'NR>1' $SHARED/reference_functional.tsv | wc -l
-```
-
-**Question 8.** Report the number and fraction of rows labeled hypothetical, unknown or uncharacterized in this file. Does that label by itself mean that the gene model is wrong?
-
-<details>
-<summary>Answer</summary>
-
-Calculate the fraction from your counts rather than expecting a fixed percentage. These commands assume one header row and product descriptions in column 2: check the displayed header and adjust if the staged file uses another layout.
-
-An uncharacterized product means the file does not assign a specific function; it does not by itself establish that the structural gene model is wrong. Conversely, a familiar product name does not validate the model. *S. cerevisiae* is extensively studied, so a large uncharacterized fraction should prompt checks of the annotation source, evidence, naming rules and file columns rather than being accepted as a universal fungal expectation.
-
-Assess structural support with alignments and protein evidence, and functional support with the evidence behind the assigned product name.
-
-</details>
-
-**Question 9.** Your structural annotation truncated a gene because of a frameshift in the assembly. What does the functional step do?
-
-<details>
-<summary>Answer</summary>
-
-It faithfully assigns a product name to the truncated protein, with no warning. You now have a confident functional annotation for a protein that does not exist.
-
-Functional annotation **inherits structural errors**. This is why Tuesday's correctness question matters even when all you want is a gene list — and why an assembly with residual indel errors produces systematically shorter predicted proteins. Check mean CDS length against expectation; it is the cheapest diagnostic you have.
-
-</details>
-
-**Checkpoint 3.** Everyone can state why functional annotation cannot be more reliable than the structural annotation beneath it.
+**Checkpoint 3.** Everyone has `cds.fasta` and `protein.fasta`, with one sequence per transcript.
 
 ---
 
@@ -444,13 +380,12 @@ Functional annotation **inherits structural errors**. This is why Tuesday's corr
 |---|---|
 | Index a genome for RNA | `hisat2-build -p 8 asm.fa asm_idx` |
 | Spliced alignment | `hisat2 -x idx -1 R1 -2 R2 \| samtools sort -o out.bam` |
-| Find observed introns | filter the BAM for CIGAR strings containing N |
-| Coverage per feature | `samtools bedcov genes.bed rna.sorted.bam` |
+| Coverage across the genome | `samtools depth -a rna.sorted.bam` |
 | Annotation feature counts | `grep -v '^#' braker/braker.gff3` followed by `cut -f3`, `sort` and `uniq -c` |
+| CDS and protein FASTA from a GFF3 | `gffread -g asm.fa -x cds.fasta -y protein.fasta braker.gff3` |
 
-**Four things to carry forward:**
+**Three things to carry forward:**
 
 1. A predicted intron is a hypothesis; a spliced read is an observation. Good annotation uses both, because each covers the other's blind spot.
 2. Absence of RNA-seq coverage is not evidence of absence of a gene. It may just not have been expressed.
-3. "Hypothetical protein" is an honest answer about the databases, not a failure.
-4. Functional annotation inherits every structural error, silently. Correctness upstream is not optional.
+3. A gene model is only useful with the assembly it was made on. Translating the models is the cheapest check that the two belong together.
