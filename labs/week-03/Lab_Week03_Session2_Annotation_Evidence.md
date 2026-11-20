@@ -177,11 +177,12 @@ braker.pl \
 # Step 3: coding and protein sequences of every transcript
 module load gffread
 gffread -g asm.fa -x cds.fasta -y protein.fasta braker/braker.gff3
+gffread -g asm.fa -V -y protein.intact.fasta braker/braker.gff3
 
 # Step 4: assign functions from orthologs with eggNOG-mapper
 module load eggnog-mapper
 mkdir -p eggnog
-emapper.py -i protein.fasta -o braker --output_dir eggnog \
+emapper.py -i protein.intact.fasta -o braker --output_dir eggnog \
     --data_dir /cluster/tufts/biocontainers/datasets/eggnog \
     --cpu ${SLURM_CPUS_PER_TASK} --override
 EOF
@@ -195,9 +196,9 @@ squeue --me
 
 **Step 2** is BRAKER3, given the BAM that step 1 just made. `set -euo pipefail` stops the job at the first error, so BRAKER3 never runs on a missing or half-written BAM.
 
-**Step 3** turns the gene models into sequences. `gffread` joins each transcript's coding exons from `asm.fa`, reverse-complements genes on the minus strand, and translates them: `-x` writes the coding sequences to `cds.fasta`, and `-y` their proteins to `protein.fasta`.
+**Step 3** turns the gene models into sequences. `gffread` joins each transcript's coding exons from `asm.fa`, reverse-complements genes on the minus strand, and translates them: `-x` writes the coding sequences to `cds.fasta`, and `-y` their proteins to `protein.fasta`. gffread writes an internal stop codon as `.`, which the search tool inside eggNOG-mapper rejects, so a second run with `-V` leaves out every protein that has one, in `protein.intact.fasta`.
 
-**Step 4** compares every protein with eggNOG's database of orthologous groups and copies names, descriptions and GO terms from each protein's closest characterised relatives, into `eggnog/braker.emapper.annotations`. The database is shared by everyone, already downloaded to `/cluster/tufts/biocontainers/datasets/eggnog`. Each step loads its own modules just before it runs, so BRAKER3 never finds another tool's copy of a program it uses itself, and `--override` lets a resubmitted job replace earlier results.
+**Step 4** compares every intact protein with eggNOG's database of orthologous groups and copies names, descriptions and GO terms from each protein's closest characterised relatives, into `eggnog/braker.emapper.annotations`. The database is shared by everyone, already downloaded to `/cluster/tufts/biocontainers/datasets/eggnog`. Each step loads its own modules just before it runs, so BRAKER3 never finds another tool's copy of a program it uses itself, and `--override` lets a resubmitted job replace earlier results.
 
 **What each option tells BRAKER3:**
 
@@ -313,8 +314,9 @@ cd $MYWORK/week-03/session-02
 GFF=braker/braker.gff3
 CDS=cds.fasta
 PROT=protein.fasta
+INTACT=protein.intact.fasta
 EGG=eggnog/braker.emapper.annotations
-ls -lh $GFF $CDS $PROT $EGG
+ls -lh $GFF $CDS $PROT $INTACT $EGG
 ```
 
 If your job failed, use the staged set instead. Its files were all made from the same staged annotation and belong together:
@@ -323,6 +325,7 @@ If your job failed, use the staged set instead. Its files were all made from the
 GFF=$SHARED/fallback_annotation/braker.gff3
 CDS=$SHARED/fallback_annotation/cds.fasta
 PROT=$SHARED/fallback_annotation/protein.fasta
+INTACT=$SHARED/fallback_annotation/protein.intact.fasta
 EGG=$SHARED/fallback_annotation/braker.emapper.annotations
 ```
 
@@ -367,7 +370,10 @@ Now look for proteins with a stop codon in the middle. `gffread` leaves out each
 ```bash
 awk '/^>/ {if (s ~ /\./) n++; s = ""; next} {s = s $0}
      END {if (s ~ /\./) n++; print n + 0, "proteins with an internal stop codon"}' $PROT
+grep -c '>' $INTACT
 ```
+
+`protein.intact.fasta` holds the proteins without one. Those are the proteins Step 4 annotated.
 
 **Question 6.** How many sequences does each file hold, and how does that compare with your transcript count from Section 3.1? How many proteins have an internal stop codon, and what could cause one?
 
@@ -376,7 +382,7 @@ awk '/^>/ {if (s ~ /\./) n++; s = ""; next} {s = s $0}
 
 Each file should hold one sequence per transcript, so both counts should equal the transcript count from Section 3.1. A different number means some models could not be read, or the GFF3 and the assembly do not belong together.
 
-For BRAKER3's own models, expect no internal stops: its gene finders only predict open reading frames in the sequence they were given, and your job gave `gffread` that same `asm.fa`. An internal stop appears when a GFF3 is translated with a different assembly from the one it was made on.
+BRAKER3's gene finders predict open reading frames, so an internal stop here rarely means a broken gene. More often the GFF3 does not describe the model exactly: BRAKER3 works mainly in GTF format and converts to GFF3 at the end, and its developers recommend the GTF and `braker.aa` when a GFF3 translation disagrees with them. A few such proteins are normal; many would be worth investigating, for example by translating `braker/braker.gtf` with `gffread` and comparing. Translating a GFF3 with a different assembly from the one it was made on produces internal stops too.
 
 For gene models made another way, such as an annotation transferred from a related genome, an internal stop also reveals a problem in the sequence: a small insertion or deletion inside a gene shifts the reading frame of everything after it. Translating gene models is the cheapest check for these frameshift errors.
 
@@ -399,7 +405,7 @@ awk -F'\t' '/^#query/ {for (i = 1; i <= NF; i++) h[$i] = i; next} /^#/ {next}
   {print $1 "\t" $h["Preferred_name"] "\t" $h["Description"]}' $EGG | head
 ```
 
-A `-` means the field is empty. Proteins with no match at all are missing from the table, so compare its count with the protein count from Section 3.2.
+A `-` means the field is empty. Proteins with no match at all are missing from the table, so compare its count with the number of intact proteins eggNOG-mapper searched, from Section 3.2.
 
 **Question 7.** What fraction of your proteins received a gene name? Pick one protein with a name you recognise and one with only a description: what does each label actually rest on?
 
@@ -427,7 +433,8 @@ A label also says nothing about whether the gene model is right. A truncated or 
 | Coverage across the genome | `samtools depth -a rna.sorted.bam` |
 | Annotation feature counts | `grep -v '^#' braker/braker.gff3` followed by `cut -f3`, `sort` and `uniq -c` |
 | CDS and protein FASTA from a GFF3 | `gffread -g asm.fa -x cds.fasta -y protein.fasta braker.gff3` |
-| Functions from orthologs | `emapper.py -i protein.fasta -o out --data_dir EGGNOG_DB` |
+| Proteins without internal stops | `gffread -g asm.fa -V -y protein.intact.fasta braker.gff3` |
+| Functions from orthologs | `emapper.py -i protein.intact.fasta -o out --data_dir EGGNOG_DB` |
 
 **Four things to carry forward:**
 
